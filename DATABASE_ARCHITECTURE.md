@@ -60,27 +60,27 @@ erDiagram
 
 ## 4. Seeded Curricula Catalog (19 Production Courses across 6 Tracks)
 
-| # | Curriculum Title | Academic Track | Lead Faculty | Fee (PKR) |
+| # | Simple Course Title | Academic Track | Lead Faculty | Fee (PKR) |
 |---|---|---|---|---|
-| 1 | **Full-Stack Web Engineering with Next.js 15 & TypeScript** | Web & Software Engineering | Murtaza Wazir | **Rs. 18,500** |
-| 2 | **Advanced Backend Engineering with Go, gRPC & Microservices** | Web & Software Engineering | Prof. David Chen | **Rs. 24,000** |
-| 3 | **Cross-Platform Mobile Engineering with React Native & Expo** | Web & Software Engineering | Murtaza Wazir | **Rs. 16,000** |
-| 4 | **Applied Machine Learning & Deep Neural Networks with PyTorch** | Artificial Intelligence & Data | Dr. Sarah Mitchell | **Rs. 26,500** |
-| 5 | **Large Language Models (LLMs) & Generative AI Engineering** | Artificial Intelligence & Data | Dr. Sarah Mitchell | **Rs. 29,000** |
-| 6 | **Computer Vision & Image Processing with OpenCV & PyTorch** | Artificial Intelligence & Data | Dr. Sarah Mitchell | **Rs. 21,000** |
-| 7 | **Cloud Infrastructure Engineering with Docker, Kubernetes & AWS** | Cloud & DevOps Architecture | Prof. David Chen | **Rs. 17,500** |
-| 8 | **Enterprise Infrastructure as Code (IaC) with Terraform & AWS** | Cloud & DevOps Architecture | Prof. David Chen | **Rs. 19,500** |
-| 9 | **Offensive Cybersecurity & Ethical Penetration Testing Mastery** | Cybersecurity & System Defense | Alex Rivera | **Rs. 27,000** |
-| 10 | **Zero-Trust Security & Cloud Defenses on AWS and Azure** | Cybersecurity & System Defense | Alex Rivera | **Rs. 22,500** |
-| 11 | **Data Structures, Competitive Algorithms & LeetCode Mastery** | Core Algorithms & Computer Science | Prof. David Chen | **Rs. 14,500** |
-| 12 | **Database Engine Internals, Query Optimization & Storage Systems** | Core Algorithms & Computer Science | Dr. Zainab Ahmed | **Rs. 25,000** |
-| 13 | **UI/UX Design Systems & Interactive Prototyping in Figma** | UI/UX & Product Design | **Adeel Qasir** | **Rs. 12,000** |
-| 14 | **Advanced UX Research, User Journey Mapping & Wireframing** | UI/UX & Product Design | **Adeel Qasir** | **Rs. 15,000** |
-| 15 | **Mobile App UI/UX Design & Micro-Interactions in Figma** | UI/UX & Product Design | **Adeel Qasir** | **Rs. 18,500** |
-| 16 | **Enterprise Full-Stack Architecture with MERN & Next.js 16** | Web & Software Engineering | **Misbah Ullah** | **Rs. 25,000** |
-| 17 | **Scalable REST & GraphQL API Engineering with Node.js & PostgreSQL** | Web & Software Engineering | **Misbah Ullah** | **Rs. 22,000** |
-| 18 | **Production Cross-Platform Mobile Apps with React Native & Expo** | Web & Software Engineering | **Muhammad Ibrahim** | **Rs. 24,000** |
-| 19 | **Flutter & Dart Masterclass: Native Android & iOS App Development** | Web & Software Engineering | **Muhammad Ibrahim** | **Rs. 26,000** |
+| 1 | **Web Development** | Web & Software Engineering | Murtaza Wazir | **Rs. 18,500** |
+| 2 | **Backend Development** | Web & Software Engineering | Prof. David Chen | **Rs. 24,000** |
+| 3 | **App Development** | Web & Software Engineering | Murtaza Wazir | **Rs. 16,000** |
+| 4 | **Machine Learning & AI** | Artificial Intelligence & Data | Dr. Sarah Mitchell | **Rs. 26,500** |
+| 5 | **Generative AI** | Artificial Intelligence & Data | Dr. Sarah Mitchell | **Rs. 29,000** |
+| 6 | **Computer Vision** | Artificial Intelligence & Data | Dr. Sarah Mitchell | **Rs. 21,000** |
+| 7 | **Cloud Computing & DevOps** | Cloud & DevOps Architecture | Prof. David Chen | **Rs. 17,500** |
+| 8 | **Cloud Infrastructure** | Cloud & DevOps Architecture | Prof. David Chen | **Rs. 19,500** |
+| 9 | **Cyber Security** | Cybersecurity & System Defense | Alex Rivera | **Rs. 27,000** |
+| 10 | **Network & Cloud Security** | Cybersecurity & System Defense | Alex Rivera | **Rs. 22,500** |
+| 11 | **Data Structures & Algorithms** | Core Algorithms & Computer Science | Prof. David Chen | **Rs. 14,500** |
+| 12 | **Database Systems & SQL** | Core Algorithms & Computer Science | Dr. Zainab Ahmed | **Rs. 25,000** |
+| 13 | **UI/UX Design** | UI/UX & Product Design | **Adeel Qasir** | **Rs. 12,000** |
+| 14 | **UX Research & Wireframing** | UI/UX & Product Design | **Adeel Qasir** | **Rs. 15,000** |
+| 15 | **Mobile UI/UX Design** | UI/UX & Product Design | **Adeel Qasir** | **Rs. 18,500** |
+| 16 | **MERN Stack Development** | Web & Software Engineering | **Misbah Ullah** | **Rs. 25,000** |
+| 17 | **API & Backend Engineering** | Web & Software Engineering | **Misbah Ullah** | **Rs. 22,000** |
+| 18 | **React Native App Development** | Web & Software Engineering | **Muhammad Ibrahim** | **Rs. 24,000** |
+| 19 | **Flutter App Development** | Web & Software Engineering | **Muhammad Ibrahim** | **Rs. 26,000** |
 
 ---
 

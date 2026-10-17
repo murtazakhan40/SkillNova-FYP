@@ -363,12 +363,12 @@ async function main() {
     return course;
   }
 
-  // --- COURSE 1: Next.js & TypeScript ---
+  // --- COURSE 1: Web Development ---
   const course1 = await seedCurriculum({
-    title: "Full-Stack Web Engineering with Next.js 15 & TypeScript",
+    title: "Web Development",
     slug: "fullstack-nextjs-typescript",
-    subtitle: "Master the App Router, Server Actions, Prisma ORM, and enterprise deployment.",
-    description: "This flagship curriculum guides BS Computer Science students and professional engineers through the complete lifecycle of production-grade modern web applications. You will engineer reactive interfaces, design relational databases, secure authentication systems, and deploy cloud applications.",
+    subtitle: "Build modern websites and web apps with HTML, CSS, JavaScript, and Next.js.",
+    description: "Learn modern full-stack web development from scratch. Build responsive user interfaces, work with modern React and Next.js, connect relational databases, and deploy live websites to the cloud.",
     price: 18500,
     level: "INTERMEDIATE",
     thumbnail: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&auto=format&fit=crop&q=80",
@@ -455,11 +455,11 @@ Compound indexes on foreign keys and search terms dramatically reduce B-Tree tra
     ],
   });
 
-  // --- COURSE 2: Go Backend & Microservices ---
+  // --- COURSE 2: Backend Development ---
   const course2 = await seedCurriculum({
-    title: "Advanced Backend Engineering with Go, gRPC & Microservices",
+    title: "Backend Development",
     slug: "advanced-backend-go-grpc",
-    subtitle: "High-throughput microservices, concurrency patterns, and gRPC communication.",
+    subtitle: "Build scalable server systems, APIs, and microservices with Go.",
     description: "Learn how to build resilient, distributed backend microservices handling hundreds of thousands of concurrent requests with Go routines, channels, protocol buffers, and distributed tracing.",
     price: 24000,
     level: "ADVANCED",
@@ -523,11 +523,11 @@ gRPC utilizes HTTP/2 streams to allow multiple requests and responses concurrent
     ],
   });
 
-  // --- COURSE 3: React Native & Expo ---
+  // --- COURSE 3: App Development ---
   const course3 = await seedCurriculum({
-    title: "Cross-Platform Mobile Engineering with React Native & Expo",
+    title: "App Development",
     slug: "cross-platform-react-native-expo",
-    subtitle: "Build native iOS and Android apps with a single modern TypeScript codebase.",
+    subtitle: "Create cross-platform mobile apps for iOS and Android with React Native.",
     description: "Construct production mobile apps with native gesture handling, offline persistence, push notifications, and App Store / Google Play deployment pipelines.",
     price: 16000,
     level: "INTERMEDIATE",
@@ -572,12 +572,12 @@ Reanimated 3 runs worklets on the native UI thread, guaranteeing steady 60 FPS t
     ],
   });
 
-  // --- COURSE 4: Machine Learning with PyTorch ---
+  // --- COURSE 4: Machine Learning & AI ---
   const course4 = await seedCurriculum({
-    title: "Applied Machine Learning & Deep Neural Networks with PyTorch",
+    title: "Machine Learning & AI",
     slug: "applied-machine-learning-pytorch",
-    subtitle: "From tensors and backpropagation to CNNs, RNNs, and model deployment.",
-    description: "Gain hands-on mastery over deep learning mathematical fundamentals. Build computer vision classifiers, recurrent sequential models, and export optimized models using TorchScript and ONNX.",
+    subtitle: "Train neural networks, deep learning models, and smart algorithms with PyTorch.",
+    description: "Gain hands-on mastery over machine learning and deep learning fundamentals. Build classifiers, sequential models, and export optimized models for production applications.",
     price: 26500,
     level: "ADVANCED",
     thumbnail: "https://images.unsplash.com/photo-1507146426996-ef05388b69b9?w=800&auto=format&fit=crop&q=80",
@@ -633,12 +633,12 @@ Kernels slide across pixel matrices to extract spatial representations such as e
     ],
   });
 
-  // --- COURSE 5: LLMs & Generative AI ---
+  // --- COURSE 5: Generative AI ---
   const course5 = await seedCurriculum({
-    title: "Large Language Models (LLMs) & Generative AI Engineering",
+    title: "Generative AI",
     slug: "large-language-models-generative-ai",
-    subtitle: "Transformers, Self-Attention, LoRA Fine-Tuning, and RAG Pipelines.",
-    description: "Deep dive into the transformer revolution. Master the Multi-Head Attention mechanism, fine-tune open-weights models with LoRA/QLoRA, and build production Retrieval-Augmented Generation (RAG) architectures with vector databases.",
+    subtitle: "Build AI agents, ChatGPT chatbots, and intelligent applications with LLMs.",
+    description: "Deep dive into generative AI and large language models. Master the Transformer attention mechanism, fine-tune open models, and build production Retrieval-Augmented Generation (RAG) architectures with vector search.",
     price: 29000,
     level: "ADVANCED",
     thumbnail: "https://images.unsplash.com/photo-1677442136019-21780efad99a?w=800&auto=format&fit=crop&q=80",
@@ -690,9 +690,9 @@ Combining semantic search over private documents with LLM context windows to eli
 
   // --- COURSE 6: Computer Vision ---
   await seedCurriculum({
-    title: "Computer Vision & Image Processing with OpenCV & PyTorch",
+    title: "Computer Vision",
     slug: "computer-vision-opencv-pytorch",
-    subtitle: "Real-time object detection, segmentation, and feature extraction.",
+    subtitle: "Image recognition, face detection, and video analysis with OpenCV.",
     description: "Comprehensive curriculum covering classic image filtering, edge detection, optical flow, YOLO real-time object detection, and Mask R-CNN semantic segmentation.",
     price: 21000,
     level: "INTERMEDIATE",
@@ -724,11 +724,11 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 7: Docker, Kubernetes & AWS ---
+  // --- COURSE 7: Cloud Computing & DevOps ---
   const course7 = await seedCurriculum({
-    title: "Cloud Infrastructure Engineering with Docker, Kubernetes & AWS",
+    title: "Cloud Computing & DevOps",
     slug: "cloud-infrastructure-docker-kubernetes-aws",
-    subtitle: "Container orchestration, ingress controllers, microservices on AWS EKS.",
+    subtitle: "Deploy and manage software using Docker, Kubernetes, and AWS.",
     description: "Deploy scalable, enterprise-grade cloud applications. Master Docker multi-stage builds, Kubernetes pods, deployments, services, ingress routing, Helm charts, and AWS Cloud networking.",
     price: 17500,
     level: "INTERMEDIATE",
@@ -771,11 +771,11 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 8: Terraform IaC ---
+  // --- COURSE 8: Cloud Infrastructure ---
   await seedCurriculum({
-    title: "Enterprise Infrastructure as Code (IaC) with Terraform & AWS",
+    title: "Cloud Infrastructure",
     slug: "enterprise-infrastructure-as-code-terraform",
-    subtitle: "Declarative infrastructure provisioning, state management, and modules.",
+    subtitle: "Automate server setup and cloud networks using Terraform.",
     description: "Automate entire cloud environments with HashiCorp Terraform. Learn HCL, remote state locking with DynamoDB, modular architectures, and automated testing.",
     price: 19500,
     level: "ADVANCED",
@@ -812,12 +812,12 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 9: Offensive Cybersecurity ---
+  // --- COURSE 9: Cyber Security ---
   const course9 = await seedCurriculum({
-    title: "Offensive Cybersecurity & Ethical Penetration Testing Mastery",
+    title: "Cyber Security",
     slug: "offensive-cybersecurity-ethical-hacking",
-    subtitle: "Network reconnaissance, web exploits, privilege escalation, and defense.",
-    description: "Learn ethical hacking from scratch. Master Nmap scanning, Burp Suite intercepting, SQL injection, Cross-Site Scripting (XSS), Buffer Overflows, and Metasploit framework.",
+    subtitle: "Learn ethical hacking, penetration testing, and system defense.",
+    description: "Learn practical cyber security and ethical hacking. Master network scanning, vulnerability identification, SQL injection defense, web penetration testing, and threat mitigation.",
     price: 27000,
     level: "ADVANCED",
     thumbnail: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&auto=format&fit=crop&q=80",
@@ -853,12 +853,12 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 10: Zero-Trust Security ---
+  // --- COURSE 10: Network & Cloud Security ---
   await seedCurriculum({
-    title: "Zero-Trust Security & Cloud Defenses on AWS and Azure",
+    title: "Network & Cloud Security",
     slug: "zero-trust-cloud-security-defenses",
-    subtitle: "Identity-aware access, IAM policies, mutual TLS, and threat modeling.",
-    description: "Replace legacy perimeter security with modern Zero-Trust architectures. Learn least privilege IAM policies, mTLS service meshes, micro-segmentation, and SIEM monitoring.",
+    subtitle: "Protect servers, cloud networks, and firewalls against cyber threats.",
+    description: "Learn essential cloud and network defenses. Master identity and access management (IAM), firewall configurations, security group isolation, and threat detection on AWS and Azure.",
     price: 22500,
     level: "INTERMEDIATE",
     thumbnail: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&auto=format&fit=crop&q=80",
@@ -894,11 +894,11 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 11: Data Structures & LeetCode ---
+  // --- COURSE 11: Data Structures & Algorithms ---
   const course11 = await seedCurriculum({
-    title: "Data Structures, Competitive Algorithms & LeetCode Mastery",
+    title: "Data Structures & Algorithms",
     slug: "data-structures-algorithms-leetcode-mastery",
-    subtitle: "Ace technical coding interviews: Graphs, DP, Trees, and Complexity Analysis.",
+    subtitle: "Master fundamental coding logic, problem solving, and technical interviews.",
     description: "Rigorous computer science algorithms course. Master Big-O analysis, binary heaps, topological sorting, Dijkstra shortest path, dynamic programming memoization, and bit manipulation.",
     price: 14500,
     level: "INTERMEDIATE",
@@ -930,12 +930,12 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 12: Database Internals ---
+  // --- COURSE 12: Database Systems & SQL ---
   await seedCurriculum({
-    title: "Database Engine Internals, Query Optimization & Storage Systems",
+    title: "Database Systems & SQL",
     slug: "database-engine-internals-query-optimization",
-    subtitle: "B-Trees, LSM-Trees, Write-Ahead Logs (WAL), and MVCC Concurrency.",
-    description: "Understand what happens underneath the SQL prompt. Learn page buffer managers, B+ Trees vs LSM-Trees, Write-Ahead Logging (WAL) for crash recovery, and multi-version concurrency control.",
+    subtitle: "Master relational databases, SQL queries, indexes, and storage.",
+    description: "Understand database fundamentals and storage internals. Learn page buffer managers, B+ Trees vs LSM-Trees, Write-Ahead Logging (WAL) for crash recovery, and multi-version concurrency control.",
     price: 25000,
     level: "ADVANCED",
     thumbnail: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=800&auto=format&fit=crop&q=80",
@@ -971,11 +971,11 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 13: UI/UX Design Systems (Adeel Qasir) ---
+  // --- COURSE 13: UI/UX Design (Adeel Qasir) ---
   const course13 = await seedCurriculum({
-    title: "UI/UX Design Systems & Interactive Prototyping in Figma",
+    title: "UI/UX Design",
     slug: "ui-ux-design-systems-prototyping",
-    subtitle: "Design stunning digital experiences, component libraries, and interactive design tokens in Figma.",
+    subtitle: "Design stunning digital experiences, component systems, and prototypes in Figma.",
     description: "Elevate your user experience design skills from wireframing to high-fidelity accessible design systems with Adeel Qasir. Learn typography scales, WCAG contrast compliance, auto-layout variants, and engineering handoff.",
     price: 12000,
     level: "BEGINNER",
@@ -1013,11 +1013,11 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 14: Advanced UX Research (Adeel Qasir) ---
+  // --- COURSE 14: UX Research & Wireframing (Adeel Qasir) ---
   const course14 = await seedCurriculum({
-    title: "Advanced UX Research, User Journey Mapping & Wireframing",
+    title: "UX Research & Wireframing",
     slug: "ux-research-journey-mapping-wireframing",
-    subtitle: "Master user interviews, information architecture, heuristic evaluation, and low-to-high fidelity wireframes.",
+    subtitle: "Master user interviews, information architecture, wireframing, and usability testing.",
     description: "Delve deep into cognitive psychology and UX research methodologies with Adeel Qasir. Conduct qualitative user interviews, construct data-driven empathy maps, user journey workflows, and run tree testing to architect friction-free user flows.",
     price: 15000,
     level: "BEGINNER",
@@ -1077,11 +1077,11 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 15: Mobile App UI/UX & Micro-Interactions (Adeel Qasir) ---
+  // --- COURSE 15: Mobile UI/UX Design (Adeel Qasir) ---
   const course15 = await seedCurriculum({
-    title: "Mobile App UI/UX Design & Micro-Interactions in Figma",
+    title: "Mobile UI/UX Design",
     slug: "mobile-app-ui-ux-micro-interactions",
-    subtitle: "Craft pixel-perfect iOS & Android mobile interfaces, responsive components, and fluid micro-animations.",
+    subtitle: "Design pixel-perfect mobile interfaces and smooth micro-animations in Figma.",
     description: "Design cutting-edge mobile applications following Apple Human Interface Guidelines and Google Material Design 3 with Adeel Qasir. Learn touch ergonomics, spring physics, smart animate transitions, and design token integration for seamless developer handoff.",
     price: 18500,
     level: "INTERMEDIATE",
@@ -1136,11 +1136,11 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 16: Enterprise MERN & Next.js (Misbah Ullah) ---
+  // --- COURSE 16: MERN Stack Development (Misbah Ullah) ---
   const course16 = await seedCurriculum({
-    title: "Enterprise Full-Stack Architecture with MERN & Next.js 16",
+    title: "MERN Stack Development",
     slug: "enterprise-mern-nextjs-architecture",
-    subtitle: "Architect enterprise-grade web applications with React 19, Node.js, Express, MongoDB, and Next.js App Router.",
+    subtitle: "Build web apps with MongoDB, Express, React, and Node.js.",
     description: "Led by Misbah Ullah, master modern full-stack web engineering from monorepo orchestration to server actions, optimistic UI, state management with Zustand, and production Docker containerization. Build resilient, scalable architectures with type-safety end-to-end.",
     price: 25000,
     level: "INTERMEDIATE",
@@ -1200,11 +1200,11 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 17: Scalable REST & GraphQL APIs (Misbah Ullah) ---
+  // --- COURSE 17: API & Backend Engineering (Misbah Ullah) ---
   const course17 = await seedCurriculum({
-    title: "Scalable REST & GraphQL API Engineering with Node.js & PostgreSQL",
+    title: "API & Backend Engineering",
     slug: "scalable-rest-graphql-api-engineering",
-    subtitle: "Design bulletproof APIs, connection pools, schema caching, rate limiting, and real-time WebSockets.",
+    subtitle: "Design fast REST and GraphQL APIs with Node.js and PostgreSQL.",
     description: "Learn the mechanics of engineering high-throughput backend services with Misbah Ullah. Implement connection pooling with pgBouncer, write optimized Prisma and raw SQL queries, engineer Apollo GraphQL schemas with DataLoader N+1 prevention, and deploy resilient CI/CD pipelines.",
     price: 22000,
     level: "ADVANCED",
@@ -1264,11 +1264,11 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 18: Cross-Platform React Native (Muhammad Ibrahim) ---
+  // --- COURSE 18: React Native App Development (Muhammad Ibrahim) ---
   const course18 = await seedCurriculum({
-    title: "Production Cross-Platform Mobile Apps with React Native & Expo",
+    title: "React Native App Development",
     slug: "react-native-expo-production-engineering",
-    subtitle: "Build, profile, and ship high-performance iOS and Android apps with React Native New Architecture.",
+    subtitle: "Build high-speed mobile apps for iOS and Android with React Native and Expo.",
     description: "Taught by Muhammad Ibrahim, harness the power of React Native, TypeScript, Expo SDK, and native gesture handlers. Master Fabric rendering, TurboModule JSI bridges, Reanimated 3 spring physics, and push notification pipelines with Expo EAS.",
     price: 24000,
     level: "INTERMEDIATE",
@@ -1328,11 +1328,11 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 19: Flutter & Dart Masterclass (Muhammad Ibrahim) ---
+  // --- COURSE 19: Flutter App Development (Muhammad Ibrahim) ---
   const course19 = await seedCurriculum({
-    title: "Flutter & Dart Masterclass: Native Android & iOS App Development",
+    title: "Flutter App Development",
     slug: "flutter-dart-masterclass-mobile-development",
-    subtitle: "Create beautiful, smooth 120 FPS native mobile applications with Google Flutter & Dart.",
+    subtitle: "Create smooth, modern native mobile apps using Google Flutter & Dart.",
     description: "Taught by Muhammad Ibrahim, learn Dart 3 modern features like records and pattern matching, Flutter widget trees, BLoC state management, platform channels for native hardware access, and clean architecture patterns.",
     price: 26000,
     level: "BEGINNER",
