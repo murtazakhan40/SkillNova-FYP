@@ -25,9 +25,9 @@ export function DashboardShell({
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex bg-[#F8FAFC]">
+    <div className="h-screen max-h-screen flex bg-[#F8FAFC] overflow-hidden">
       {/* Desktop Persistent Sidebar */}
-      <div className="hidden lg:block shrink-0">
+      <div className="hidden lg:flex lg:flex-col shrink-0 h-full overflow-hidden">
         <DashboardSidebar user={user} />
       </div>
 
@@ -38,7 +38,7 @@ export function DashboardShell({
           onClick={() => setIsMobileSidebarOpen(false)}
         >
           <div
-            className="fixed inset-y-0 left-0 z-50 w-64 max-w-[80vw] shadow-2xl transition-transform duration-300"
+            className="fixed inset-y-0 left-0 z-50 w-64 max-w-[80vw] h-full shadow-2xl transition-transform duration-300 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <DashboardSidebar
@@ -50,7 +50,7 @@ export function DashboardShell({
       )}
 
       {/* Main Content Area with Header */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         <DashboardHeader
           user={user}
           notifications={notifications}
@@ -58,7 +58,7 @@ export function DashboardShell({
           isMobileSidebarOpen={isMobileSidebarOpen}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto overscroll-contain">
           {children}
         </main>
       </div>

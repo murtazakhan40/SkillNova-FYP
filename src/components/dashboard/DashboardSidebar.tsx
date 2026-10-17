@@ -82,90 +82,88 @@ export function DashboardSidebar({ user, onCloseMobile }: DashboardSidebarProps)
   };
 
   return (
-    <aside className="w-64 bg-[#0B1B3D] text-slate-300 min-h-screen flex flex-col justify-between border-r border-slate-800 shrink-0">
-      <div>
-        {/* Brand Header */}
-        <div className="p-5 border-b border-slate-800/80 flex items-center justify-between">
-          <div>
-            <SkillNovaLogo variant="light" size="sm" />
-            <div className="mt-2.5">
-              <span
-                className={`inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${roleBadge.color}`}
-              >
-                {roleBadge.label}
-              </span>
-            </div>
-          </div>
-          {onCloseMobile && (
-            <button
-              type="button"
-              onClick={onCloseMobile}
-              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
-              aria-label="Close menu"
+    <aside className="w-64 bg-[#0B1B3D] text-slate-300 h-full max-h-screen flex flex-col border-r border-slate-800 shrink-0 select-none">
+      {/* Brand Header - Pinned at top */}
+      <div className="p-5 border-b border-slate-800/80 flex items-center justify-between shrink-0">
+        <div>
+          <SkillNovaLogo variant="light" size="sm" />
+          <div className="mt-2.5">
+            <span
+              className={`inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${roleBadge.color}`}
             >
-              <X className="w-5 h-5" />
-            </button>
-          )}
+              {roleBadge.label}
+            </span>
+          </div>
         </div>
-
-        {/* Navigation Items */}
-        <nav className="p-4 space-y-1.5">
-          <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            {user.role === "ADMIN" ? "Admin Governance" : user.role === "TRAINER" ? "Faculty Studio" : "Academy Navigation"}
-          </div>
-          {links.map((link) => {
-            const Icon = link.icon;
-            const isActive = pathname === link.href;
-
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={handleLinkClick}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
-                  isActive
-                    ? "bg-[#FF6B00] text-white shadow-md shadow-orange-500/25 font-bold"
-                    : "text-slate-300 hover:bg-[#132752] hover:text-white"
-                }`}
-              >
-                <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-slate-400"}`} />
-                <span>{link.label}</span>
-              </Link>
-            );
-          })}
-
-          <div className="pt-5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Public Portal
-          </div>
-          <Link
-            href="/"
-            onClick={handleLinkClick}
-            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-medium text-slate-400 hover:bg-[#132752] hover:text-white transition-colors"
+        {onCloseMobile && (
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+            aria-label="Close menu"
           >
-            <Compass className="w-4 h-4 text-slate-500" />
-            <span>Return to Homepage</span>
-          </Link>
-          <Link
-            href="/courses"
-            onClick={handleLinkClick}
-            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-medium text-slate-400 hover:bg-[#132752] hover:text-white transition-colors"
-          >
-            <BookOpen className="w-4 h-4 text-slate-500" />
-            <span>Browse Full Catalog</span>
-          </Link>
-          <Link
-            href="/verify"
-            onClick={handleLinkClick}
-            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-medium text-slate-400 hover:bg-[#132752] hover:text-white transition-colors"
-          >
-            <Award className="w-4 h-4 text-slate-500" />
-            <span>Verify Credentials</span>
-          </Link>
-        </nav>
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
-      {/* User Footer Card & Sign Out */}
-      <div className="p-4 border-t border-slate-800 bg-[#060E1E]/60">
+      {/* Navigation Items - Independent Scrollable Area */}
+      <nav className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-1.5 custom-sidebar-scrollbar">
+        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          {user.role === "ADMIN" ? "Admin Governance" : user.role === "TRAINER" ? "Faculty Studio" : "Academy Navigation"}
+        </div>
+        {links.map((link) => {
+          const Icon = link.icon;
+          const isActive = pathname === link.href;
+
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={handleLinkClick}
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
+                isActive
+                  ? "bg-[#FF6B00] text-white shadow-md shadow-orange-500/25 font-bold"
+                  : "text-slate-300 hover:bg-[#132752] hover:text-white"
+              }`}
+            >
+              <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-slate-400"}`} />
+              <span>{link.label}</span>
+            </Link>
+          );
+        })}
+
+        <div className="pt-5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          Public Portal
+        </div>
+        <Link
+          href="/"
+          onClick={handleLinkClick}
+          className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-medium text-slate-400 hover:bg-[#132752] hover:text-white transition-colors"
+        >
+          <Compass className="w-4 h-4 text-slate-500" />
+          <span>Return to Homepage</span>
+        </Link>
+        <Link
+          href="/courses"
+          onClick={handleLinkClick}
+          className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-medium text-slate-400 hover:bg-[#132752] hover:text-white transition-colors"
+        >
+          <BookOpen className="w-4 h-4 text-slate-500" />
+          <span>Browse Full Catalog</span>
+        </Link>
+        <Link
+          href="/verify"
+          onClick={handleLinkClick}
+          className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-medium text-slate-400 hover:bg-[#132752] hover:text-white transition-colors"
+        >
+          <Award className="w-4 h-4 text-slate-500" />
+          <span>Verify Credentials</span>
+        </Link>
+      </nav>
+
+      {/* User Footer Card & Sign Out - Pinned at bottom */}
+      <div className="p-4 border-t border-slate-800 bg-[#060E1E]/80 shrink-0">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5 overflow-hidden">
             <div className="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center font-bold text-white text-xs shrink-0 overflow-hidden ring-1 ring-orange-500/40">
