@@ -1,0 +1,193 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User Model supporting RBAC (Student, Trainer, Admin)
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         String    @default("STUDENT") // "STUDENT", "TRAINER", "ADMIN"
+  avatar       String?
+  bio          String?
+  headline     String?
+  phone        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  coursesTaught   Course[]         @relation("TrainerCourses")
+  enrollments     Enrollment[]
+  lessonProgress  LessonProgress[]
+  quizSubmissions QuizSubmission[]
+  reviews         Review[]
+  certificates    Certificate[]
+}
+
+// Category for catalog classification
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  icon        String?  // Lucide icon key name
+  courses     Course[]
+}
+
+// Course Model
+model Course {
+  id           String       @id @default(uuid())
+  title        String
+  slug         String       @unique
+  subtitle     String?
+  description  String
+  price        Float        @default(0.0)
+  level        String       @default("BEGINNER") // "BEGINNER", "INTERMEDIATE", "ADVANCED"
+  language     String       @default("English")
+  thumbnail    String?
+  published    Boolean      @default(false)
+  featured     Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // Foreign Keys
+  instructorId String
+  instructor   User         @relation("TrainerCourses", fields: [instructorId], references: [id], onDelete: Cascade)
+
+  categoryId   String
+  category     Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  // Relations
+  sections     Section[]
+  enrollments  Enrollment[]
+  quizzes      Quiz[]
+  reviews      Review[]
+  certificates Certificate[]
+}
+
+// Curriculum Section
+model Section {
+  id        String   @id @default(uuid())
+  title     String
+  order     Int      @default(0)
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons   Lesson[]
+}
+
+// Individual Course Lesson
+model Lesson {
+  id          String           @id @default(uuid())
+  title       String
+  duration    String           @default("10 mins")
+  videoUrl    String?
+  content     String?          // Markdown / Rich text notes
+  order       Int              @default(0)
+  isFree      Boolean          @default(false)
+  sectionId   String
+  section     Section          @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  progress    LessonProgress[]
+}
+
+// Student Course Enrollment
+model Enrollment {
+  id          String    @id @default(uuid())
+  userId      String
+  courseId    String
+  progress    Float     @default(0.0) // 0 to 100%
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
+
+// Progress for individual lessons
+model LessonProgress {
+  id          String    @id @default(uuid())
+  userId      String
+  lessonId    String
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+}
+
+// Assessment Quiz
+model Quiz {
+  id           String           @id @default(uuid())
+  title        String
+  passingScore Int              @default(70) // Percentage
+  courseId     String
+  course       Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  questions    Question[]
+  submissions  QuizSubmission[]
+}
+
+// Multiple Choice Question
+model Question {
+  id            String   @id @default(uuid())
+  quizId        String
+  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  text          String
+  optionsJson   String   // JSON stringified array of options: ["Option A", "Option B", ...]
+  correctIndex  Int      // 0-indexed correct option
+  explanation   String?
+}
+
+// Student Quiz Attempt Submission
+model QuizSubmission {
+  id         String   @id @default(uuid())
+  quizId     String
+  userId     String
+  score      Float    // Percentage achieved
+  passed     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Course Review & Rating
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int      @default(5) // 1 to 5 stars
+  comment   String
+  createdAt DateTime @default(now())
+
+  userId   String
+  courseId String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
+
+// Verified Course Completion Certificate
+model Certificate {
+  id              String   @id @default(uuid())
+  certificateCode String   @unique // e.g. "SN-2026-X89J21"
+  issuedAt        DateTime @default(now())
+
+  userId   String
+  courseId String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
