@@ -31,6 +31,8 @@ model User {
   quizSubmissions QuizSubmission[]
   reviews         Review[]
   certificates    Certificate[]
+
+  @@index([role])
 }
 
 // Category for catalog classification
@@ -72,6 +74,11 @@ model Course {
   quizzes      Quiz[]
   reviews      Review[]
   certificates Certificate[]
+
+  @@index([instructorId])
+  @@index([categoryId])
+  @@index([published])
+  @@index([featured])
 }
 
 // Curriculum Section
@@ -82,6 +89,9 @@ model Section {
   courseId  String
   course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons   Lesson[]
+
+  @@index([courseId])
+  @@index([order])
 }
 
 // Individual Course Lesson
@@ -96,6 +106,9 @@ model Lesson {
   sectionId   String
   section     Section          @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   progress    LessonProgress[]
+
+  @@index([sectionId])
+  @@index([order])
 }
 
 // Student Course Enrollment
@@ -112,6 +125,9 @@ model Enrollment {
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([progress])
 }
 
 // Progress for individual lessons
@@ -126,6 +142,9 @@ model LessonProgress {
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   @@unique([userId, lessonId])
+  @@index([userId])
+  @@index([lessonId])
+  @@index([isCompleted])
 }
 
 // Assessment Quiz
@@ -137,6 +156,8 @@ model Quiz {
   course       Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
   questions    Question[]
   submissions  QuizSubmission[]
+
+  @@index([courseId])
 }
 
 // Multiple Choice Question
@@ -148,6 +169,8 @@ model Question {
   optionsJson   String   // JSON stringified array of options: ["Option A", "Option B", ...]
   correctIndex  Int      // 0-indexed correct option
   explanation   String?
+
+  @@index([quizId])
 }
 
 // Student Quiz Attempt Submission
@@ -161,6 +184,10 @@ model QuizSubmission {
 
   quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+  @@index([userId])
+  @@index([passed])
 }
 
 // Course Review & Rating
@@ -176,6 +203,9 @@ model Review {
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([rating])
 }
 
 // Verified Course Completion Certificate
@@ -190,4 +220,25 @@ model Certificate {
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([issuedAt])
+}
+
+// System & Governance Audit Log
+// Stores sanitized operational traces without sensitive credentials, passwords, or secrets.
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String   // e.g. "USER_ROLE_UPDATED", "COURSE_PUBLISHED", "COURSE_CREATED"
+  entity    String   // e.g. "User", "Course"
+  entityId  String   // ID of affected entity
+  details   String?  // Sanitized JSON string of mutation parameters (NO secrets)
+  userId    String?  // Acting user ID (if authenticated)
+  ipAddress String?  // Optional client IP identifier
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
 }

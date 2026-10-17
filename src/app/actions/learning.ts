@@ -56,87 +56,91 @@ export async function toggleLessonProgress(lessonId: string, courseSlug: string)
 
   const nextState = !existingProgress?.isCompleted;
 
-  await db.lessonProgress.upsert({
-    where: {
-      userId_lessonId: {
+  // Execute progress, enrollment recalculation, and certificate issuance inside an atomic ACID transaction
+  await db.$transaction(async (tx) => {
+    // 1. Upsert LessonProgress
+    await tx.lessonProgress.upsert({
+      where: {
+        userId_lessonId: {
+          userId: user.id,
+          lessonId: lesson.id,
+        },
+      },
+      update: {
+        isCompleted: nextState,
+        completedAt: nextState ? new Date() : null,
+      },
+      create: {
         userId: user.id,
         lessonId: lesson.id,
+        isCompleted: nextState,
+        completedAt: nextState ? new Date() : null,
       },
-    },
-    update: {
-      isCompleted: nextState,
-      completedAt: nextState ? new Date() : null,
-    },
-    create: {
-      userId: user.id,
-      lessonId: lesson.id,
-      isCompleted: nextState,
-      completedAt: nextState ? new Date() : null,
-    },
-  });
+    });
 
-  // Recalculate total course progress
-  const allCourseLessonIds = course.sections.flatMap((s) =>
-    s.lessons.map((l) => l.id)
-  );
-  const totalLessons = allCourseLessonIds.length;
+    // 2. Recalculate total course progress
+    const allCourseLessonIds = course.sections.flatMap((s) =>
+      s.lessons.map((l) => l.id)
+    );
+    const totalLessons = allCourseLessonIds.length;
 
-  const completedCount = await db.lessonProgress.count({
-    where: {
-      userId: user.id,
-      lessonId: { in: allCourseLessonIds },
-      isCompleted: true,
-    },
-  });
-
-  const progressPercent =
-    totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
-
-  // Update Enrollment record in DB
-  await db.enrollment.upsert({
-    where: {
-      userId_courseId: {
+    const completedCount = await tx.lessonProgress.count({
+      where: {
         userId: user.id,
-        courseId: course.id,
+        lessonId: { in: allCourseLessonIds },
+        isCompleted: true,
       },
-    },
-    update: {
-      progress: progressPercent,
-      completedAt: progressPercent === 100 ? new Date() : null,
-    },
-    create: {
-      userId: user.id,
-      courseId: course.id,
-      progress: progressPercent,
-      completedAt: progressPercent === 100 ? new Date() : null,
-    },
-  });
+    });
 
-  // Automatically award certificate if 100% completed and not yet issued
-  if (progressPercent === 100) {
-    const existingCert = await db.certificate.findUnique({
+    const progressPercent =
+      totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+
+    // 3. Upsert Enrollment record
+    await tx.enrollment.upsert({
       where: {
         userId_courseId: {
           userId: user.id,
           courseId: course.id,
         },
       },
+      update: {
+        progress: progressPercent,
+        completedAt: progressPercent === 100 ? new Date() : null,
+      },
+      create: {
+        userId: user.id,
+        courseId: course.id,
+        progress: progressPercent,
+        completedAt: progressPercent === 100 ? new Date() : null,
+      },
     });
 
-    if (!existingCert) {
-      const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
-      const code = `SN-2026-${randomSuffix}`;
-
-      await db.certificate.create({
-        data: {
-          certificateCode: code,
-          userId: user.id,
-          courseId: course.id,
-          issuedAt: new Date(),
+    // 4. Automatically award certificate if 100% completed and not yet issued
+    if (progressPercent === 100) {
+      const existingCert = await tx.certificate.findUnique({
+        where: {
+          userId_courseId: {
+            userId: user.id,
+            courseId: course.id,
+          },
         },
       });
+
+      if (!existingCert) {
+        const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const code = `SN-2026-${randomSuffix}`;
+
+        await tx.certificate.create({
+          data: {
+            certificateCode: code,
+            userId: user.id,
+            courseId: course.id,
+            issuedAt: new Date(),
+          },
+        });
+      }
     }
-  }
+  });
 
   revalidatePath(`/courses/${courseSlug}/learn/${lessonId}`);
   revalidatePath(`/dashboard/student`);
@@ -319,11 +323,21 @@ export async function createCourseAction(formData: FormData): Promise<void> {
  * Strictly enforces ADMIN role.
  */
 export async function toggleCoursePublish(courseId: string, published: boolean) {
-  await requireRole(["ADMIN"]);
+  const admin = await requireRole(["ADMIN"]);
 
   await db.course.update({
     where: { id: courseId },
     data: { published },
+  });
+
+  // Sanitized audit log entry
+  await db.auditLog.create({
+    data: {
+      action: published ? "COURSE_PUBLISHED" : "COURSE_UNPUBLISHED",
+      entity: "Course",
+      entityId: courseId,
+      userId: admin.id,
+    },
   });
 
   revalidatePath("/dashboard/admin");
@@ -342,13 +356,34 @@ export async function updateUserRole(userId: string, newRole: string) {
     throw new Error("Safety violation: Administrators cannot demote their own account.");
   }
 
-  if (!["STUDENT", "TRAINER", "ADMIN"].includes(newRole.toUpperCase())) {
+  const role = newRole.toUpperCase();
+  if (!["STUDENT", "TRAINER", "ADMIN"].includes(role)) {
     throw new Error("Invalid role requested.");
   }
 
+  const targetUser = await db.user.findUnique({
+    where: { id: userId },
+    select: { role: true, email: true },
+  });
+
   await db.user.update({
     where: { id: userId },
-    data: { role: newRole.toUpperCase() },
+    data: { role },
+  });
+
+  // Sanitized audit log entry (NO secrets or passwords)
+  await db.auditLog.create({
+    data: {
+      action: "USER_ROLE_UPDATED",
+      entity: "User",
+      entityId: userId,
+      details: JSON.stringify({
+        targetEmail: targetUser?.email,
+        previousRole: targetUser?.role,
+        updatedRole: role,
+      }),
+      userId: admin.id,
+    },
   });
 
   revalidatePath("/dashboard/admin");
