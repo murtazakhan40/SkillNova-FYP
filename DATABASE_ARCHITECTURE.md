@@ -58,7 +58,7 @@ erDiagram
 
 ---
 
-## 4. Seeded Curricula Catalog (13 Production Courses across 6 Tracks)
+## 4. Seeded Curricula Catalog (19 Production Courses across 6 Tracks)
 
 | # | Curriculum Title | Academic Track | Lead Faculty | Fee (PKR) |
 |---|---|---|---|---|
@@ -74,7 +74,13 @@ erDiagram
 | 10 | **Zero-Trust Security & Cloud Defenses on AWS and Azure** | Cybersecurity & System Defense | Alex Rivera | **Rs. 22,500** |
 | 11 | **Data Structures, Competitive Algorithms & LeetCode Mastery** | Core Algorithms & Computer Science | Prof. David Chen | **Rs. 14,500** |
 | 12 | **Database Engine Internals, Query Optimization & Storage Systems** | Core Algorithms & Computer Science | Dr. Zainab Ahmed | **Rs. 25,000** |
-| 13 | **UI/UX Design Systems & Interactive Prototyping in Figma** | UI/UX & Product Design | Dr. Sarah Mitchell | **Rs. 12,000** |
+| 13 | **UI/UX Design Systems & Interactive Prototyping in Figma** | UI/UX & Product Design | **Adeel Qasir** | **Rs. 12,000** |
+| 14 | **Advanced UX Research, User Journey Mapping & Wireframing** | UI/UX & Product Design | **Adeel Qasir** | **Rs. 15,000** |
+| 15 | **Mobile App UI/UX Design & Micro-Interactions in Figma** | UI/UX & Product Design | **Adeel Qasir** | **Rs. 18,500** |
+| 16 | **Enterprise Full-Stack Architecture with MERN & Next.js 16** | Web & Software Engineering | **Misbah Ullah** | **Rs. 25,000** |
+| 17 | **Scalable REST & GraphQL API Engineering with Node.js & PostgreSQL** | Web & Software Engineering | **Misbah Ullah** | **Rs. 22,000** |
+| 18 | **Production Cross-Platform Mobile Apps with React Native & Expo** | Web & Software Engineering | **Muhammad Ibrahim** | **Rs. 24,000** |
+| 19 | **Flutter & Dart Masterclass: Native Android & iOS App Development** | Web & Software Engineering | **Muhammad Ibrahim** | **Rs. 26,000** |
 
 ---
 

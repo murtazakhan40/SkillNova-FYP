@@ -154,6 +154,45 @@ async function main() {
     },
   });
 
+  const trainerAdeel = await prisma.user.create({
+    data: {
+      name: "Adeel Qasir",
+      email: "adeel.qasir@skillnova.com",
+      passwordHash: trainerPassword,
+      role: "TRAINER",
+      phone: "03129876543",
+      headline: "Senior Lead UI/UX & Product Design Specialist",
+      bio: "10+ years architecting design systems, human-centered UI/UX frameworks, responsive design tokens, and interactive Figma prototypes for enterprise platforms.",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  const trainerMisbah = await prisma.user.create({
+    data: {
+      name: "Misbah Ullah",
+      email: "misbah.ullah@skillnova.com",
+      passwordHash: trainerPassword,
+      role: "TRAINER",
+      phone: "03017765432",
+      headline: "Principal Full-Stack Web Architect & Distributed Systems Specialist",
+      bio: "Veteran software architect specializing in Next.js 16 App Router, TypeScript monorepos, MERN full-stack architectures, high-concurrency Node.js APIs, and database query optimization.",
+      avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  const trainerIbrahim = await prisma.user.create({
+    data: {
+      name: "Muhammad Ibrahim",
+      email: "muhammad.ibrahim@skillnova.com",
+      passwordHash: trainerPassword,
+      role: "TRAINER",
+      phone: "03451122334",
+      headline: "Senior Mobile Engineering Lead & Cross-Platform Architect",
+      bio: "Specializing in React Native New Architecture (Fabric & TurboModules), Google Flutter & Dart native compilation, offline-first SQLite sync, and production app releases.",
+      avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
   // --- Administrators ---
   await prisma.user.create({
     data: {
@@ -932,17 +971,17 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 13: UI/UX Design Systems ---
-  await seedCurriculum({
+  // --- COURSE 13: UI/UX Design Systems (Adeel Qasir) ---
+  const course13 = await seedCurriculum({
     title: "UI/UX Design Systems & Interactive Prototyping in Figma",
     slug: "ui-ux-design-systems-prototyping",
     subtitle: "Design stunning digital experiences, component libraries, and interactive design tokens in Figma.",
-    description: "Elevate your user experience design skills from wireframing to high-fidelity accessible design systems. Learn typography scales, WCAG contrast compliance, auto-layout variants, and handoff to engineering.",
+    description: "Elevate your user experience design skills from wireframing to high-fidelity accessible design systems with Adeel Qasir. Learn typography scales, WCAG contrast compliance, auto-layout variants, and engineering handoff.",
     price: 12000,
     level: "BEGINNER",
     thumbnail: "https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=800&auto=format&fit=crop&q=80",
-    featured: false,
-    instructorId: trainerMitchell.id,
+    featured: true,
+    instructorId: trainerAdeel.id,
     categoryId: catDesign.id,
     sections: [
       {
@@ -953,6 +992,12 @@ Combining semantic search over private documents with LLM context windows to eli
             duration: "18 mins",
             isFree: true,
             content: "Color theory, semantic naming, dark mode variants, and WCAG AA guidelines.",
+          },
+          {
+            title: "Figma Component Auto-Layout & Multi-State Variants",
+            duration: "24 mins",
+            isFree: false,
+            content: "Mastering nested auto-layout, min/max dimensions, and responsive component properties.",
           },
         ],
       },
@@ -968,7 +1013,386 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  console.log("✓ Seeded all 13 comprehensive computer science curricula");
+  // --- COURSE 14: Advanced UX Research (Adeel Qasir) ---
+  const course14 = await seedCurriculum({
+    title: "Advanced UX Research, User Journey Mapping & Wireframing",
+    slug: "ux-research-journey-mapping-wireframing",
+    subtitle: "Master user interviews, information architecture, heuristic evaluation, and low-to-high fidelity wireframes.",
+    description: "Delve deep into cognitive psychology and UX research methodologies with Adeel Qasir. Conduct qualitative user interviews, construct data-driven empathy maps, user journey workflows, and run tree testing to architect friction-free user flows.",
+    price: 15000,
+    level: "BEGINNER",
+    thumbnail: "https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=800&auto=format&fit=crop&q=80",
+    featured: true,
+    instructorId: trainerAdeel.id,
+    categoryId: catDesign.id,
+    sections: [
+      {
+        title: "Module 1: UX Discovery & Behavioral Research",
+        lessons: [
+          {
+            title: "Conducting User Interviews & Quantitative Persona Archetypes",
+            duration: "16 mins",
+            isFree: true,
+            content: "Formulating open-ended inquiry protocols, avoiding cognitive bias, and synthesizing interview transcripts.",
+          },
+          {
+            title: "Constructing Empathy Maps & Journey Flow Architecture",
+            duration: "22 mins",
+            isFree: false,
+            content: "Visualizing user emotional states, pain points, and friction-reducing transition gates.",
+          },
+        ],
+      },
+      {
+        title: "Module 2: Usability Testing & Information Architecture",
+        lessons: [
+          {
+            title: "Card Sorting & Heuristic Usability Audits (Nielsen Norman)",
+            duration: "25 mins",
+            isFree: false,
+            content: "Applying the 10 Jakob Nielsen usability heuristics to evaluate digital applications.",
+          },
+          {
+            title: "Low-Fidelity Paper Prototyping & Rapid Validation",
+            duration: "18 mins",
+            isFree: false,
+            content: "Fast-iteration wireframing cycles for early concept validation before high-fidelity handoff.",
+          },
+        ],
+      },
+    ],
+    quizTitle: "UX Discovery & Heuristics Certification Quiz",
+    questions: [
+      {
+        text: "Which research method is specifically designed to evaluate and discover intuitive navigation tree structures?",
+        options: [
+          "Card Sorting and Tree Testing",
+          "Automated Load Testing",
+          "A/B Price Testing",
+          "SQL Query Plan Auditing",
+        ],
+        correctIndex: 0,
+        explanation: "Card sorting and tree testing reveal mental models for categorizing navigation menus and site taxonomy.",
+      },
+    ],
+  });
+
+  // --- COURSE 15: Mobile App UI/UX & Micro-Interactions (Adeel Qasir) ---
+  const course15 = await seedCurriculum({
+    title: "Mobile App UI/UX Design & Micro-Interactions in Figma",
+    slug: "mobile-app-ui-ux-micro-interactions",
+    subtitle: "Craft pixel-perfect iOS & Android mobile interfaces, responsive components, and fluid micro-animations.",
+    description: "Design cutting-edge mobile applications following Apple Human Interface Guidelines and Google Material Design 3 with Adeel Qasir. Learn touch ergonomics, spring physics, smart animate transitions, and design token integration for seamless developer handoff.",
+    price: 18500,
+    level: "INTERMEDIATE",
+    thumbnail: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80",
+    featured: true,
+    instructorId: trainerAdeel.id,
+    categoryId: catDesign.id,
+    sections: [
+      {
+        title: "Module 1: Touch Ergonomics & Mobile Design Standards",
+        lessons: [
+          {
+            title: "iOS Human Interface Guidelines vs Material Design 3",
+            duration: "20 mins",
+            isFree: true,
+            content: "Comparing navigation bars, bottom sheets, system typography, and native icon behaviors.",
+          },
+          {
+            title: "Touch Targets, Thumb Zones & Bottom Sheet Ergonomics",
+            duration: "19 mins",
+            isFree: false,
+            content: "Designing for one-handed thumb reachability and standard 48x48dp interactive bounding boxes.",
+          },
+        ],
+      },
+      {
+        title: "Module 2: Micro-Interactions & Motion Design",
+        lessons: [
+          {
+            title: "Figma Smart Animate & Interactive Component Variants",
+            duration: "24 mins",
+            isFree: false,
+            content: "Crafting delightful button feedback, pull-to-refresh micro-interactions, and tab transitions.",
+          },
+          {
+            title: "Exporting Production Lottie JSON & Design Token Specs",
+            duration: "21 mins",
+            isFree: false,
+            content: "Bridging the designer-developer gap with clean token exports and JSON vector animations.",
+          },
+        ],
+      },
+    ],
+    quizTitle: "Mobile UX Standards & Micro-Interactions Quiz",
+    questions: [
+      {
+        text: "What is Apple's recommended minimum interactive touch target dimension?",
+        options: ["44 x 44 points", "16 x 16 points", "100 x 100 points", "24 x 24 points"],
+        correctIndex: 0,
+        explanation: "Apple Human Interface Guidelines mandate at least 44x44 points for touch target accessibility.",
+      },
+    ],
+  });
+
+  // --- COURSE 16: Enterprise MERN & Next.js (Misbah Ullah) ---
+  const course16 = await seedCurriculum({
+    title: "Enterprise Full-Stack Architecture with MERN & Next.js 16",
+    slug: "enterprise-mern-nextjs-architecture",
+    subtitle: "Architect enterprise-grade web applications with React 19, Node.js, Express, MongoDB, and Next.js App Router.",
+    description: "Led by Misbah Ullah, master modern full-stack web engineering from monorepo orchestration to server actions, optimistic UI, state management with Zustand, and production Docker containerization. Build resilient, scalable architectures with type-safety end-to-end.",
+    price: 25000,
+    level: "INTERMEDIATE",
+    thumbnail: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&auto=format&fit=crop&q=80",
+    featured: true,
+    instructorId: trainerMisbah.id,
+    categoryId: catWeb.id,
+    sections: [
+      {
+        title: "Module 1: Monorepos & Next.js 16 Server Architecture",
+        lessons: [
+          {
+            title: "Turborepo Setup with Shared TypeScript Packages",
+            duration: "22 mins",
+            isFree: true,
+            content: "Configuring multi-package monorepos, shared ESLint rules, and UI component packages.",
+          },
+          {
+            title: "React Server Components (RSC) & Streaming SSR Patterns",
+            duration: "28 mins",
+            isFree: false,
+            content: "Leveraging Suspense boundaries, streaming HTML, and reducing client JavaScript execution overhead.",
+          },
+        ],
+      },
+      {
+        title: "Module 2: State Synchronization & Secure Data Flow",
+        lessons: [
+          {
+            title: "Optimistic State Mutation with Server Actions & Zod",
+            duration: "25 mins",
+            isFree: false,
+            content: "Using useOptimistic, validating input boundaries with Zod schemas, and managing database rollbacks.",
+          },
+          {
+            title: "Production Authentication, Session Cookies & RBAC Protection",
+            duration: "30 mins",
+            isFree: false,
+            content: "HttpOnly cookie tokens, middleware routing gates, and role-based access control.",
+          },
+        ],
+      },
+    ],
+    quizTitle: "Enterprise Next.js Architecture & Data Mutations Quiz",
+    questions: [
+      {
+        text: "Why do React Server Components (RSC) dramatically improve mobile web performance?",
+        options: [
+          "RSC components and dependencies execute solely on the server and are not bundled into client JavaScript",
+          "They disable CSS completely",
+          "They require no server at all",
+          "They convert all images to ASCII text",
+        ],
+        correctIndex: 0,
+        explanation: "Server components ship zero JavaScript to the browser bundle, drastically reducing Time to Interactive (TTI).",
+      },
+    ],
+  });
+
+  // --- COURSE 17: Scalable REST & GraphQL APIs (Misbah Ullah) ---
+  const course17 = await seedCurriculum({
+    title: "Scalable REST & GraphQL API Engineering with Node.js & PostgreSQL",
+    slug: "scalable-rest-graphql-api-engineering",
+    subtitle: "Design bulletproof APIs, connection pools, schema caching, rate limiting, and real-time WebSockets.",
+    description: "Learn the mechanics of engineering high-throughput backend services with Misbah Ullah. Implement connection pooling with pgBouncer, write optimized Prisma and raw SQL queries, engineer Apollo GraphQL schemas with DataLoader N+1 prevention, and deploy resilient CI/CD pipelines.",
+    price: 22000,
+    level: "ADVANCED",
+    thumbnail: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80",
+    featured: false,
+    instructorId: trainerMisbah.id,
+    categoryId: catWeb.id,
+    sections: [
+      {
+        title: "Module 1: Database Throughput & Query Optimization",
+        lessons: [
+          {
+            title: "PostgreSQL Index Strategies: B-Tree, GIN & Partitioning",
+            duration: "24 mins",
+            isFree: true,
+            content: "Optimizing sequential scans, designing compound indexes, and partitioning time-series tables.",
+          },
+          {
+            title: "Solving the N+1 Query Problem with DataLoader & Batching",
+            duration: "26 mins",
+            isFree: false,
+            content: "Coalescing individual relation queries into grouped IN queries during single tick execution.",
+          },
+        ],
+      },
+      {
+        title: "Module 2: Security & High-Concurrency Throughput",
+        lessons: [
+          {
+            title: "Redis Token Bucket Rate Limiting & Sliding Windows",
+            duration: "22 mins",
+            isFree: false,
+            content: "Thwarting DDoS attacks and brute-force attempts with distributed Redis counters.",
+          },
+          {
+            title: "Real-Time WebSocket Streams & Event-Driven Architecture",
+            duration: "30 mins",
+            isFree: false,
+            content: "Publish-subscribe message brokers, heartbeat ping/pong keepalives, and connection failovers.",
+          },
+        ],
+      },
+    ],
+    quizTitle: "Backend Scalability & High-Throughput APIs Quiz",
+    questions: [
+      {
+        text: "How does DataLoader resolve the N+1 query problem in GraphQL resolver trees?",
+        options: [
+          "By batching multiple individual load requests within a single event loop tick into a single bulk query",
+          "By deleting foreign keys from the database",
+          "By running every query in a synchronous loop",
+          "By caching all data permanently in memory",
+        ],
+        correctIndex: 0,
+        explanation: "DataLoader groups individual load calls into an array of IDs and executes one aggregated batch query.",
+      },
+    ],
+  });
+
+  // --- COURSE 18: Cross-Platform React Native (Muhammad Ibrahim) ---
+  const course18 = await seedCurriculum({
+    title: "Production Cross-Platform Mobile Apps with React Native & Expo",
+    slug: "react-native-expo-production-engineering",
+    subtitle: "Build, profile, and ship high-performance iOS and Android apps with React Native New Architecture.",
+    description: "Taught by Muhammad Ibrahim, harness the power of React Native, TypeScript, Expo SDK, and native gesture handlers. Master Fabric rendering, TurboModule JSI bridges, Reanimated 3 spring physics, and push notification pipelines with Expo EAS.",
+    price: 24000,
+    level: "INTERMEDIATE",
+    thumbnail: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&auto=format&fit=crop&q=80",
+    featured: true,
+    instructorId: trainerIbrahim.id,
+    categoryId: catWeb.id,
+    sections: [
+      {
+        title: "Module 1: React Native New Architecture & Fabric",
+        lessons: [
+          {
+            title: "Understanding Fabric Renderer & TurboModule JSI Bindings",
+            duration: "24 mins",
+            isFree: true,
+            content: "Transitioning away from the legacy asynchronous JSON bridge to direct C++ memory pointers.",
+          },
+          {
+            title: "Fluid Gestures & Physics with React Native Reanimated 3",
+            duration: "28 mins",
+            isFree: false,
+            content: "Running gesture handling and spring animations directly on the UI thread at 120 FPS.",
+          },
+        ],
+      },
+      {
+        title: "Module 2: Offline Persistence & Store Deployment",
+        lessons: [
+          {
+            title: "Offline-First Data Sync with WatermelonDB & SQLite",
+            duration: "30 mins",
+            isFree: false,
+            content: "Architecting local SQLite relational stores that sync seamlessly when network reconnects.",
+          },
+          {
+            title: "Building & Distributing Binaries with Expo Application Services (EAS)",
+            duration: "26 mins",
+            isFree: false,
+            content: "Automated provisioning profiles, testflight distribution, and Google Play internal testing tracks.",
+          },
+        ],
+      },
+    ],
+    quizTitle: "React Native Architecture & Performance Quiz",
+    questions: [
+      {
+        text: "What architectural component in React Native replaces the legacy JSON serialization bridge?",
+        options: [
+          "JavaScript Interface (JSI) enabling direct C++ host object calls",
+          "WebSockets over HTTP",
+          "A background WebView thread",
+          "Shared XML files",
+        ],
+        correctIndex: 0,
+        explanation: "JSI allows JavaScript to hold direct references to C++ host objects without JSON string serialization.",
+      },
+    ],
+  });
+
+  // --- COURSE 19: Flutter & Dart Masterclass (Muhammad Ibrahim) ---
+  const course19 = await seedCurriculum({
+    title: "Flutter & Dart Masterclass: Native Android & iOS App Development",
+    slug: "flutter-dart-masterclass-mobile-development",
+    subtitle: "Create beautiful, smooth 120 FPS native mobile applications with Google Flutter & Dart.",
+    description: "Taught by Muhammad Ibrahim, learn Dart 3 modern features like records and pattern matching, Flutter widget trees, BLoC state management, platform channels for native hardware access, and clean architecture patterns.",
+    price: 26000,
+    level: "BEGINNER",
+    thumbnail: "https://images.unsplash.com/photo-1526498460520-4c246339dccb?w=800&auto=format&fit=crop&q=80",
+    featured: true,
+    instructorId: trainerIbrahim.id,
+    categoryId: catWeb.id,
+    sections: [
+      {
+        title: "Module 1: Dart 3 Fundamentals & Flutter Widget Hierarchy",
+        lessons: [
+          {
+            title: "Dart 3 Type System, Records, Pattern Matching & Null Safety",
+            duration: "22 mins",
+            isFree: true,
+            content: "Mastering modern Dart sound null safety, exhaustive pattern switches, and record tuples.",
+          },
+          {
+            title: "Declarative UI: StatelessWidget vs StatefulWidget Lifecycle",
+            duration: "25 mins",
+            isFree: false,
+            content: "Understanding the Element, RenderObject, and Widget trees for 120 FPS frame stability.",
+          },
+        ],
+      },
+      {
+        title: "Module 2: State Architecture & Native Hardware",
+        lessons: [
+          {
+            title: "Clean Architecture with BLoC & Hydrated State Persistence",
+            duration: "32 mins",
+            isFree: false,
+            content: "Unidirectional data flow with events, states, streams, and offline state dehydration.",
+          },
+          {
+            title: "Platform Channels: Invoking Kotlin and Swift Native APIs",
+            duration: "27 mins",
+            isFree: false,
+            content: "MethodChannel communication with native iOS CoreMotion and Android SensorManager.",
+          },
+        ],
+      },
+    ],
+    quizTitle: "Flutter BLoC & Native Platform Channels Quiz",
+    questions: [
+      {
+        text: "In Flutter, which architectural engine layer is responsible for rendering widgets directly to GPU surfaces?",
+        options: [
+          "Flutter Engine (C++ / Impeller / Skia)",
+          "Chrome V8 JavaScript Engine",
+          "Android Dalvik VM",
+          "WebAssembly Runtime",
+        ],
+        correctIndex: 0,
+        explanation: "The Flutter Engine is written in C++ and utilizes Impeller/Skia to draw UI directly to hardware surfaces.",
+      },
+    ],
+  });
+
+  console.log("✓ Seeded all 19 comprehensive computer science & engineering curricula");
 
   // 3. Seed Realistic Enrollments across Multiple Courses
   // Student 1 (Murtaza Wazir): Enrolled in 4 courses with certificates and progress
@@ -1032,6 +1456,42 @@ Combining semantic search over private documents with LLM context windows to eli
     },
   });
 
+  // Student 1 (Murtaza Wazir): UI/UX Design with Adeel Qasir
+  await prisma.enrollment.create({
+    data: {
+      userId: studentMurtaza.id,
+      courseId: course13.id,
+      progress: 85.0,
+    },
+  });
+
+  await prisma.enrollment.create({
+    data: {
+      userId: studentMurtaza.id,
+      courseId: course14.id,
+      progress: 100.0,
+      completedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    },
+  });
+
+  // Student 2 (Ali Khan): Enterprise Next.js with Misbah Ullah
+  await prisma.enrollment.create({
+    data: {
+      userId: studentAli.id,
+      courseId: course16.id,
+      progress: 50.0,
+    },
+  });
+
+  // Student 3 (Fatima Noor): React Native with Muhammad Ibrahim
+  await prisma.enrollment.create({
+    data: {
+      userId: studentFatima.id,
+      courseId: course18.id,
+      progress: 70.0,
+    },
+  });
+
   // 4. Seed Verified Digital Certificates
   await prisma.certificate.create({
     data: {
@@ -1048,6 +1508,15 @@ Combining semantic search over private documents with LLM context windows to eli
       userId: studentMurtaza.id,
       courseId: course2.id,
       issuedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+    },
+  });
+
+  await prisma.certificate.create({
+    data: {
+      certificateCode: "SN-2026-UX77A9",
+      userId: studentMurtaza.id,
+      courseId: course14.id,
+      issuedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
     },
   });
 
@@ -1085,6 +1554,33 @@ Combining semantic search over private documents with LLM context windows to eli
       courseId: course4.id,
       rating: 5,
       comment: "Dr. Sarah Mitchell breaks down autograd and backprop math intuitively.",
+    },
+  });
+
+  await prisma.review.create({
+    data: {
+      userId: studentMurtaza.id,
+      courseId: course13.id,
+      rating: 5,
+      comment: "Adeel Qasir's Figma design system breakdown is elite. The token naming conventions and auto-layout lessons saved me weeks of refactoring.",
+    },
+  });
+
+  await prisma.review.create({
+    data: {
+      userId: studentAli.id,
+      courseId: course16.id,
+      rating: 5,
+      comment: "Misbah Ullah explains Next.js server actions, optimistic UI, and Turborepo monorepos better than any course on the internet.",
+    },
+  });
+
+  await prisma.review.create({
+    data: {
+      userId: studentFatima.id,
+      courseId: course18.id,
+      rating: 5,
+      comment: "Muhammad Ibrahim's deep dive into React Native Fabric and JSI bridges is unbelievable! Pure senior engineering knowledge.",
     },
   });
 

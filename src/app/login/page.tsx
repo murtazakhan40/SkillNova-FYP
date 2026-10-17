@@ -74,6 +74,27 @@ export default function LoginPage() {
                 ▸ View Course Instructors & Demo Logins
               </summary>
               <div className="mt-2 pt-2 border-t border-orange-200/80 space-y-1.5 text-[11px]">
+                <form action={loginWithFacultyEmail.bind(null, "adeel.qasir@skillnova.com")}>
+                  <button type="submit" className="w-full text-left p-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-800 flex justify-between items-center transition-colors cursor-pointer border border-orange-100">
+                    <span>🎨 <strong>Adeel Qasir</strong> (Lead UI/UX Design)</span>
+                    <span className="text-[10px] text-[#FF6B00] font-bold">1-Click Login →</span>
+                  </button>
+                </form>
+
+                <form action={loginWithFacultyEmail.bind(null, "misbah.ullah@skillnova.com")}>
+                  <button type="submit" className="w-full text-left p-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-800 flex justify-between items-center transition-colors cursor-pointer border border-blue-100">
+                    <span>💻 <strong>Misbah Ullah</strong> (MERN & Next.js)</span>
+                    <span className="text-[10px] text-[#FF6B00] font-bold">1-Click Login →</span>
+                  </button>
+                </form>
+
+                <form action={loginWithFacultyEmail.bind(null, "muhammad.ibrahim@skillnova.com")}>
+                  <button type="submit" className="w-full text-left p-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-800 flex justify-between items-center transition-colors cursor-pointer border border-emerald-100">
+                    <span>📱 <strong>Muhammad Ibrahim</strong> (Mobile & Flutter)</span>
+                    <span className="text-[10px] text-[#FF6B00] font-bold">1-Click Login →</span>
+                  </button>
+                </form>
+
                 <form action={loginWithFacultyEmail.bind(null, "sarah.mitchell@skillnova.com")}>
                   <button type="submit" className="w-full text-left p-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-800 flex justify-between items-center transition-colors cursor-pointer">
                     <span>🧠 <strong>Dr. Sarah Mitchell</strong> (AI / PyTorch)</span>
