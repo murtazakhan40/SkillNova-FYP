@@ -15,7 +15,8 @@ import {
   HelpCircle,
   UserCheck,
   Compass,
-  X
+  X,
+  Settings
 } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 
@@ -46,13 +47,15 @@ export function DashboardSidebar({ user, onCloseMobile }: DashboardSidebarProps)
     { label: "Course Management", href: "/dashboard/trainer/courses", icon: BookOpen },
     { label: "Add New Course", href: "/dashboard/trainer/new-course", icon: PlusCircle },
     { label: "Enrolled Students", href: "/dashboard/trainer/students", icon: Users },
+    { label: "Assessments & Quizzes", href: "/dashboard/trainer/assessments", icon: HelpCircle },
   ];
 
   const adminLinks = [
     { label: "Platform Metrics", href: "/dashboard/admin", icon: LayoutDashboard },
-    { label: "Course Approvals", href: "/dashboard/admin/courses", icon: BookOpen },
+    { label: "Course Moderation", href: "/dashboard/admin/courses", icon: BookOpen },
     { label: "User Governance", href: "/dashboard/admin/users", icon: Users },
     { label: "Academic Reports", href: "/dashboard/admin/reports", icon: BarChart3 },
+    { label: "System Settings", href: "/dashboard/admin/settings", icon: Settings },
   ];
 
   const links =
@@ -107,7 +110,7 @@ export function DashboardSidebar({ user, onCloseMobile }: DashboardSidebarProps)
         {/* Navigation Items */}
         <nav className="p-4 space-y-1.5">
           <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Academy Navigation
+            {user.role === "ADMIN" ? "Admin Governance" : user.role === "TRAINER" ? "Faculty Studio" : "Academy Navigation"}
           </div>
           {links.map((link) => {
             const Icon = link.icon;

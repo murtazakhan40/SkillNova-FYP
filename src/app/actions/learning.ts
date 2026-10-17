@@ -344,3 +344,80 @@ export async function updateUserRole(userId: string, newRole: string) {
   revalidatePath("/dashboard/admin");
   revalidatePath("/dashboard/admin/users");
 }
+
+/**
+ * Admin: Assign Trainer to Course
+ */
+export async function assignCourseInstructorAction(courseId: string, instructorId: string) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "ADMIN") {
+    redirect("/login");
+  }
+
+  const instructor = await db.user.findUnique({
+    where: { id: instructorId },
+  });
+
+  if (!instructor || instructor.role !== "TRAINER") {
+    throw new Error("Target user is not an approved faculty trainer.");
+  }
+
+  await db.course.update({
+    where: { id: courseId },
+    data: { instructorId },
+  });
+
+  revalidatePath("/dashboard/admin/courses");
+  revalidatePath("/dashboard/trainer");
+  revalidatePath("/courses");
+}
+
+/**
+ * Admin or Assigned Trainer: Update Course Metadata
+ */
+export async function updateCourseDetailsAction(courseId: string, formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user || (user.role !== "ADMIN" && user.role !== "TRAINER")) {
+    redirect("/login");
+  }
+
+  const course = await db.course.findUnique({
+    where: { id: courseId },
+  });
+
+  if (!course) {
+    throw new Error("Course not found.");
+  }
+
+  // Strict ownership check for trainers
+  if (user.role === "TRAINER" && course.instructorId !== user.id) {
+    throw new Error("Unauthorized: Trainers can only edit their own authored courses.");
+  }
+
+  const title = (formData.get("title") as string)?.trim();
+  const subtitle = (formData.get("subtitle") as string)?.trim() || null;
+  const description = (formData.get("description") as string)?.trim();
+  const level = (formData.get("level") as string) || course.level;
+  const price = parseFloat(formData.get("price") as string) || course.price;
+  const categoryId = (formData.get("categoryId") as string) || course.categoryId;
+
+  if (!title || !description) {
+    return;
+  }
+
+  await db.course.update({
+    where: { id: courseId },
+    data: {
+      title,
+      subtitle,
+      description,
+      level,
+      price,
+      categoryId,
+    },
+  });
+
+  revalidatePath("/dashboard/admin/courses");
+  revalidatePath("/dashboard/trainer/courses");
+  revalidatePath(`/courses/${course.slug}`);
+}

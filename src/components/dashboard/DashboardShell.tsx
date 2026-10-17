@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import type { StudentNotification } from "@/lib/notifications";
+import type { DashboardNotification } from "@/lib/notifications";
 
 interface DashboardShellProps {
   user: {
@@ -13,7 +13,7 @@ interface DashboardShellProps {
     role: "STUDENT" | "TRAINER" | "ADMIN" | string;
     avatar?: string | null;
   };
-  notifications?: StudentNotification[];
+  notifications?: DashboardNotification[];
   children: React.ReactNode;
 }
 

@@ -16,10 +16,14 @@ import {
   Clock, 
   ExternalLink,
   ChevronDown,
-  Sparkles
+  Sparkles,
+  ShieldCheck,
+  LayoutDashboard,
+  Users,
+  Settings
 } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
-import type { StudentNotification } from "@/lib/notifications";
+import type { DashboardNotification } from "@/lib/notifications";
 
 interface DashboardHeaderProps {
   user: {
@@ -29,7 +33,7 @@ interface DashboardHeaderProps {
     role: "STUDENT" | "TRAINER" | "ADMIN" | string;
     avatar?: string | null;
   };
-  notifications?: StudentNotification[];
+  notifications?: DashboardNotification[];
   onToggleMobileSidebar: () => void;
   isMobileSidebarOpen: boolean;
 }
@@ -42,7 +46,7 @@ export function DashboardHeader({
 }: DashboardHeaderProps) {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [unreadList, setUnreadList] = useState<StudentNotification[]>(notifications);
+  const [unreadList, setUnreadList] = useState<DashboardNotification[]>(notifications);
 
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -67,6 +71,18 @@ export function DashboardHeader({
   const markAllRead = () => {
     setUnreadList((prev) => prev.map((n) => ({ ...n, unread: false })));
   };
+
+  const portalLabel = {
+    ADMIN: "Platform Administration & System Governance",
+    TRAINER: "Faculty Teaching Studio & Curriculum Management",
+    STUDENT: "SkillNova Student Portal • Academic Ledger",
+  }[user.role] || "SkillNova Portal";
+
+  const roleBadge = {
+    ADMIN: { label: "System Administrator", color: "bg-purple-50 text-purple-700 border-purple-200" },
+    TRAINER: { label: "Course Instructor", color: "bg-orange-50 text-orange-700 border-orange-200" },
+    STUDENT: { label: "Student Learner", color: "bg-blue-50 text-blue-700 border-blue-200" },
+  }[user.role] || { label: "User", color: "bg-slate-100 text-slate-700 border-slate-200" };
 
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-xs px-4 sm:px-6 lg:px-8 py-3.5 transition-all">
@@ -93,13 +109,15 @@ export function DashboardHeader({
 
           {/* Desktop Search / Breadcrumb subtitle */}
           <div className="hidden lg:flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 border border-orange-200/80 text-[11px] font-bold text-[#FF6B00]">
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-bold ${
+              user.role === "ADMIN"
+                ? "bg-purple-50 border-purple-200 text-purple-700"
+                : user.role === "TRAINER"
+                ? "bg-orange-50 border-orange-200 text-[#FF6B00]"
+                : "bg-blue-50 border-blue-200 text-blue-700"
+            }`}>
               <Sparkles className="w-3.5 h-3.5" />
-              SkillNova Student Portal
-            </span>
-            <span className="text-xs text-slate-400 font-medium">|</span>
-            <span className="text-xs text-slate-500 font-medium">
-              Academic Dashboard & Credential Ledger
+              <span>{portalLabel}</span>
             </span>
           </div>
         </div>
@@ -142,10 +160,10 @@ export function DashboardHeader({
                 <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
                   <div>
                     <h3 className="text-xs font-extrabold text-[#0B1B3D]">
-                      Notifications & Alerts
+                      Activity Alerts & Updates
                     </h3>
                     <p className="text-[10px] text-slate-400">
-                      Recent enrollments, assessments & achievements
+                      Real-time updates from database events
                     </p>
                   </div>
                   {unreadCount > 0 && (
@@ -167,7 +185,9 @@ export function DashboardHeader({
                         QUIZ: <CheckCircle2 className="w-4 h-4 text-[#FF6B00]" />,
                         ENROLLMENT: <Clock className="w-4 h-4 text-blue-600" />,
                         ACADEMIC: <Sparkles className="w-4 h-4 text-purple-600" />,
-                      }[item.type];
+                        USER: <Users className="w-4 h-4 text-indigo-600" />,
+                        SYSTEM: <ShieldCheck className="w-4 h-4 text-emerald-600" />,
+                      }[item.type] || <Sparkles className="w-4 h-4 text-slate-600" />;
 
                       return (
                         <Link
@@ -203,20 +223,15 @@ export function DashboardHeader({
                 </div>
 
                 <div className="p-2 border-t border-slate-100 text-center bg-slate-50/50 rounded-b-2xl">
-                  <Link
-                    href="/dashboard/student"
-                    onClick={() => setIsNotifOpen(false)}
-                    className="text-[11px] font-bold text-slate-600 hover:text-[#0B1B3D] inline-flex items-center gap-1"
-                  >
-                    <span>View Academic Overview</span>
-                    <ExternalLink className="w-3 h-3 text-[#FF6B00]" />
-                  </Link>
+                  <span className="text-[10px] text-slate-400">
+                    Real-time SQLite database sync
+                  </span>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Student Profile Menu */}
+          {/* User Profile Menu */}
           <div className="relative" ref={profileRef}>
             <button
               type="button"
@@ -243,7 +258,7 @@ export function DashboardHeader({
                   <ChevronDown className="w-3 h-3 text-slate-400" />
                 </div>
                 <div className="text-[10px] text-[#FF6B00] font-semibold">
-                  Student
+                  {user.role}
                 </div>
               </div>
             </button>
@@ -258,56 +273,130 @@ export function DashboardHeader({
                   <div className="text-[10px] text-slate-500 truncate mt-0.5">
                     {user.email}
                   </div>
-                  <span className="inline-block mt-2 px-2 py-0.5 rounded-md bg-blue-50 border border-blue-100 text-blue-700 text-[10px] font-bold">
-                    🎓 Student Learner
+                  <span className={`inline-block mt-2 px-2 py-0.5 rounded-md text-[10px] font-bold border ${roleBadge.color}`}>
+                    {roleBadge.label}
                   </span>
                 </div>
 
                 <div className="py-1">
-                  <Link
-                    href="/dashboard/student"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
-                  >
-                    <BookOpen className="w-4 h-4 text-slate-400" />
-                    <span>Learning Center</span>
-                  </Link>
+                  {user.role === "ADMIN" && (
+                    <>
+                      <Link
+                        href="/dashboard/admin"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-purple-600" />
+                        <span>Platform Metrics</span>
+                      </Link>
+                      <Link
+                        href="/dashboard/admin/users"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
+                      >
+                        <Users className="w-4 h-4 text-slate-400" />
+                        <span>User Governance</span>
+                      </Link>
+                      <Link
+                        href="/dashboard/admin/courses"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
+                      >
+                        <BookOpen className="w-4 h-4 text-slate-400" />
+                        <span>Course Moderation</span>
+                      </Link>
+                      <Link
+                        href="/dashboard/admin/settings"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
+                      >
+                        <Settings className="w-4 h-4 text-slate-400" />
+                        <span>System Settings</span>
+                      </Link>
+                    </>
+                  )}
 
-                  <Link
-                    href="/dashboard/student/courses"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
-                  >
-                    <BookOpen className="w-4 h-4 text-slate-400" />
-                    <span>My Courses</span>
-                  </Link>
+                  {user.role === "TRAINER" && (
+                    <>
+                      <Link
+                        href="/dashboard/trainer"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-orange-600" />
+                        <span>Faculty Studio</span>
+                      </Link>
+                      <Link
+                        href="/dashboard/trainer/courses"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
+                      >
+                        <BookOpen className="w-4 h-4 text-slate-400" />
+                        <span>My Courses</span>
+                      </Link>
+                      <Link
+                        href="/dashboard/trainer/students"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
+                      >
+                        <Users className="w-4 h-4 text-slate-400" />
+                        <span>Enrolled Students</span>
+                      </Link>
+                      <Link
+                        href="/dashboard/trainer/assessments"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
+                      >
+                        <HelpCircle className="w-4 h-4 text-slate-400" />
+                        <span>Assessment Reviews</span>
+                      </Link>
+                    </>
+                  )}
 
-                  <Link
-                    href="/dashboard/student/quizzes"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
-                  >
-                    <HelpCircle className="w-4 h-4 text-slate-400" />
-                    <span>Quizzes & Scores</span>
-                  </Link>
-
-                  <Link
-                    href="/dashboard/student/certificates"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
-                  >
-                    <Award className="w-4 h-4 text-slate-400" />
-                    <span>My Certificates</span>
-                  </Link>
-
-                  <Link
-                    href="/dashboard/student/profile"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
-                  >
-                    <UserIcon className="w-4 h-4 text-slate-400" />
-                    <span>Profile & Settings</span>
-                  </Link>
+                  {user.role === "STUDENT" && (
+                    <>
+                      <Link
+                        href="/dashboard/student"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-blue-600" />
+                        <span>Learning Center</span>
+                      </Link>
+                      <Link
+                        href="/dashboard/student/courses"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
+                      >
+                        <BookOpen className="w-4 h-4 text-slate-400" />
+                        <span>My Courses</span>
+                      </Link>
+                      <Link
+                        href="/dashboard/student/quizzes"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
+                      >
+                        <HelpCircle className="w-4 h-4 text-slate-400" />
+                        <span>Quizzes & Scores</span>
+                      </Link>
+                      <Link
+                        href="/dashboard/student/certificates"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
+                      >
+                        <Award className="w-4 h-4 text-slate-400" />
+                        <span>My Certificates</span>
+                      </Link>
+                      <Link
+                        href="/dashboard/student/profile"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
+                      >
+                        <UserIcon className="w-4 h-4 text-slate-400" />
+                        <span>Profile & Settings</span>
+                      </Link>
+                    </>
+                  )}
                 </div>
 
                 <div className="border-t border-slate-100 pt-1 mt-1">
