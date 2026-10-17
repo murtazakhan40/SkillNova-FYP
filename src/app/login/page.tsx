@@ -2,7 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { SkillNovaLogo } from "@/components/brand/SkillNovaLogo";
 import { HeroParticles } from "@/components/animations/HeroParticles";
-import { loginAction, quickDemoLogin } from "@/app/actions/auth";
+import { loginAction, quickDemoLogin, loginWithFacultyEmail } from "@/app/actions/auth";
 import { 
   ArrowRight, 
   Lock, 
@@ -33,16 +33,17 @@ export default function LoginPage() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="bg-white py-8 px-6 shadow-2xl rounded-2xl sm:px-10 border border-slate-100">
           {/* Quick Demo Switcher for FYP Presentation */}
-          <div className="mb-6 p-3.5 rounded-xl bg-orange-50/80 border border-orange-200">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#0B1B3D] mb-2.5">
+          <div className="mb-6 p-4 rounded-2xl bg-orange-50/80 border border-orange-200 shadow-sm">
+            <div className="flex items-center gap-2 text-xs font-heading font-bold text-[#0B1B3D] mb-2.5">
               <Sparkles className="w-4 h-4 text-[#FF6B00]" />
               <span>FYP Evaluator One-Click Sign In:</span>
             </div>
+
             <div className="grid grid-cols-3 gap-2">
               <form action={quickDemoLogin.bind(null, "STUDENT")}>
                 <button
                   type="submit"
-                  className="w-full py-1.5 px-2 rounded-lg text-[11px] font-bold bg-white text-blue-700 hover:bg-blue-50 border border-blue-200 shadow-sm transition-colors"
+                  className="w-full py-2 px-2 rounded-xl text-[11px] font-heading font-bold bg-white text-blue-700 hover:bg-blue-50 border border-blue-200/80 shadow-sm btn-lift cursor-pointer text-center"
                 >
                   Student (Murtaza)
                 </button>
@@ -51,23 +52,67 @@ export default function LoginPage() {
               <form action={quickDemoLogin.bind(null, "TRAINER")}>
                 <button
                   type="submit"
-                  className="w-full py-1.5 px-2 rounded-lg text-[11px] font-bold bg-white text-orange-700 hover:bg-orange-50 border border-orange-200 shadow-sm transition-colors"
+                  className="w-full py-2 px-2 rounded-xl text-[11px] font-heading font-bold bg-white text-orange-700 hover:bg-orange-50 border border-orange-200/80 shadow-sm btn-lift cursor-pointer text-center"
                 >
-                  Trainer
+                  Trainer Studio
                 </button>
               </form>
 
               <form action={quickDemoLogin.bind(null, "ADMIN")}>
                 <button
                   type="submit"
-                  className="w-full py-1.5 px-2 rounded-lg text-[11px] font-bold bg-white text-purple-700 hover:bg-purple-50 border border-purple-200 shadow-sm transition-colors"
+                  className="w-full py-2 px-2 rounded-xl text-[11px] font-heading font-bold bg-white text-purple-700 hover:bg-purple-50 border border-purple-200/80 shadow-sm btn-lift cursor-pointer text-center"
                 >
-                  Admin
+                  Admin Console
                 </button>
               </form>
             </div>
+
+            {/* Course Faculty Directory */}
+            <details className="mt-3 text-left">
+              <summary className="text-[11px] font-bold text-[#0B1B3D] hover:text-[#FF6B00] cursor-pointer select-none">
+                ▸ View Course Instructors & Demo Logins
+              </summary>
+              <div className="mt-2 pt-2 border-t border-orange-200/80 space-y-1.5 text-[11px]">
+                <form action={loginWithFacultyEmail.bind(null, "sarah.mitchell@skillnova.com")}>
+                  <button type="submit" className="w-full text-left p-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-800 flex justify-between items-center transition-colors cursor-pointer">
+                    <span>🧠 <strong>Dr. Sarah Mitchell</strong> (AI / PyTorch)</span>
+                    <span className="text-[10px] text-[#FF6B00] font-bold">1-Click Login →</span>
+                  </button>
+                </form>
+
+                <form action={loginWithFacultyEmail.bind(null, "david.chen@skillnova.com")}>
+                  <button type="submit" className="w-full text-left p-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-800 flex justify-between items-center transition-colors cursor-pointer">
+                    <span>☁️ <strong>Prof. David Chen</strong> (Cloud / Go)</span>
+                    <span className="text-[10px] text-[#FF6B00] font-bold">1-Click Login →</span>
+                  </button>
+                </form>
+
+                <form action={loginWithFacultyEmail.bind(null, "alex.rivera@skillnova.com")}>
+                  <button type="submit" className="w-full text-left p-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-800 flex justify-between items-center transition-colors cursor-pointer">
+                    <span>🛡️ <strong>Alex Rivera</strong> (Cybersecurity)</span>
+                    <span className="text-[10px] text-[#FF6B00] font-bold">1-Click Login →</span>
+                  </button>
+                </form>
+
+                <form action={loginWithFacultyEmail.bind(null, "zainab.ahmed@skillnova.com")}>
+                  <button type="submit" className="w-full text-left p-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-800 flex justify-between items-center transition-colors cursor-pointer">
+                    <span>💾 <strong>Dr. Zainab Ahmed</strong> (Databases)</span>
+                    <span className="text-[10px] text-[#FF6B00] font-bold">1-Click Login →</span>
+                  </button>
+                </form>
+
+                <form action={loginWithFacultyEmail.bind(null, "fatima.noor@skillnova.edu")}>
+                  <button type="submit" className="w-full text-left p-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-800 flex justify-between items-center transition-colors cursor-pointer">
+                    <span>🎓 <strong>Fatima Noor</strong> (AI Scholar)</span>
+                    <span className="text-[10px] text-[#FF6B00] font-bold">1-Click Login →</span>
+                  </button>
+                </form>
+              </div>
+            </details>
+
             <div className="mt-2 text-[10px] text-slate-500 text-center font-medium">
-              Lead Student: <span className="font-bold text-[#0B1B3D]">murtazwazir.edu@gmail.com</span> (Password: <span className="font-bold">student123</span>)
+              Demo passwords: <span className="font-bold text-[#0B1B3D]">student123</span> / <span className="font-bold text-[#0B1B3D]">trainer123</span> / <span className="font-bold text-[#0B1B3D]">admin123</span>
             </div>
           </div>
 

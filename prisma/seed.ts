@@ -4,9 +4,9 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Starting SkillNova Academy Database Seed (Expanding Course Catalog)...");
+  console.log("🌱 Starting Full SkillNova Academy Database Seed...");
 
-  // Clean existing records in proper relational order
+  // Clean existing records in relational order
   await prisma.certificate.deleteMany();
   await prisma.review.deleteMany();
   await prisma.quizSubmission.deleteMany();
@@ -20,26 +20,27 @@ async function main() {
   await prisma.category.deleteMany();
   await prisma.user.deleteMany();
 
-  // 1. Create Default Users (Hashed passwords)
+  // 1. Create Default Users (Hashed passwords with bcrypt)
   const studentPassword = await bcrypt.hash("student123", 10);
   const trainerPassword = await bcrypt.hash("trainer123", 10);
   const adminPassword = await bcrypt.hash("admin123", 10);
 
-  const student = await prisma.user.create({
+  // --- Lead Student (Murtaza Wazir) ---
+  const studentMurtaza = await prisma.user.create({
     data: {
       name: "Murtaza Wazir",
       email: "murtazwazir.edu@gmail.com",
       passwordHash: studentPassword,
       role: "STUDENT",
       phone: "03029983146",
-      headline: "Lead Software Architect & BS Computer Science Project Lead",
-      bio: "Creator and Lead Developer of SkillNova Academy. Specializing in Next.js 15 App Router, TypeScript, relational database modeling, and scalable web architectures. Contact: 0302-9983146 | murtazwazir.edu@gmail.com",
+      headline: "Lead Software Architect & BS CS Graduate",
+      bio: "Creator and Lead Developer of SkillNova Academy. Specializing in Next.js 16 App Router, TypeScript, relational 3NF database design, and cloud systems.",
       avatar: "/murtaza-wazir.jpg",
     },
   });
 
-  // Alias demo student account for convenience
-  await prisma.user.create({
+  // Alias student accounts for evaluators
+  const studentAli = await prisma.user.create({
     data: {
       name: "Ali Khan",
       email: "student@skillnova.com",
@@ -47,12 +48,39 @@ async function main() {
       role: "STUDENT",
       phone: "03001234567",
       headline: "BS Computer Science Undergraduate",
-      bio: "Aspiring software engineer passionate about modern web apps, cloud tech, and AI.",
+      bio: "Aspiring software engineer passionate about modern web apps, microservices, and AI.",
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
     },
   });
 
-  const trainer1 = await prisma.user.create({
+  await prisma.user.create({
+    data: {
+      name: "Student (Edu Portal)",
+      email: "student@skillnova.edu",
+      passwordHash: studentPassword,
+      role: "STUDENT",
+      phone: "03009876543",
+      headline: "SkillNova Enrolled Scholar",
+      bio: "Computer Science candidate pursuing specialized software engineering certifications.",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  const studentFatima = await prisma.user.create({
+    data: {
+      name: "Fatima Noor",
+      email: "fatima.noor@skillnova.edu",
+      passwordHash: studentPassword,
+      role: "STUDENT",
+      phone: "03335551234",
+      headline: "AI & Data Science Student",
+      bio: "Researching deep learning neural networks, computer vision, and transformers.",
+      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  // --- Instructors / Trainers ---
+  const trainerMurtaza = await prisma.user.create({
     data: {
       name: "Murtaza Wazir",
       email: "trainer@skillnova.com",
@@ -60,7 +88,20 @@ async function main() {
       role: "TRAINER",
       phone: "03029983146",
       headline: "Lead Software Architect & Web Engineering Specialist",
-      bio: "Creator and Lead Architect of SkillNova Academy. Specializing in Next.js 15 App Router, TypeScript, Prisma ORM, and high-performance cloud architectures. Contact: 0302-9983146 | murtazwazir.edu@gmail.com",
+      bio: "Creator and Lead Architect of SkillNova Academy. Specializing in Next.js 16 App Router, TypeScript, Prisma ORM, and high-performance cloud architectures.",
+      avatar: "/murtaza-wazir.jpg",
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      name: "Murtaza Wazir (Faculty)",
+      email: "trainer@skillnova.edu",
+      passwordHash: trainerPassword,
+      role: "TRAINER",
+      phone: "03029983146",
+      headline: "Faculty Lead in Web & Mobile Engineering",
+      bio: "Lead trainer for Next.js, React Native, and enterprise TypeScript architectures.",
       avatar: "/murtaza-wazir.jpg",
     },
   });
@@ -72,24 +113,24 @@ async function main() {
       passwordHash: trainerPassword,
       role: "TRAINER",
       headline: "Principal AI Researcher & Machine Learning Faculty",
-      bio: "12+ years building distributed cloud platforms, full-stack applications, and machine learning pipelines.",
+      bio: "12+ years building distributed AI platforms, deep neural networks, and generative LLMs.",
       avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
     },
   });
 
-  const trainer2 = await prisma.user.create({
+  const trainerChen = await prisma.user.create({
     data: {
       name: "Prof. David Chen",
       email: "david.chen@skillnova.com",
       passwordHash: trainerPassword,
       role: "TRAINER",
-      headline: "Former Tech Lead at Google • Algorithms & Distributed Systems",
-      bio: "Author of advanced competitive programming textbooks and veteran distributed systems researcher.",
+      headline: "Former Tech Lead at Google • Cloud & Distributed Systems",
+      bio: "Author of advanced competitive programming textbooks and veteran Kubernetes/Go architect.",
       avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
     },
   });
 
-  const trainer3 = await prisma.user.create({
+  const trainerRivera = await prisma.user.create({
     data: {
       name: "Alex Rivera",
       email: "alex.rivera@skillnova.com",
@@ -101,7 +142,7 @@ async function main() {
     },
   });
 
-  const trainer4 = await prisma.user.create({
+  const trainerAhmed = await prisma.user.create({
     data: {
       name: "Dr. Zainab Ahmed",
       email: "zainab.ahmed@skillnova.com",
@@ -113,6 +154,7 @@ async function main() {
     },
   });
 
+  // --- Administrators ---
   await prisma.user.create({
     data: {
       name: "Platform Administrator",
@@ -125,7 +167,19 @@ async function main() {
     },
   });
 
-  console.log("✓ Created default users & faculty");
+  await prisma.user.create({
+    data: {
+      name: "System Administrator",
+      email: "admin@skillnova.edu",
+      passwordHash: adminPassword,
+      role: "ADMIN",
+      headline: "University Academic Governance",
+      bio: "Overseeing BS Computer Science evaluation benchmarks and course quality.",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  console.log("✓ Seeded comprehensive user directory (Students, Instructors, Admins)");
 
   // 2. Create Categories
   const catWeb = await prisma.category.create({
@@ -141,7 +195,7 @@ async function main() {
     data: {
       name: "Artificial Intelligence & Data",
       slug: "artificial-intelligence-data",
-      description: "Machine learning, deep neural networks, computer vision, and NLP.",
+      description: "Machine learning, deep neural networks, computer vision, and generative LLMs.",
       icon: "Brain",
     },
   });
@@ -270,7 +324,7 @@ async function main() {
     return course;
   }
 
-  // --- COURSE 1: Next.js & Full-Stack ---
+  // --- COURSE 1: Next.js & TypeScript ---
   const course1 = await seedCurriculum({
     title: "Full-Stack Web Engineering with Next.js 15 & TypeScript",
     slug: "fullstack-nextjs-typescript",
@@ -280,7 +334,7 @@ async function main() {
     level: "INTERMEDIATE",
     thumbnail: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&auto=format&fit=crop&q=80",
     featured: true,
-    instructorId: trainer1.id,
+    instructorId: trainerMurtaza.id,
     categoryId: catWeb.id,
     sections: [
       {
@@ -290,88 +344,126 @@ async function main() {
             title: "Platform Overview & Next.js App Router Paradigms",
             duration: "14 mins",
             isFree: true,
-            content: "Deep dive into React Server Components, hydration boundaries, and streaming HTML.",
+            content: `### Architecture Overview
+React Server Components (RSC) allow developers to render components on the server without shipping JavaScript to the client bundle.
+- **Server Components:** Default in Next.js App Router. Zero client-side JS bundle overhead.
+- **Client Components:** Opt-in with 'use client'. Required for state, effects, and event listeners.
+- **Streaming:** Progressive rendering with React Suspense boundaries.`,
           },
           {
-            title: "Designing Responsive Layouts with Tailwind CSS",
+            title: "Designing Responsive Layouts with Tailwind CSS v4",
             duration: "22 mins",
             isFree: true,
-            content: "Configuring CSS variables, fluid breakpoints, and high-performance micro-interactions.",
+            content: `### Design System Configuration
+Tailwind CSS v4 introduces CSS-first configuration using @theme blocks directly in globals.css.
+- Utilizing CSS custom properties for fonts and palettes.
+- Fluid typography and responsive grid structures.
+- Accessible contrast ratios conforming to WCAG AA.`,
+          },
+          {
+            title: "Server Actions and Safe Form Mutations",
+            duration: "19 mins",
+            isFree: false,
+            content: `### Server Actions Implementation
+Server Actions provide type-safe asynchronous RPC functions executed exclusively on the server.
+- Built-in CSRF prevention.
+- Optimistic UI updates with useOptimistic hook.
+- Server-side input validation and error dispatching.`,
           },
         ],
       },
       {
-        title: "Module 2: Relational Modeling & Database Architecture",
+        title: "Module 2: Relational Modeling & Prisma ORM",
         lessons: [
           {
-            title: "Prisma Schema Design & Relational Constraints",
-            duration: "28 mins",
+            title: "Relational Schema Normalization (3NF)",
+            duration: "25 mins",
             isFree: false,
-            content: "3NF schema normalization, foreign key relations, cascade behaviors, and Prisma Client.",
+            content: `### Third Normal Form (3NF) Rules
+1. Eliminate repeating groups in individual tables.
+2. Create a separate table for each set of related data (2NF).
+3. Remove fields that do not depend on the primary key (transitive dependency removal).`,
+          },
+          {
+            title: "Query Optimization, Indexes & Connection Pooling",
+            duration: "30 mins",
+            isFree: false,
+            content: `### Indexing Strategy
+Compound indexes on foreign keys and search terms dramatically reduce B-Tree traversal times during complex JOIN queries.`,
           },
         ],
       },
     ],
-    quizTitle: "Next.js & Server Components Mastery Assessment",
+    quizTitle: "Next.js Full-Stack Architecture Assessment",
     questions: [
       {
         text: "What is the primary benefit of React Server Components (RSC) in Next.js?",
         options: [
-          "They send zero JavaScript bundle to the browser for non-interactive content",
-          "They run exclusively in local storage on the client machine",
-          "They disable all CSS styling",
-          "They convert React components into PHP scripts",
+          "They render solely on the server and transmit zero JavaScript to the client bundle",
+          "They replace the need for CSS entirely",
+          "They require a mandatory Redux store",
+          "They can only run on mobile devices",
         ],
         correctIndex: 0,
-        explanation: "RSC renders on the server and streams pure HTML/JSON, keeping the client bundle lean.",
+        explanation: "RSCs execute entirely on the server, resulting in faster initial page loads and zero client-bundle bloat.",
       },
       {
-        text: "Which directory in Next.js defines route segments using the App Router?",
-        options: ["src/routes", "src/app", "src/pages", "src/controllers"],
-        correctIndex: 1,
-        explanation: "The App Router uses the 'app' directory to define nested routes using folder hierarchies.",
+        text: "Which database normalization form eliminates transitive dependencies?",
+        options: ["First Normal Form (1NF)", "Second Normal Form (2NF)", "Third Normal Form (3NF)", "Boyce-Codd Normal Form"],
+        correctIndex: 2,
+        explanation: "3NF requires that every non-key attribute must depend directly on the primary key, with zero transitive dependencies.",
       },
     ],
   });
 
-  // --- COURSE 2: Go, gRPC & Microservices ---
-  await seedCurriculum({
+  // --- COURSE 2: Go Backend & Microservices ---
+  const course2 = await seedCurriculum({
     title: "Advanced Backend Engineering with Go, gRPC & Microservices",
-    slug: "advanced-backend-go-grpc-microservices",
-    subtitle: "Design high-throughput concurrent services with Protocol Buffers and event buses.",
-    description: "Go is the language of modern cloud infrastructure. In this advanced backend course, you will build microservice architectures with gRPC, implement goroutines and channels for high concurrency, handle distributed tracing, and manage PostgreSQL connection pools.",
+    slug: "advanced-backend-go-grpc",
+    subtitle: "High-throughput microservices, concurrency patterns, and gRPC communication.",
+    description: "Learn how to build resilient, distributed backend microservices handling hundreds of thousands of concurrent requests with Go routines, channels, protocol buffers, and distributed tracing.",
     price: 24000,
     level: "ADVANCED",
-    thumbnail: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80",
+    thumbnail: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=800&auto=format&fit=crop&q=80",
     featured: true,
-    instructorId: trainer2.id,
+    instructorId: trainerChen.id,
     categoryId: catWeb.id,
     sections: [
       {
-        title: "Module 1: Go Concurrency & Memory Model",
+        title: "Module 1: Concurrency Internals & Channels",
         lessons: [
           {
-            title: "Goroutines, Channels & CSP Concurrency Patterns",
-            duration: "25 mins",
+            title: "Goroutines, OS Threads, and the Go Scheduler (M:N Model)",
+            duration: "26 mins",
             isFree: true,
-            content: "Understanding Communicating Sequential Processes (CSP), buffered channels, and select statements.",
+            content: `### Go Runtime Scheduler
+Go utilizes an M:N scheduler matching M goroutines to N operating system threads via work-stealing algorithms.`,
           },
           {
-            title: "Mutexes, Atomic Primitives & Race Detection",
+            title: "Channel Semantics: Buffered, Unbuffered, and Select",
             duration: "20 mins",
             isFree: false,
-            content: "Thread-safe data structures in Go, sync.Mutex, sync.RWMutex, and the -race flag.",
+            content: `### Channel Communications
+Channels synchronize execution and prevent race conditions without explicit mutex locks.`,
           },
         ],
       },
       {
-        title: "Module 2: gRPC & Protocol Buffers",
+        title: "Module 2: gRPC, Protobuf & Distributed Systems",
         lessons: [
           {
-            title: "Defining Schemas with Proto3 & Code Generation",
-            duration: "30 mins",
+            title: "Protocol Buffers v3 Schema Design & Binary Serialization",
+            duration: "22 mins",
             isFree: false,
-            content: "Compiling .proto files into Go stubs, bidirectional streaming, and status codes.",
+            content: `### Protobuf Binary Wire Format
+Protocol Buffers encode messages into compact binary payloads, achieving up to 10x throughput over traditional JSON HTTP/1.1 APIs.`,
+          },
+          {
+            title: "Implementing Bidirectional Streaming with gRPC",
+            duration: "35 mins",
+            isFree: false,
+            content: `### HTTP/2 Multiplexing
+gRPC utilizes HTTP/2 streams to allow multiple requests and responses concurrently over a single TCP socket.`,
           },
         ],
       },
@@ -379,68 +471,136 @@ async function main() {
     quizTitle: "Go Microservices & Concurrency Quiz",
     questions: [
       {
-        text: "What does CSP stand for in Go's concurrency model?",
+        text: "How does the Go runtime scheduler allocate Goroutines to OS threads?",
         options: [
-          "Communicating Sequential Processes",
-          "Centralized Server Protocol",
-          "Concurrent System Programming",
-          "Core Socket Pipeline",
+          "Via an M:N work-stealing scheduler mapped over logical processors",
+          "One thread per goroutine strictly",
+          "By halting the CPU until completion",
+          "Through browser Web Workers",
         ],
         correctIndex: 0,
-        explanation: "Go concurrency is modeled after C.A.R. Hoare's Communicating Sequential Processes.",
+        explanation: "Go uses an M:N scheduler multiplexing M goroutines onto N OS threads across logical CPU processors.",
       },
     ],
   });
 
-  // --- COURSE 3: React Native Mobile Development ---
-  await seedCurriculum({
+  // --- COURSE 3: React Native & Expo ---
+  const course3 = await seedCurriculum({
     title: "Cross-Platform Mobile Engineering with React Native & Expo",
     slug: "cross-platform-react-native-expo",
-    subtitle: "Build iOS and Android applications with native performance and shared TypeScript code.",
-    description: "Learn to build cross-platform mobile apps for iOS and Android using React Native and Expo. Understand gesture responders, offline caching with SQLite, push notifications, and deployment to the Apple App Store and Google Play Store.",
+    subtitle: "Build native iOS and Android apps with a single modern TypeScript codebase.",
+    description: "Construct production mobile apps with native gesture handling, offline persistence, push notifications, and App Store / Google Play deployment pipelines.",
     price: 16000,
     level: "INTERMEDIATE",
     thumbnail: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&auto=format&fit=crop&q=80",
     featured: false,
-    instructorId: trainer1.id,
+    instructorId: trainerMurtaza.id,
     categoryId: catWeb.id,
     sections: [
       {
-        title: "Module 1: Mobile UI Architecture",
+        title: "Module 1: Expo Architecture & Navigation",
         lessons: [
           {
-            title: "Expo Router & File-Based Mobile Navigation",
+            title: "Expo Router & File-Based Native Navigation",
             duration: "18 mins",
             isFree: true,
-            content: "Setting up tab bars, stack navigators, and deep linking on mobile platforms.",
+            content: `### Expo Router File Conventions
+File-based routing provides deep linking and nested stack / tab navigators native to mobile OS environments.`,
           },
           {
-            title: "Native Layouts, Safe Areas & Touch Responders",
+            title: "Native Gestures & Reanimated 3 Animations",
             duration: "24 mins",
             isFree: false,
-            content: "Managing viewport notches, gesture handling, and React Native Reanimated.",
+            content: `### UI Thread Animations
+Reanimated 3 runs worklets on the native UI thread, guaranteeing steady 60 FPS transitions without blocking the JS bridge.`,
           },
         ],
       },
     ],
-    quizTitle: "React Native Architecture Quiz",
+    quizTitle: "React Native Performance Quiz",
     questions: [
       {
-        text: "What is the new React Native rendering architecture called?",
-        options: ["Fabric", "TurboDOM", "Blink", "Hermes"],
+        text: "Why does React Native Reanimated run animations on the UI thread?",
+        options: [
+          "To avoid frame drops when the JavaScript thread is busy with business logic",
+          "Because JavaScript cannot compute numbers",
+          "To disable GPU acceleration",
+          "Because iOS bans JavaScript",
+        ],
         correctIndex: 0,
-        explanation: "Fabric is the new C++ rendering engine in React Native that communicates directly with native views without the legacy bridge.",
+        explanation: "Running animations directly on the UI thread guarantees steady 60-120fps motion unaffected by JS processing spikes.",
       },
     ],
   });
 
-  // --- COURSE 4: Machine Learning & PyTorch ---
+  // --- COURSE 4: Machine Learning with PyTorch ---
   const course4 = await seedCurriculum({
     title: "Applied Machine Learning & Deep Neural Networks with PyTorch",
-    slug: "applied-machine-learning-deep-neural-networks",
-    subtitle: "From gradient descent and loss functions to Transformer architectures with PyTorch.",
-    description: "Understand mathematical foundations of artificial intelligence and build real-world vision and NLP models. Explore backpropagation, stochastic gradient descent, multi-layer perceptrons, regularization, and model evaluation metrics.",
+    slug: "applied-machine-learning-pytorch",
+    subtitle: "From tensors and backpropagation to CNNs, RNNs, and model deployment.",
+    description: "Gain hands-on mastery over deep learning mathematical fundamentals. Build computer vision classifiers, recurrent sequential models, and export optimized models using TorchScript and ONNX.",
     price: 26500,
+    level: "ADVANCED",
+    thumbnail: "https://images.unsplash.com/photo-1507146426996-ef05388b69b9?w=800&auto=format&fit=crop&q=80",
+    featured: true,
+    instructorId: trainerMitchell.id,
+    categoryId: catAI.id,
+    sections: [
+      {
+        title: "Module 1: Tensors, Autograd & Optimization",
+        lessons: [
+          {
+            title: "Computational Graphs & Dynamic Autograd in PyTorch",
+            duration: "28 mins",
+            isFree: true,
+            content: `### Dynamic Computation Graphs
+PyTorch builds computation graphs on the fly with every forward pass, allowing dynamic flow control and intuitive debugging.`,
+          },
+          {
+            title: "Loss Functions, Gradient Descent & Adam Optimizer",
+            duration: "22 mins",
+            isFree: false,
+            content: `### Stochastic Optimization
+Adam combines Momentum and RMSProp adaptive learning rate concepts for robust convergence on non-convex surfaces.`,
+          },
+        ],
+      },
+      {
+        title: "Module 2: Convolutional Neural Networks (CNNs)",
+        lessons: [
+          {
+            title: "Kernel Filters, Pooling, and Feature Map Extractions",
+            duration: "30 mins",
+            isFree: false,
+            content: `### Convolution Operation
+Kernels slide across pixel matrices to extract spatial representations such as edges, textures, and object hierarchies.`,
+          },
+        ],
+      },
+    ],
+    quizTitle: "PyTorch & Deep Neural Network Quiz",
+    questions: [
+      {
+        text: "What mechanism enables automatic backpropagation in PyTorch?",
+        options: [
+          "The Autograd engine tracking operations on Tensors with requires_grad=True",
+          "Manual calculus lookup tables",
+          "Compiler regex parsing",
+          "Thread sleep listeners",
+        ],
+        correctIndex: 0,
+        explanation: "Autograd records an acyclic directed graph of tensor operations, computing reverse vector-Jacobian products during .backward().",
+      },
+    ],
+  });
+
+  // --- COURSE 5: LLMs & Generative AI ---
+  const course5 = await seedCurriculum({
+    title: "Large Language Models (LLMs) & Generative AI Engineering",
+    slug: "large-language-models-generative-ai",
+    subtitle: "Transformers, Self-Attention, LoRA Fine-Tuning, and RAG Pipelines.",
+    description: "Deep dive into the transformer revolution. Master the Multi-Head Attention mechanism, fine-tune open-weights models with LoRA/QLoRA, and build production Retrieval-Augmented Generation (RAG) architectures with vector databases.",
+    price: 29000,
     level: "ADVANCED",
     thumbnail: "https://images.unsplash.com/photo-1677442136019-21780efad99a?w=800&auto=format&fit=crop&q=80",
     featured: true,
@@ -448,77 +608,43 @@ async function main() {
     categoryId: catAI.id,
     sections: [
       {
-        title: "Module 1: Tensor Calculus & Neural Network Foundations",
+        title: "Module 1: Transformer Architecture & Self-Attention",
         lessons: [
           {
-            title: "Tensors, Autograd & Computational Graphs",
-            duration: "26 mins",
-            isFree: true,
-            content: "Building automatic differentiation engines and understanding backpropagation flow.",
-          },
-          {
-            title: "Training Deep Feedforward Networks",
-            duration: "32 mins",
-            isFree: false,
-            content: "Loss functions (CrossEntropy, MSE), Adam optimizer, and learning rate schedulers.",
-          },
-        ],
-      },
-    ],
-    quizTitle: "Neural Networks & Backpropagation Quiz",
-    questions: [
-      {
-        text: "Which algorithm computes gradients of the loss function with respect to model weights?",
-        options: ["Backpropagation", "K-Means", "Dijkstra's Algorithm", "A* Search"],
-        correctIndex: 0,
-        explanation: "Backpropagation applies the calculus chain rule recursively through the computational graph.",
-      },
-    ],
-  });
-
-  // --- COURSE 5: LLMs & Generative AI ---
-  await seedCurriculum({
-    title: "Large Language Models (LLMs) & Generative AI Engineering",
-    slug: "llms-generative-ai-engineering",
-    subtitle: "Build Retrieval-Augmented Generation (RAG) pipelines, embeddings, and autonomous AI agents.",
-    description: "Master modern AI application development. Learn transformer self-attention mechanisms, tokenization, vector databases (Pinecone, ChromaDB), LangChain orchestration, and fine-tuning open-source models with LoRA/QLoRA.",
-    price: 29000,
-    level: "ADVANCED",
-    thumbnail: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800&auto=format&fit=crop&q=80",
-    featured: true,
-    instructorId: trainerMitchell.id,
-    categoryId: catAI.id,
-    sections: [
-      {
-        title: "Module 1: Attention Mechanisms & Transformers",
-        lessons: [
-          {
-            title: "Self-Attention Mathematics: Query, Key, Value",
+            title: "Query, Key, Value Matrices & Scaled Dot-Product Attention",
             duration: "35 mins",
             isFree: true,
-            content: "The math behind Vaswani et al. 'Attention Is All You Need' and scaled dot-product attention.",
+            content: `### Attention Is All You Need
+Attention(Q, K, V) = softmax((Q * K^T) / sqrt(d_k)) * V
+Allows token-to-token contextual weighting independent of distance.`,
           },
+        ],
+      },
+      {
+        title: "Module 2: Vector Search & Production RAG Systems",
+        lessons: [
           {
-            title: "Vector Embeddings & Semantic Search",
+            title: "Chunking Strategies, Dense Embeddings, and HNSW Vector Indexing",
             duration: "28 mins",
             isFree: false,
-            content: "Generating high-dimensional embeddings and calculating cosine similarity in vector stores.",
+            content: `### Retrieval Augmented Generation (RAG)
+Combining semantic search over private documents with LLM context windows to eliminate hallucinations.`,
           },
         ],
       },
     ],
-    quizTitle: "Transformer & RAG Architecture Quiz",
+    quizTitle: "LLM & Transformer Architecture Quiz",
     questions: [
       {
-        text: "What does RAG stand for in modern AI application architecture?",
+        text: "What does dividing by sqrt(d_k) achieve in Scaled Dot-Product Attention?",
         options: [
-          "Retrieval-Augmented Generation",
-          "Recursive Attention Graph",
-          "Random Automated Generator",
-          "Relational Attribute Grouping",
+          "It prevents dot products from growing excessively large, avoiding vanishing gradients in the softmax function",
+          "It makes the tensor size smaller",
+          "It rounds all floats to integers",
+          "It converts text to audio",
         ],
         correctIndex: 0,
-        explanation: "Retrieval-Augmented Generation combines external document retrieval with generative language models.",
+        explanation: "Scaling prevents extremely large dot-product magnitudes that push softmax into regions with near-zero gradients.",
       },
     ],
   });
@@ -526,184 +652,189 @@ async function main() {
   // --- COURSE 6: Computer Vision ---
   await seedCurriculum({
     title: "Computer Vision & Image Processing with OpenCV & PyTorch",
-    slug: "computer-vision-image-processing-opencv",
-    subtitle: "Object detection, semantic segmentation, and real-time visual tracking.",
-    description: "Explore the visual computing domain from matrix filtering and edge detection to state-of-the-art YOLO object detectors and convolutional neural networks (CNNs).",
+    slug: "computer-vision-opencv-pytorch",
+    subtitle: "Real-time object detection, segmentation, and feature extraction.",
+    description: "Comprehensive curriculum covering classic image filtering, edge detection, optical flow, YOLO real-time object detection, and Mask R-CNN semantic segmentation.",
     price: 21000,
     level: "INTERMEDIATE",
-    thumbnail: "https://images.unsplash.com/photo-1507146426996-ef05306b995a?w=800&auto=format&fit=crop&q=80",
+    thumbnail: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80",
     featured: false,
     instructorId: trainerMitchell.id,
     categoryId: catAI.id,
     sections: [
       {
-        title: "Module 1: Convolutional Neural Networks",
+        title: "Module 1: Image Processing with OpenCV",
         lessons: [
           {
-            title: "Feature Maps, Pooling & Receptive Fields",
-            duration: "22 mins",
+            title: "Color Spaces, Affine Transforms, and Canny Edge Detection",
+            duration: "20 mins",
             isFree: true,
-            content: "Understanding 2D spatial convolutions, stride, padding, and max-pooling.",
+            content: "Spatial image filtering, Gaussian blurs, and gradient-based edge extraction algorithms.",
           },
         ],
       },
     ],
-    quizTitle: "Computer Vision & CNN Quiz",
+    quizTitle: "Computer Vision Fundamentals Quiz",
     questions: [
       {
-        text: "What is the primary function of a pooling layer in a CNN?",
-        options: [
-          "Downsample spatial dimensions while preserving dominant features",
-          "Increase the image resolution",
-          "Convert color images to grayscale",
-          "Encrypt image bytes",
-        ],
+        text: "What color channel order does OpenCV use by default?",
+        options: ["BGR", "RGB", "CMYK", "Grayscale"],
         correctIndex: 0,
-        explanation: "Pooling reduces spatial dimensionality, controlling computational load and preventing overfitting.",
+        explanation: "OpenCV reads images in BGR format rather than the standard RGB representation.",
       },
     ],
   });
 
-  // --- COURSE 7: Cloud & Kubernetes ---
-  await seedCurriculum({
+  // --- COURSE 7: Docker, Kubernetes & AWS ---
+  const course7 = await seedCurriculum({
     title: "Cloud Infrastructure Engineering with Docker, Kubernetes & AWS",
-    slug: "cloud-infrastructure-docker-kubernetes",
-    subtitle: "Containerize applications, orchestrate microservices, and deploy multi-region clusters.",
-    description: "Learn production DevOps practices: multi-stage Docker builds, Kubernetes Pod orchestration, Ingress controllers, Helm package management, and continuous delivery pipelines.",
+    slug: "cloud-infrastructure-docker-kubernetes-aws",
+    subtitle: "Container orchestration, ingress controllers, microservices on AWS EKS.",
+    description: "Deploy scalable, enterprise-grade cloud applications. Master Docker multi-stage builds, Kubernetes pods, deployments, services, ingress routing, Helm charts, and AWS Cloud networking.",
     price: 17500,
     level: "INTERMEDIATE",
-    thumbnail: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80",
-    featured: false,
-    instructorId: trainer2.id,
+    thumbnail: "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?w=800&auto=format&fit=crop&q=80",
+    featured: true,
+    instructorId: trainerChen.id,
     categoryId: catCloud.id,
     sections: [
       {
-        title: "Module 1: Containerization with Docker",
+        title: "Module 1: Docker Containerization Best Practices",
         lessons: [
           {
-            title: "Linux Namespaces, Cgroups & Docker Architecture",
-            duration: "20 mins",
+            title: "Multi-Stage Dockerfiles & Minimal Alpine/Distroless Images",
+            duration: "21 mins",
             isFree: true,
-            content: "How the Linux kernel isolates processes through namespaces and control groups.",
+            content: "Minimizing attack surfaces and reducing container image payloads from 1GB to under 50MB.",
+          },
+        ],
+      },
+      {
+        title: "Module 2: Kubernetes Orchestration",
+        lessons: [
+          {
+            title: "ReplicaSets, Deployments, Rolling Updates & HPA",
+            duration: "32 mins",
+            isFree: false,
+            content: "Zero-downtime rolling deployments and Horizontal Pod Autoscalers triggered by CPU/Memory metrics.",
           },
         ],
       },
     ],
-    quizTitle: "Docker & Kubernetes Core Concepts Quiz",
+    quizTitle: "Kubernetes & Cloud Engineering Quiz",
     questions: [
       {
-        text: "Which Kubernetes component schedules pods onto worker nodes?",
-        options: ["kube-scheduler", "kubelet", "etcd", "kube-proxy"],
+        text: "What is the smallest deployable computing unit in Kubernetes?",
+        options: ["A Pod", "A Node", "A Dockerfile", "A Virtual Machine"],
         correctIndex: 0,
-        explanation: "kube-scheduler watches for newly created pods with no assigned node and selects an optimal node for them.",
+        explanation: "A Pod represents a single instance of a running process in a cluster, encapsulating one or more containers.",
       },
     ],
   });
 
-  // --- COURSE 8: Infrastructure as Code & Terraform ---
+  // --- COURSE 8: Terraform IaC ---
   await seedCurriculum({
     title: "Enterprise Infrastructure as Code (IaC) with Terraform & AWS",
     slug: "enterprise-infrastructure-as-code-terraform",
-    subtitle: "Automate multi-cloud provisioning, VPCs, IAM roles, and automated disaster recovery.",
-    description: "Declarative infrastructure automation using HashiCorp Terraform. Manage remote state with S3 and DynamoDB locks, author reusable modules, and enforce compliance policies.",
+    subtitle: "Declarative infrastructure provisioning, state management, and modules.",
+    description: "Automate entire cloud environments with HashiCorp Terraform. Learn HCL, remote state locking with DynamoDB, modular architectures, and automated testing.",
     price: 19500,
     level: "ADVANCED",
-    thumbnail: "https://images.unsplash.com/photo-1618401471353-b98aedd04e11?w=800&auto=format&fit=crop&q=80",
+    thumbnail: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80",
     featured: false,
-    instructorId: trainer2.id,
+    instructorId: trainerChen.id,
     categoryId: catCloud.id,
     sections: [
       {
-        title: "Module 1: Declarative Cloud Provisioning",
+        title: "Module 1: Terraform Core & Remote State",
         lessons: [
           {
-            title: "Terraform State Management & Resource Graphs",
+            title: "State Locking with S3 Buckets & DynamoDB Tables",
             duration: "24 mins",
             isFree: true,
-            content: "Graph resolution, state locking, drift detection, and terraform plan workflows.",
+            content: "Preventing race conditions and corrupting terraform.tfstate in multi-engineer teams.",
           },
         ],
       },
     ],
-    quizTitle: "Terraform IaC Quiz",
+    quizTitle: "Terraform State Management Quiz",
     questions: [
       {
-        text: "Where should production Terraform state files be stored?",
+        text: "Why is DynamoDB used alongside Amazon S3 for Terraform remote backend?",
         options: [
-          "In a remote object store with state locking (e.g. S3 + DynamoDB)",
-          "On the developer's desktop",
-          "Directly committed to public GitHub repositories",
-          "In browser localStorage",
+          "To provide distributed state locking and prevent concurrent writes",
+          "To host website images",
+          "To compile Terraform code",
+          "To calculate tax fees",
         ],
         correctIndex: 0,
-        explanation: "Remote backends provide team state locking, encryption at rest, and audit logs.",
+        explanation: "DynamoDB provides atomic distributed locks, ensuring two engineers cannot apply changes simultaneously.",
       },
     ],
   });
 
-  // --- COURSE 9: Offensive Cybersecurity & Pen Testing ---
-  await seedCurriculum({
+  // --- COURSE 9: Offensive Cybersecurity ---
+  const course9 = await seedCurriculum({
     title: "Offensive Cybersecurity & Ethical Penetration Testing Mastery",
-    slug: "offensive-cybersecurity-ethical-penetration-testing",
-    subtitle: "Hands-on vulnerability scanning, reverse engineering, buffer overflows, and red team exploits.",
-    description: "Understand the adversarial mindset to build unassailable digital fortifications. Master reconnaissance, web application exploits (SQL injection, XSS, SSRF), privilege escalation, and network packet analysis with Wireshark.",
+    slug: "offensive-cybersecurity-ethical-hacking",
+    subtitle: "Network reconnaissance, web exploits, privilege escalation, and defense.",
+    description: "Learn ethical hacking from scratch. Master Nmap scanning, Burp Suite intercepting, SQL injection, Cross-Site Scripting (XSS), Buffer Overflows, and Metasploit framework.",
     price: 27000,
     level: "ADVANCED",
-    thumbnail: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80",
+    thumbnail: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&auto=format&fit=crop&q=80",
     featured: true,
-    instructorId: trainer3.id,
+    instructorId: trainerRivera.id,
     categoryId: catCyber.id,
     sections: [
       {
-        title: "Module 1: Reconnaissance & Web Application Exploitation",
+        title: "Module 1: Web Application Penetration Testing",
         lessons: [
           {
-            title: "Network Mapping with Nmap & Port Fingerprinting",
-            duration: "28 mins",
+            title: "OWASP Top 10: SQL Injection & Blind Injection Defense",
+            duration: "27 mins",
             isFree: true,
-            content: "SYN scans, OS detection, service versioning, and NSE vulnerability scripts.",
-          },
-          {
-            title: "SQL Injection Vectors & Parameterized Defense",
-            duration: "30 mins",
-            isFree: false,
-            content: "Blind SQLi, UNION-based data extraction, and ORM/Prepared statement mitigation.",
+            content: "Constructing union queries, error-based payloads, and implementing parameterized prepared statements.",
           },
         ],
       },
     ],
-    quizTitle: "Penetration Testing & Exploit Mechanics Quiz",
+    quizTitle: "Cybersecurity & Web Defense Quiz",
     questions: [
       {
-        text: "Which SQL injection type does not return data in HTTP responses, relying instead on timing or boolean inferences?",
-        options: ["Blind SQL Injection", "Classic UNION Injection", "Stacked Query", "Direct Output"],
+        text: "What is the most effective defense against SQL Injection?",
+        options: [
+          "Parameterized queries / Prepared statements with ORM abstraction",
+          "Encrypting the hard drive",
+          "Changing the port to 8080",
+          "Using complex passwords",
+        ],
         correctIndex: 0,
-        explanation: "Blind SQL injection extracts data by inferring database behavior through true/false response differences or database sleep delays.",
+        explanation: "Prepared statements ensure user inputs are treated strictly as data literals rather than executable SQL syntax.",
       },
     ],
   });
 
-  // --- COURSE 10: Zero-Trust & Cloud Security ---
+  // --- COURSE 10: Zero-Trust Security ---
   await seedCurriculum({
     title: "Zero-Trust Security & Cloud Defenses on AWS and Azure",
-    slug: "zero-trust-cloud-defenses-aws-azure",
-    subtitle: "Implement identity federation, mutual TLS (mTLS), and automated threat detection.",
-    description: "Never trust, always verify. Design zero-trust microservice meshes with Istio, manage secrets with HashiCorp Vault, enforce least privilege IAM, and monitor cloud logs with SIEM tools.",
+    slug: "zero-trust-cloud-security-defenses",
+    subtitle: "Identity-aware access, IAM policies, mutual TLS, and threat modeling.",
+    description: "Replace legacy perimeter security with modern Zero-Trust architectures. Learn least privilege IAM policies, mTLS service meshes, micro-segmentation, and SIEM monitoring.",
     price: 22500,
     level: "INTERMEDIATE",
     thumbnail: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&auto=format&fit=crop&q=80",
     featured: false,
-    instructorId: trainer3.id,
+    instructorId: trainerRivera.id,
     categoryId: catCyber.id,
     sections: [
       {
         title: "Module 1: Identity & Access Management (IAM)",
         lessons: [
           {
-            title: "Principle of Least Privilege & Role-Based Access Control",
-            duration: "21 mins",
+            title: "Least Privilege Principle & AWS IAM Policy Evaluations",
+            duration: "20 mins",
             isFree: true,
-            content: "Designing RBAC policy matrices, token validation, and OAuth2/OIDC flows.",
+            content: "Crafting explicit Deny statements, condition keys, and temporary STS credentials.",
           },
         ],
       },
@@ -711,88 +842,76 @@ async function main() {
     quizTitle: "Zero-Trust Architecture Quiz",
     questions: [
       {
-        text: "What is the core premise of the Zero-Trust security model?",
+        text: "What is the core axiom of Zero-Trust architecture?",
         options: [
-          "Assume breach and verify every request explicitly, regardless of network location",
-          "Trust any connection that originates from inside the office network",
-          "Disable all firewall rules to speed up connections",
-          "Rely solely on single-factor passwords",
+          "Never trust, always verify, regardless of network location",
+          "Trust everyone inside the company Wi-Fi",
+          "Disable all passwords",
+          "Allow root access on port 22",
         ],
         correctIndex: 0,
-        explanation: "Zero-Trust assumes no user or device is trusted by default inside or outside the perimeter.",
+        explanation: "Zero-Trust assumes breach and continuously authenticates and authorizes every transaction at every layer.",
       },
     ],
   });
 
-  // --- COURSE 11: Data Structures & Algorithms ---
-  await seedCurriculum({
+  // --- COURSE 11: Data Structures & LeetCode ---
+  const course11 = await seedCurriculum({
     title: "Data Structures, Competitive Algorithms & LeetCode Mastery",
-    slug: "data-structures-competitive-algorithms-mastery",
-    subtitle: "Asymptotic notation, graphs, trees, dynamic programming, and technical interview excellence.",
-    description: "The definitive algorithmic foundation for BS Computer Science graduates. Master Big-O complexity, balanced binary search trees (AVL/Red-Black), graph traversals (Dijkstra, Tarjan, topological sort), and 2D dynamic programming.",
+    slug: "data-structures-algorithms-leetcode-mastery",
+    subtitle: "Ace technical coding interviews: Graphs, DP, Trees, and Complexity Analysis.",
+    description: "Rigorous computer science algorithms course. Master Big-O analysis, binary heaps, topological sorting, Dijkstra shortest path, dynamic programming memoization, and bit manipulation.",
     price: 14500,
-    level: "BEGINNER",
-    thumbnail: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=800&auto=format&fit=crop&q=80",
-    featured: true,
-    instructorId: trainer2.id,
+    level: "INTERMEDIATE",
+    thumbnail: "https://images.unsplash.com/photo-1516259762381-22954d7d3ad2?w=800&auto=format&fit=crop&q=80",
+    featured: false,
+    instructorId: trainerChen.id,
     categoryId: catAlgo.id,
     sections: [
       {
-        title: "Module 1: Asymptotic Analysis & Core Structures",
+        title: "Module 1: Graph Algorithms",
         lessons: [
           {
-            title: "Big-O, Big-Omega & Amortized Complexity",
+            title: "Breadth-First Search (BFS) vs Depth-First Search (DFS)",
             duration: "25 mins",
             isFree: true,
-            content: "Formal mathematical definitions of runtime bounds and space-time tradeoffs.",
-          },
-          {
-            title: "Dynamic Arrays, Hash Tables & Collision Resolution",
-            duration: "30 mins",
-            isFree: false,
-            content: "Separate chaining, open addressing (linear probing, double hashing), and amortized doubling.",
+            content: "Iterative queue vs recursive stack implementations, cycle detection, and connected components.",
           },
         ],
       },
     ],
-    quizTitle: "Algorithms & Asymptotic Complexity Quiz",
+    quizTitle: "Algorithm Complexity Quiz",
     questions: [
       {
-        text: "What is the average time complexity of searching in a well-balanced Hash Table?",
-        options: ["O(1)", "O(log n)", "O(n)", "O(n log n)"],
+        text: "What is the time complexity of searching in a balanced Binary Search Tree (AVL / Red-Black)?",
+        options: ["O(log n)", "O(n)", "O(1)", "O(n^2)"],
         correctIndex: 0,
-        explanation: "With a good hash function and low load factor, hash table lookups take constant amortized time O(1).",
+        explanation: "Balanced BSTs guarantee maximum tree height of O(log n), making lookup, insertion, and deletion O(log n).",
       },
     ],
   });
 
-  // --- COURSE 12: Database Engine Internals ---
+  // --- COURSE 12: Database Internals ---
   await seedCurriculum({
     title: "Database Engine Internals, Query Optimization & Storage Systems",
     slug: "database-engine-internals-query-optimization",
-    subtitle: "B-Trees, LSM-Trees, Write-Ahead Logs (WAL), and distributed consensus protocols.",
-    description: "Look under the hood of database engines like PostgreSQL, SQLite, and CockroachDB. Understand disk page layouts, B+ Tree indexing, cost-based query planners, MVCC (Multi-Version Concurrency Control), and Raft consensus.",
+    subtitle: "B-Trees, LSM-Trees, Write-Ahead Logs (WAL), and MVCC Concurrency.",
+    description: "Understand what happens underneath the SQL prompt. Learn page buffer managers, B+ Trees vs LSM-Trees, Write-Ahead Logging (WAL) for crash recovery, and multi-version concurrency control.",
     price: 25000,
     level: "ADVANCED",
     thumbnail: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=800&auto=format&fit=crop&q=80",
     featured: false,
-    instructorId: trainer4.id,
+    instructorId: trainerAhmed.id,
     categoryId: catAlgo.id,
     sections: [
       {
-        title: "Module 1: On-Disk Storage Structures",
+        title: "Module 1: Storage Structures",
         lessons: [
           {
-            title: "Slotted Page Layouts, Tuples & Write-Ahead Logging",
-            duration: "32 mins",
+            title: "B+ Tree Fanout, Leaf Chaining, and Buffer Pool Evictions",
+            duration: "30 mins",
             isFree: true,
-            content: "Buffer pool management, page eviction (LRU-K), and crash recovery with ARIES.",
-          },
-          {
-            title: "B+ Tree Indexing & Node Splitting Mechanics",
-            duration: "35 mins",
-            isFree: false,
-            content: "Fanout calculations, root-to-leaf searches, and range scans in clustered indices.",
+            content: "Page layout, slotted pages, LRU vs CLOCK buffer eviction policies.",
           },
         ],
       },
@@ -849,47 +968,128 @@ async function main() {
     ],
   });
 
-  console.log("✓ Seeded 13 comprehensive computer science curricula");
+  console.log("✓ Seeded all 13 comprehensive computer science curricula");
 
-  // 4. Seed Student Enrollments
+  // 3. Seed Realistic Enrollments across Multiple Courses
+  // Student 1 (Murtaza Wazir): Enrolled in 4 courses with certificates and progress
   await prisma.enrollment.create({
     data: {
-      userId: student.id,
+      userId: studentMurtaza.id,
       courseId: course1.id,
-      progress: 68.0,
+      progress: 100.0,
+      completedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
     },
   });
 
   await prisma.enrollment.create({
     data: {
-      userId: student.id,
+      userId: studentMurtaza.id,
+      courseId: course2.id,
+      progress: 100.0,
+      completedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+    },
+  });
+
+  await prisma.enrollment.create({
+    data: {
+      userId: studentMurtaza.id,
       courseId: course4.id,
-      progress: 35.0,
+      progress: 75.0,
+    },
+  });
+
+  await prisma.enrollment.create({
+    data: {
+      userId: studentMurtaza.id,
+      courseId: course7.id,
+      progress: 45.0,
+    },
+  });
+
+  // Student 2 (Ali Khan): Enrolled in course 1 and 5
+  await prisma.enrollment.create({
+    data: {
+      userId: studentAli.id,
+      courseId: course1.id,
+      progress: 60.0,
+    },
+  });
+
+  await prisma.enrollment.create({
+    data: {
+      userId: studentAli.id,
+      courseId: course5.id,
+      progress: 30.0,
+    },
+  });
+
+  // Student 3 (Fatima Noor): Enrolled in course 4 and 5
+  await prisma.enrollment.create({
+    data: {
+      userId: studentFatima.id,
+      courseId: course4.id,
+      progress: 90.0,
+    },
+  });
+
+  // 4. Seed Verified Digital Certificates
+  await prisma.certificate.create({
+    data: {
+      certificateCode: "SN-2026-X89J21",
+      userId: studentMurtaza.id,
+      courseId: course1.id,
+      issuedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    },
+  });
+
+  await prisma.certificate.create({
+    data: {
+      certificateCode: "SN-2026-B94K12",
+      userId: studentMurtaza.id,
+      courseId: course2.id,
+      issuedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
     },
   });
 
   // 5. Seed Course Reviews
   await prisma.review.create({
     data: {
-      userId: student.id,
+      userId: studentMurtaza.id,
       courseId: course1.id,
       rating: 5,
-      comment: "Exceptional course! The architectural depth and hands-on examples helped me ace my final semester project.",
+      comment: "Outstanding architectural rigor! The Server Components and relational 3NF modeling sections are world-class.",
     },
   });
 
-  // 6. Seed a sample certificate
-  await prisma.certificate.create({
+  await prisma.review.create({
     data: {
-      certificateCode: "SN-2026-X89J21",
-      userId: student.id,
+      userId: studentAli.id,
       courseId: course1.id,
-      issuedAt: new Date(),
+      rating: 5,
+      comment: "The best Next.js App Router guide available. Easy to follow, production-grade examples.",
     },
   });
 
-  console.log("✓ Seeded student enrollments, reviews, and verified certificates");
-  console.log("🚀 SkillNova Academy database seed completed successfully with 13 courses!");
+  await prisma.review.create({
+    data: {
+      userId: studentMurtaza.id,
+      courseId: course2.id,
+      rating: 5,
+      comment: "Prof. David Chen explains Go channels and the M:N scheduler with supreme clarity.",
+    },
+  });
+
+  await prisma.review.create({
+    data: {
+      userId: studentFatima.id,
+      courseId: course4.id,
+      rating: 5,
+      comment: "Dr. Sarah Mitchell breaks down autograd and backprop math intuitively.",
+    },
+  });
+
+  console.log("✓ Seeded realistic enrollments, reviews, and verified certificates");
+  console.log("🚀 SkillNova Academy database is fully populated and ready for FYP evaluation!");
 }
 
 main()

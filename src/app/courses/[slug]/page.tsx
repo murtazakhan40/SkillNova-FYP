@@ -19,6 +19,7 @@ import {
 import { formatPrice, formatDate } from "@/lib/utils";
 import { enrollInCourseAction } from "@/app/actions/enrollment";
 import { submitCourseReview } from "@/app/actions/learning";
+import { directCourseClassroomAccess } from "@/app/actions/auth";
 
 interface CourseDetailPageProps {
   params: Promise<{
@@ -421,22 +422,34 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
 
                 {isEnrolled ? (
                   <Link
-                    href="/dashboard/student"
+                    href={`/courses/${course.slug}/learn/${course.sections[0]?.lessons[0]?.id || ""}`}
                     className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-heading font-bold bg-[#0B1B3D] hover:bg-[#132752] text-white shadow-md btn-lift text-sm"
                   >
-                    <span>Already Enrolled • Go to Classroom</span>
+                    <span>Already Enrolled • Enter Classroom</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                 ) : (
-                  <form action={enrollInCourseAction.bind(null, course.id)}>
-                    <button
-                      type="submit"
-                      className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-heading font-bold bg-gradient-to-r from-[#FF6B00] to-[#EA580C] text-white shadow-lg shadow-orange-500/25 btn-lift text-sm cursor-pointer"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      <span>Enroll in Course</span>
-                    </button>
-                  </form>
+                  <div className="space-y-2">
+                    <form action={enrollInCourseAction.bind(null, course.id)}>
+                      <button
+                        type="submit"
+                        className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-heading font-bold bg-gradient-to-r from-[#FF6B00] to-[#EA580C] text-white shadow-lg shadow-orange-500/25 btn-lift text-sm cursor-pointer"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        <span>Enroll in Course</span>
+                      </button>
+                    </form>
+
+                    <form action={directCourseClassroomAccess.bind(null, course.id, course.slug)}>
+                      <button
+                        type="submit"
+                        className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl font-heading font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs btn-lift cursor-pointer shadow-sm"
+                      >
+                        <PlayCircle className="w-4 h-4 text-blue-600" />
+                        <span>Instant Demo: Enter Course Classroom</span>
+                      </button>
+                    </form>
+                  </div>
                 )}
 
                 {/* Features included */}

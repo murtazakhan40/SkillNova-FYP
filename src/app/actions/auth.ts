@@ -81,14 +81,19 @@ export async function registerAction(prevState: unknown, formData: FormData) {
   }
 }
 
-export async function quickDemoLogin(role: "STUDENT" | "TRAINER" | "ADMIN") {
+export async function quickDemoLogin(
+  role: "STUDENT" | "TRAINER" | "ADMIN",
+  customEmailOrFormData?: string | FormData,
+  redirectTo?: string
+) {
+  const customEmail = typeof customEmailOrFormData === "string" ? customEmailOrFormData : undefined;
   const emailMap = {
-    STUDENT: "murtazwazir.edu@gmail.com",
-    TRAINER: "trainer@skillnova.com",
-    ADMIN: "admin@skillnova.com",
+    STUDENT: customEmail || "murtazwazir.edu@gmail.com",
+    TRAINER: customEmail || "trainer@skillnova.com",
+    ADMIN: customEmail || "admin@skillnova.com",
   };
 
-  const targetEmail = emailMap[role];
+  const targetEmail = customEmail || emailMap[role];
   let user = await db.user.findUnique({
     where: { email: targetEmail },
   });
@@ -112,6 +117,10 @@ export async function quickDemoLogin(role: "STUDENT" | "TRAINER" | "ADMIN") {
     });
   }
 
+  if (redirectTo) {
+    redirect(redirectTo);
+  }
+
   if (role === "ADMIN") {
     redirect("/dashboard/admin");
   } else if (role === "TRAINER") {
@@ -119,6 +128,90 @@ export async function quickDemoLogin(role: "STUDENT" | "TRAINER" | "ADMIN") {
   } else {
     redirect("/dashboard/student");
   }
+}
+
+export async function loginWithFacultyEmail(email: string) {
+  const user = await db.user.findUnique({
+    where: { email: email.toLowerCase().trim() },
+  });
+  if (user) {
+    await createSession({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role as "STUDENT" | "TRAINER" | "ADMIN",
+      avatar: user.avatar,
+      headline: user.headline,
+      phone: user.phone,
+    });
+
+    if (user.role === "ADMIN") {
+      redirect("/dashboard/admin");
+    } else if (user.role === "TRAINER") {
+      redirect("/dashboard/trainer");
+    } else {
+      redirect("/dashboard/student");
+    }
+  }
+}
+
+export async function directCourseClassroomAccess(courseId: string, courseSlug: string) {
+  let user = await db.user.findUnique({
+    where: { email: "murtazwazir.edu@gmail.com" },
+  });
+  if (!user) {
+    user = await db.user.findFirst({
+      where: { role: "STUDENT" },
+    });
+  }
+
+  if (user) {
+    await createSession({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role as "STUDENT" | "TRAINER" | "ADMIN",
+      avatar: user.avatar,
+      headline: user.headline,
+      phone: user.phone,
+    });
+
+    // Ensure enrollment exists
+    const existingEnrollment = await db.enrollment.findUnique({
+      where: {
+        userId_courseId: {
+          userId: user.id,
+          courseId: courseId,
+        },
+      },
+    });
+
+    if (!existingEnrollment) {
+      await db.enrollment.create({
+        data: {
+          userId: user.id,
+          courseId: courseId,
+          progress: 15.0,
+        },
+      });
+    }
+
+    // Find first lesson of this course
+    const firstLesson = await db.lesson.findFirst({
+      where: {
+        section: {
+          courseId: courseId,
+        },
+      },
+      orderBy: { order: "asc" },
+    });
+
+    if (firstLesson) {
+      redirect(`/courses/${courseSlug}/learn/${firstLesson.id}`);
+    }
+  }
+
+  redirect(`/courses/${courseSlug}`);
 }
 
 export async function logoutAction() {
