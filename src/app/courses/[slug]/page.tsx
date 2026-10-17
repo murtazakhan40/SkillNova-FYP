@@ -114,12 +114,12 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                 </span>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-extrabold tracking-tight leading-tight">
                 {course.title}
               </h1>
 
               {course.subtitle && (
-                <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
+                <p className="text-base sm:text-lg text-slate-300 leading-relaxed font-normal">
                   {course.subtitle}
                 </p>
               )}
@@ -411,10 +411,10 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
               {/* Pricing & CTA */}
               <div className="p-6 space-y-5">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-3xl font-extrabold text-[#0B1B3D]">
+                  <span className="text-3xl font-heading font-extrabold text-[#0B1B3D]">
                     {formatPrice(course.price)}
                   </span>
-                  <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
                     Full Academic Access
                   </span>
                 </div>
@@ -422,7 +422,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                 {isEnrolled ? (
                   <Link
                     href="/dashboard/student"
-                    className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold bg-[#0B1B3D] hover:bg-[#132752] text-white shadow-md transition-all text-sm"
+                    className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-heading font-bold bg-[#0B1B3D] hover:bg-[#132752] text-white shadow-md btn-lift text-sm"
                   >
                     <span>Already Enrolled • Go to Classroom</span>
                     <ArrowRight className="w-4 h-4" />
@@ -431,7 +431,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                   <form action={enrollInCourseAction.bind(null, course.id)}>
                     <button
                       type="submit"
-                      className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold bg-[#FF6B00] hover:bg-[#EA580C] text-white shadow-lg shadow-orange-500/25 transition-all text-sm hover:scale-[1.01]"
+                      className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-heading font-bold bg-gradient-to-r from-[#FF6B00] to-[#EA580C] text-white shadow-lg shadow-orange-500/25 btn-lift text-sm cursor-pointer"
                     >
                       <Sparkles className="w-4 h-4" />
                       <span>Enroll in Course</span>

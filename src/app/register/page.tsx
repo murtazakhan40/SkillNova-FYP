@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { SkillNovaLogo } from "@/components/brand/SkillNovaLogo";
+import { HeroParticles } from "@/components/animations/HeroParticles";
 import { registerAction } from "@/app/actions/auth";
 import { 
   User, 
@@ -12,17 +13,18 @@ import {
 export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-[#0B1B3D] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-[#FF6B00]/10 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full bg-blue-600/15 blur-3xl pointer-events-none" />
+      <HeroParticles particleCount={25} />
+      <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-[#FF6B00]/10 blur-3xl pointer-events-none animate-pulse-glow" />
+      <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full bg-blue-600/15 blur-3xl pointer-events-none animate-pulse-glow" style={{ animationDelay: "2s" }} />
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10">
         <div className="flex justify-center mb-4">
           <SkillNovaLogo variant="light" size="lg" />
         </div>
-        <h2 className="text-2xl font-extrabold text-white">
+        <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-white tracking-tight">
           Create Your Free Account
         </h2>
-        <p className="mt-2 text-xs text-slate-400">
+        <p className="mt-2 text-xs sm:text-sm text-slate-400 font-normal">
           Join thousands of learners and instructors on SkillNova Academy.
         </p>
       </div>
@@ -118,7 +120,7 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-[#FF6B00] hover:bg-[#EA580C] shadow-md shadow-orange-500/20 transition-all hover:scale-[1.01] mt-2"
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-heading font-bold text-white bg-gradient-to-r from-[#FF6B00] to-[#EA580C] shadow-md shadow-orange-500/25 btn-lift cursor-pointer mt-2"
             >
               <span>Create Account</span>
               <ArrowRight className="w-4 h-4" />

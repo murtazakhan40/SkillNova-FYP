@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CourseCard } from "@/components/course/CourseCard";
+import { ScrollReveal } from "@/components/animations/ScrollReveal";
 import { Search, Filter, BookOpen, Sparkles } from "lucide-react";
 
 interface CoursesPageProps {
@@ -67,17 +68,18 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
       <Navbar />
 
       {/* Header Banner */}
-      <section className="bg-[#0B1B3D] text-white py-14 border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="bg-[#0B1B3D] text-white py-14 border-b border-slate-800 relative overflow-hidden">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-[#FF6B00]/10 blur-3xl pointer-events-none" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-[#132752] border border-[#1B376F] text-[#FF6B00] mb-4">
-              <Sparkles className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#132752] border border-[#1B376F] text-[#FF8533] mb-4 shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-[#FF6B00]" />
               <span>Academic Curriculum Catalog</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            <h1 className="text-3xl sm:text-5xl font-heading font-extrabold tracking-tight">
               Explore All Courses
             </h1>
-            <p className="text-sm text-slate-300 mt-2">
+            <p className="text-sm sm:text-base text-slate-300 mt-3 font-normal leading-relaxed">
               Browse through rigorous software development, artificial intelligence, and cloud engineering tracks.
             </p>
           </div>
@@ -170,8 +172,10 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
               Showing {courses.length} curriculum module{courses.length > 1 ? "s" : ""}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {courses.map((course) => (
-                <CourseCard key={course.id} course={course} />
+              {courses.map((course, idx) => (
+                <ScrollReveal key={course.id} delay={idx * 60} direction="up" distance={16}>
+                  <CourseCard course={course} />
+                </ScrollReveal>
               ))}
             </div>
           </div>

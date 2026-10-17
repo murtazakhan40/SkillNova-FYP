@@ -3,6 +3,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { HeroParticles } from "@/components/animations/HeroParticles";
 import { 
   Award, 
   CheckCircle2, 
@@ -45,16 +46,18 @@ export default async function VerifyCertificatePage({
       <Navbar />
 
       {/* Header Banner */}
-      <section className="bg-[#0B1B3D] text-white py-16 border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#132752] border border-[#1B376F] text-[#FF6B00] mb-4">
-            <Sparkles className="w-3.5 h-3.5" />
+      <section className="bg-[#0B1B3D] text-white py-16 border-b border-slate-800 relative overflow-hidden">
+        <HeroParticles particleCount={20} />
+        <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-[#FF6B00]/10 blur-3xl pointer-events-none animate-pulse-glow" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-3xl relative z-10">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#132752] border border-[#1B376F] text-[#FF8533] mb-4 shadow-sm">
+            <Sparkles className="w-3.5 h-3.5 text-[#FF6B00]" />
             <span>Cryptographic Credential Verification</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+          <h1 className="text-3xl sm:text-5xl font-heading font-extrabold tracking-tight">
             Verify SkillNova Academy Certificate
           </h1>
-          <p className="text-sm text-slate-300 mt-3 leading-relaxed">
+          <p className="text-sm sm:text-base text-slate-300 mt-3 leading-relaxed font-normal">
             Validate the authenticity of completion certificates issued by SkillNova Academy.
             Enter the unique credential identifier below.
           </p>
@@ -74,7 +77,7 @@ export default async function VerifyCertificatePage({
               </div>
               <button
                 type="submit"
-                className="px-6 py-3 rounded-xl text-xs font-bold bg-[#FF6B00] hover:bg-[#EA580C] text-white shadow-md transition-all shrink-0"
+                className="px-6 py-3 rounded-xl text-xs font-heading font-bold bg-[#FF6B00] hover:bg-[#EA580C] text-white shadow-md btn-lift shrink-0 cursor-pointer"
               >
                 Verify
               </button>

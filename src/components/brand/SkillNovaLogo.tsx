@@ -107,14 +107,17 @@ export const SkillNovaLogo: React.FC<SkillNovaLogoProps> = ({
 
       {/* Brand Typography */}
       {!iconOnly && (
-        <div className="flex flex-col leading-tight">
-          <div className={`font-extrabold tracking-tight ${currentSize.text} flex items-center`}>
+        <div className="flex flex-col leading-none">
+          <div className={`font-brand font-black tracking-tight ${currentSize.text} flex items-center transition-transform duration-200 group-hover:translate-x-0.5`}>
             <span className={isLight ? "text-white" : "text-[#0B1B3D]"}>Skill</span>
-            <span className="text-[#FF6B00] ml-0.5">Nova</span>
+            <span className="text-[#FF6B00] ml-0.5 relative">
+              Nova
+              <span className="absolute -top-1 -right-2 w-1.5 h-1.5 rounded-full bg-[#FF8533] opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-ping" />
+            </span>
           </div>
           <span
-            className={`font-semibold tracking-[0.25em] uppercase ${currentSize.sub} ${
-              isLight ? "text-slate-300" : "text-slate-500"
+            className={`font-sans font-bold tracking-[0.28em] uppercase ${currentSize.sub} mt-1 ${
+              isLight ? "text-slate-300/90" : "text-slate-500"
             }`}
           >
             Academy

@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { SkillNovaLogo } from "@/components/brand/SkillNovaLogo";
+import { HeroParticles } from "@/components/animations/HeroParticles";
 import { loginAction, quickDemoLogin } from "@/app/actions/auth";
 import { 
   ArrowRight, 
@@ -12,18 +13,19 @@ import {
 export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#0B1B3D] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background radial glows */}
-      <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-[#FF6B00]/10 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full bg-blue-600/15 blur-3xl pointer-events-none" />
+      {/* Background ambient particles & glows */}
+      <HeroParticles particleCount={25} />
+      <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-[#FF6B00]/10 blur-3xl pointer-events-none animate-pulse-glow" />
+      <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full bg-blue-600/15 blur-3xl pointer-events-none animate-pulse-glow" style={{ animationDelay: "2s" }} />
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10">
         <div className="flex justify-center mb-4">
           <SkillNovaLogo variant="light" size="lg" />
         </div>
-        <h2 className="text-2xl font-extrabold text-white">
+        <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-white tracking-tight">
           Sign In to Your Account
         </h2>
-        <p className="mt-2 text-xs text-slate-400">
+        <p className="mt-2 text-xs sm:text-sm text-slate-400 font-normal">
           Access your courses, dashboard, and learning materials.
         </p>
       </div>
@@ -124,7 +126,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-[#0B1B3D] hover:bg-[#132752] shadow-md transition-all hover:scale-[1.01] mt-2"
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-heading font-bold text-white bg-[#0B1B3D] hover:bg-[#132752] shadow-md btn-lift cursor-pointer mt-2"
             >
               <span>Sign In</span>
               <ArrowRight className="w-4 h-4 text-[#FF6B00]" />
