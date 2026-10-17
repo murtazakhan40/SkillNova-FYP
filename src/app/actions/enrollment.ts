@@ -1,17 +1,31 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
+/**
+ * Enroll in a Course.
+ * Strictly verifies user authentication and enforces the course pricing policy.
+ * Direct zero-dollar enrollment is restricted to free courses (price == 0).
+ */
 export async function enrollInCourseAction(courseId: string) {
-  const user = await getCurrentUser();
+  const user = await requireAuth();
 
-  if (!user) {
-    redirect("/login");
+  const course = await db.course.findUnique({
+    where: { id: courseId },
+  });
+
+  if (!course) {
+    throw new Error("Course not found");
   }
 
-  // Check if enrollment exists
+  // Enforce pricing policy: paid courses cannot be directly enrolled for free
+  if (course.price > 0) {
+    redirect(`/courses/${course.slug}?checkout_required=true`);
+  }
+
+  // Check if enrollment already exists
   const existing = await db.enrollment.findUnique({
     where: {
       userId_courseId: {
@@ -31,5 +45,5 @@ export async function enrollInCourseAction(courseId: string) {
     });
   }
 
-  redirect("/dashboard/student");
+  redirect("/dashboard/student/courses");
 }

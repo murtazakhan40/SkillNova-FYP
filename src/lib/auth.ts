@@ -1,43 +1,35 @@
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
+import {
+  SessionUser,
+  SESSION_COOKIE_NAME,
+  SESSION_MAX_AGE,
+  signSessionToken,
+  verifySessionToken,
+} from "./token";
 
-export interface SessionUser {
-  id: string;
-  name: string;
-  email: string;
-  role: "STUDENT" | "TRAINER" | "ADMIN";
-  avatar?: string | null;
-  headline?: string | null;
-  phone?: string | null;
-}
-
-const SESSION_COOKIE_NAME = "skillnova_session";
+export * from "./token";
 
 /**
- * Verify credentials and return user record if valid
+ * Verify user credentials against the database.
+ * Strictly uses bcrypt hash verification. Zero backdoor or hardcoded fallback credentials.
  */
-export async function verifyCredentials(email: string, password: string) {
+export async function verifyCredentials(
+  email: string,
+  password: string
+): Promise<SessionUser | null> {
+  const normalizedEmail = email.toLowerCase().trim();
   const user = await db.user.findUnique({
-    where: { email: email.toLowerCase().trim() },
+    where: { email: normalizedEmail },
   });
 
-  if (!user) {
+  if (!user || !user.passwordHash) {
     return null;
   }
 
-  let isValid = await bcrypt.compare(password, user.passwordHash);
-  if (!isValid) {
-    const clean = password.toLowerCase().replace(/[@_!]/g, "");
-    if (
-      (user.role === "ADMIN" && (password === "Admin@123" || clean === "admin123")) ||
-      (user.role === "TRAINER" && (password === "Trainer@123" || clean === "trainer123")) ||
-      (user.role === "STUDENT" && (password === "Student@123" || clean === "student123"))
-    ) {
-      isValid = true;
-    }
-  }
-
+  // Strict bcrypt validation
+  const isValid = await bcrypt.compare(password, user.passwordHash);
   if (!isValid) {
     return null;
   }
@@ -54,24 +46,24 @@ export async function verifyCredentials(email: string, password: string) {
 }
 
 /**
- * Create a secure session cookie
+ * Create an HttpOnly, Secure, SameSite, cryptographically signed session cookie.
  */
 export async function createSession(user: SessionUser) {
   const cookieStore = await cookies();
-  const sessionData = JSON.stringify(user);
-  const encoded = Buffer.from(sessionData).toString("base64");
+  const token = signSessionToken(user);
 
-  cookieStore.set(SESSION_COOKIE_NAME, encoded, {
+  cookieStore.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    maxAge: SESSION_MAX_AGE,
   });
 }
 
 /**
- * Read current logged-in user from session cookie
+ * Read current logged-in user from signed session cookie.
+ * Returns null if missing, forged, or expired.
  */
 export async function getCurrentUser(): Promise<SessionUser | null> {
   try {
@@ -82,18 +74,73 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
       return null;
     }
 
-    const decoded = Buffer.from(sessionCookie.value, "base64").toString("utf-8");
-    const user = JSON.parse(decoded) as SessionUser;
-    return user;
+    return verifySessionToken(sessionCookie.value);
   } catch {
     return null;
   }
 }
 
 /**
- * Terminate current session
+ * Terminate current session by clearing the cookie with maxAge=0.
  */
 export async function destroySession() {
   const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE_NAME);
+  cookieStore.set(SESSION_COOKIE_NAME, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+}
+
+/**
+ * Server-Side Assertion: Require an authenticated session.
+ */
+export async function requireAuth(): Promise<SessionUser> {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("Unauthorized: Authentication required.");
+  }
+  return user;
+}
+
+/**
+ * Server-Side Assertion: Require a specific user role.
+ */
+export async function requireRole(
+  allowedRoles: ("STUDENT" | "TRAINER" | "ADMIN")[]
+): Promise<SessionUser> {
+  const user = await requireAuth();
+  if (!allowedRoles.includes(user.role)) {
+    throw new Error(
+      `Forbidden: Access denied. Required role: [${allowedRoles.join(
+        ", "
+      )}]. Current: [${user.role}].`
+    );
+  }
+  return user;
+}
+
+/**
+ * Server-Side Assertion: Verify that a student is actively enrolled in a course.
+ */
+export async function requireCourseEnrollment(
+  userId: string,
+  courseId: string
+): Promise<boolean> {
+  const enrollment = await db.enrollment.findUnique({
+    where: {
+      userId_courseId: {
+        userId,
+        courseId,
+      },
+    },
+  });
+
+  if (!enrollment) {
+    throw new Error("Forbidden: Active course enrollment is required.");
+  }
+
+  return true;
 }

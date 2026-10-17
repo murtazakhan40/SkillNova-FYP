@@ -2,17 +2,20 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import {
+  getCurrentUser,
+  requireAuth,
+  requireRole,
+  requireCourseEnrollment,
+} from "@/lib/auth";
 import { db } from "@/lib/db";
 
 /**
- * Mark a lesson as completed, calculate course progress, and auto-issue certificate at 100%
+ * Mark a lesson as completed, calculate course progress, and auto-issue certificate at 100%.
+ * Strictly requires the student to be actively enrolled in the course.
  */
 export async function toggleLessonProgress(lessonId: string, courseSlug: string) {
-  const user = await getCurrentUser();
-  if (!user) {
-    redirect("/login");
-  }
+  const user = await requireAuth();
 
   // Find lesson and verify course
   const lesson = await db.lesson.findUnique({
@@ -37,6 +40,9 @@ export async function toggleLessonProgress(lessonId: string, courseSlug: string)
   }
 
   const course = lesson.section.course;
+
+  // Enforce server-side course enrollment authorization
+  await requireCourseEnrollment(user.id, course.id);
 
   // Toggle progress in DB
   const existingProgress = await db.lessonProgress.findUnique({
@@ -83,9 +89,8 @@ export async function toggleLessonProgress(lessonId: string, courseSlug: string)
     },
   });
 
-  const progressPercent = totalLessons > 0
-    ? Math.round((completedCount / totalLessons) * 100)
-    : 0;
+  const progressPercent =
+    totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
   // Update Enrollment record in DB
   await db.enrollment.upsert({
@@ -139,16 +144,14 @@ export async function toggleLessonProgress(lessonId: string, courseSlug: string)
 }
 
 /**
- * Submit Course Assessment Quiz and record attempt in database
+ * Submit Course Assessment Quiz and record attempt in database.
+ * Strictly verifies the student is actively enrolled in the course.
  */
 export async function submitQuizAttempt(
   quizId: string,
   answers: Record<string, number>
 ) {
-  const user = await getCurrentUser();
-  if (!user) {
-    redirect("/login");
-  }
+  const user = await requireAuth();
 
   const quiz = await db.quiz.findUnique({
     where: { id: quizId },
@@ -161,6 +164,9 @@ export async function submitQuizAttempt(
   if (!quiz) {
     throw new Error("Quiz not found");
   }
+
+  // Enforce server-side course enrollment authorization
+  await requireCourseEnrollment(user.id, quiz.courseId);
 
   let correctCount = 0;
   quiz.questions.forEach((q) => {
@@ -199,22 +205,23 @@ export async function submitQuizAttempt(
 }
 
 /**
- * Submit student review for a course
+ * Submit student review for a course.
+ * Strictly checks that the student is enrolled in the course.
  */
 export async function submitCourseReview(formData: FormData) {
-  const user = await getCurrentUser();
-  if (!user) {
-    redirect("/login");
-  }
+  const user = await requireAuth();
 
   const courseId = formData.get("courseId") as string;
   const courseSlug = formData.get("courseSlug") as string;
   const rating = parseInt(formData.get("rating") as string, 10) || 5;
-  const comment = formData.get("comment") as string;
+  const comment = (formData.get("comment") as string)?.trim();
 
   if (!courseId || !comment) {
     return;
   }
+
+  // Enforce server-side course enrollment authorization
+  await requireCourseEnrollment(user.id, courseId);
 
   await db.review.upsert({
     where: {
@@ -240,17 +247,15 @@ export async function submitCourseReview(formData: FormData) {
 }
 
 /**
- * Trainer: Create New Course in Database
+ * Trainer/Admin: Create New Course in Database.
+ * Strictly enforces TRAINER or ADMIN role.
  */
 export async function createCourseAction(formData: FormData): Promise<void> {
-  const user = await getCurrentUser();
-  if (!user || (user.role !== "TRAINER" && user.role !== "ADMIN")) {
-    redirect("/login");
-  }
+  const user = await requireRole(["TRAINER", "ADMIN"]);
 
-  const title = formData.get("title") as string;
-  const subtitle = formData.get("subtitle") as string;
-  const description = formData.get("description") as string;
+  const title = (formData.get("title") as string)?.trim();
+  const subtitle = (formData.get("subtitle") as string)?.trim();
+  const description = (formData.get("description") as string)?.trim();
   const categoryId = formData.get("categoryId") as string;
   const level = (formData.get("level") as string) || "BEGINNER";
   const price = parseFloat(formData.get("price") as string) || 0;
@@ -310,13 +315,11 @@ export async function createCourseAction(formData: FormData): Promise<void> {
 }
 
 /**
- * Admin: Toggle course publish state
+ * Admin: Toggle course publish state.
+ * Strictly enforces ADMIN role.
  */
 export async function toggleCoursePublish(courseId: string, published: boolean) {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "ADMIN") {
-    redirect("/login");
-  }
+  await requireRole(["ADMIN"]);
 
   await db.course.update({
     where: { id: courseId },
@@ -328,12 +331,19 @@ export async function toggleCoursePublish(courseId: string, published: boolean) 
 }
 
 /**
- * Admin: Change user role in database
+ * Admin: Change user role in database.
+ * Strictly enforces ADMIN role.
  */
 export async function updateUserRole(userId: string, newRole: string) {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "ADMIN") {
-    redirect("/login");
+  const admin = await requireRole(["ADMIN"]);
+
+  // Prevent admin from removing their own admin role
+  if (userId === admin.id && newRole !== "ADMIN") {
+    throw new Error("Safety violation: Administrators cannot demote their own account.");
+  }
+
+  if (!["STUDENT", "TRAINER", "ADMIN"].includes(newRole.toUpperCase())) {
+    throw new Error("Invalid role requested.");
   }
 
   await db.user.update({
@@ -346,19 +356,17 @@ export async function updateUserRole(userId: string, newRole: string) {
 }
 
 /**
- * Admin: Assign Trainer to Course
+ * Admin: Assign Trainer to Course.
+ * Strictly enforces ADMIN role.
  */
 export async function assignCourseInstructorAction(courseId: string, instructorId: string) {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "ADMIN") {
-    redirect("/login");
-  }
+  await requireRole(["ADMIN"]);
 
   const instructor = await db.user.findUnique({
     where: { id: instructorId },
   });
 
-  if (!instructor || instructor.role !== "TRAINER") {
+  if (!instructor || (instructor.role !== "TRAINER" && instructor.role !== "ADMIN")) {
     throw new Error("Target user is not an approved faculty trainer.");
   }
 
@@ -373,13 +381,11 @@ export async function assignCourseInstructorAction(courseId: string, instructorI
 }
 
 /**
- * Admin or Assigned Trainer: Update Course Metadata
+ * Admin or Assigned Trainer: Update Course Metadata.
+ * Strictly verifies ADMIN role or matching instructor ownership.
  */
 export async function updateCourseDetailsAction(courseId: string, formData: FormData) {
-  const user = await getCurrentUser();
-  if (!user || (user.role !== "ADMIN" && user.role !== "TRAINER")) {
-    redirect("/login");
-  }
+  const user = await requireRole(["ADMIN", "TRAINER"]);
 
   const course = await db.course.findUnique({
     where: { id: courseId },
