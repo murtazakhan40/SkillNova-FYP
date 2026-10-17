@@ -48,6 +48,7 @@ export function DashboardSidebar({ user, onCloseMobile }: DashboardSidebarProps)
     { label: "Add New Course", href: "/dashboard/trainer/new-course", icon: PlusCircle },
     { label: "Enrolled Students", href: "/dashboard/trainer/students", icon: Users },
     { label: "Assessments & Quizzes", href: "/dashboard/trainer/assessments", icon: HelpCircle },
+    { label: "Profile & Settings", href: "/dashboard/trainer/profile", icon: UserCheck },
   ];
 
   const adminLinks = [

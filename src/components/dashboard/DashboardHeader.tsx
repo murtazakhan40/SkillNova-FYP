@@ -350,6 +350,14 @@ export function DashboardHeader({
                         <HelpCircle className="w-4 h-4 text-slate-400" />
                         <span>Assessment Reviews</span>
                       </Link>
+                      <Link
+                        href="/dashboard/trainer/profile"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B1B3D]"
+                      >
+                        <UserIcon className="w-4 h-4 text-slate-400" />
+                        <span>Profile & Settings</span>
+                      </Link>
                     </>
                   )}
 
