@@ -2,20 +2,25 @@ import React from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { getAdminNotifications } from "@/lib/notifications";
+import { 
+  AdminSettingsClient, 
+  BroadcastAnnouncementItem 
+} from "@/components/dashboard/AdminSettingsClient";
 import { 
   ArrowLeft, 
   Settings, 
   ShieldCheck, 
   Database, 
   Server, 
-  Bell, 
   CheckCircle2, 
   Lock,
   Sparkles,
-  Save
+  Layers
 } from "lucide-react";
+import { formatDate } from "@/lib/utils";
 
 export default async function AdminSettingsPage() {
   const user = await getCurrentUser();
@@ -24,7 +29,41 @@ export default async function AdminSettingsPage() {
     redirect(user ? "/dashboard/student" : "/login");
   }
 
-  const notifications = await getAdminNotifications();
+  const [notifications, auditAnnouncements] = await Promise.all([
+    getAdminNotifications(),
+    db.auditLog.findMany({
+      where: { action: "BROADCAST_ANNOUNCEMENT" },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+  ]);
+
+  const announcementItems: BroadcastAnnouncementItem[] = auditAnnouncements.map((log) => {
+    let title = "Official Notice";
+    let message = "System update";
+    let priority = "NORMAL";
+    let scope = "ALL";
+    let authorName = "Administrator";
+
+    try {
+      const parsed = JSON.parse(log.details || "{}");
+      title = parsed.title || title;
+      message = parsed.message || message;
+      priority = parsed.priority || priority;
+      scope = parsed.scope || scope;
+      authorName = parsed.authorName || authorName;
+    } catch {}
+
+    return {
+      id: log.id,
+      title,
+      message,
+      priority,
+      scope,
+      authorName,
+      createdAt: formatDate(log.createdAt),
+    };
+  });
 
   return (
     <DashboardShell user={user} notifications={notifications}>
@@ -51,7 +90,10 @@ export default async function AdminSettingsPage() {
           </p>
         </div>
 
-        {/* System Settings Card */}
+        {/* Interactive Announcement Broadcast Composer & Active Stream */}
+        <AdminSettingsClient announcements={announcementItems} />
+
+        {/* System Settings & Institutional Parameters */}
         <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 sm:p-8 space-y-6">
           <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
             <div>
@@ -59,7 +101,7 @@ export default async function AdminSettingsPage() {
                 SkillNova Academy Institutional Parameters
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Global settings applied across student, trainer, and catalog modules
+                Global configuration applied across student, trainer, and catalog modules
               </p>
             </div>
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200">
@@ -104,25 +146,6 @@ export default async function AdminSettingsPage() {
                 <div>• Engine: SQLite 3NF Normalized Schema</div>
                 <div>• ORM: Prisma Client 6.x</div>
                 <div>• Integrity: Foreign Key Cascades & Indices</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Broadcast Announcement Preview */}
-          <div className="pt-4 border-t border-slate-100 space-y-3">
-            <div className="flex items-center gap-2">
-              <Bell className="w-4 h-4 text-[#FF6B00]" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                Active Institutional Broadcast Announcement
-              </h3>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-orange-50 border border-orange-200 text-xs text-orange-900 flex items-start gap-3">
-              <Sparkles className="w-5 h-5 text-[#FF6B00] shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold">Official FYP Evaluator Notice: </span>
-                SkillNova digital credentials are authenticated via SHA-256 cryptographic verification.
-                Evaluators can inspect full student coursework progression and test live role switching.
               </div>
             </div>
           </div>

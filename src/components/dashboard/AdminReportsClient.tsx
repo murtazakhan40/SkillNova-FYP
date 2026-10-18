@@ -9,7 +9,10 @@ import {
   CheckCircle2, 
   Star, 
   Award,
-  Layers
+  Layers,
+  Search,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 
@@ -43,6 +46,9 @@ export function AdminReportsClient({
   totalCertificates,
 }: AdminReportsClientProps) {
   const [selectedCategory, setSelectedCategory] = useState("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 8;
 
   // Extract unique categories
   const categories = useMemo(() => {
@@ -53,9 +59,26 @@ export function AdminReportsClient({
 
   // Filtered
   const filteredCourses = useMemo(() => {
-    if (selectedCategory === "ALL") return courses;
-    return courses.filter((c) => c.categoryName === selectedCategory);
-  }, [courses, selectedCategory]);
+    return courses.filter((c) => {
+      if (selectedCategory !== "ALL" && c.categoryName !== selectedCategory) {
+        return false;
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchTitle = c.title.toLowerCase().includes(q);
+        const matchInstructor = c.instructorName.toLowerCase().includes(q);
+        if (!matchTitle && !matchInstructor) return false;
+      }
+      return true;
+    });
+  }, [courses, selectedCategory, searchQuery]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredCourses.length / pageSize) || 1;
+  const paginatedCourses = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredCourses.slice(start, start + pageSize);
+  }, [filteredCourses, currentPage]);
 
   // Overall totals
   const totalRevenue = useMemo(() => {
@@ -167,26 +190,45 @@ export function AdminReportsClient({
 
       {/* Filter and Export Bar */}
       <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-400" />
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 bg-white focus:outline-hidden"
-          >
-            <option value="ALL">All Disciplines & Tracks</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+        <div className="flex items-center gap-2 flex-1">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Search course or instructor..."
+              className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:outline-hidden focus:border-[#FF6B00]"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <select
+              value={selectedCategory}
+              onChange={(e) => {
+                setSelectedCategory(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 bg-white focus:outline-hidden"
+            >
+              <option value="ALL">All Disciplines ({categories.length})</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <button
           type="button"
           onClick={handleExportCSV}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#0B1B3D] hover:bg-[#132752] text-white shadow-xs transition-all"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#0B1B3D] hover:bg-[#132752] text-white shadow-xs transition-all shrink-0"
         >
           <Download className="w-3.5 h-3.5 text-[#FF6B00]" />
           <span>Export Enrollment Report (CSV)</span>
@@ -219,47 +261,84 @@ export function AdminReportsClient({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
-              {filteredCourses.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="py-4 px-6 font-bold text-[#0B1B3D] max-w-xs">
-                    <div>{c.title}</div>
-                    <div className="text-[10px] text-slate-400 font-normal">
-                      {c.categoryName}
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 text-slate-700">
-                    {c.instructorName}
-                  </td>
-                  <td className="py-4 px-6 text-slate-700 font-semibold">
-                    {formatPrice(c.price)}
-                  </td>
-                  <td className="py-4 px-6 font-extrabold text-[#FF6B00]">
-                    {c.enrolledCount}
-                  </td>
-                  <td className="py-4 px-6 font-bold text-emerald-600">
-                    {c.completedCount}
-                  </td>
-                  <td className="py-4 px-6">
-                    <div className="space-y-1 max-w-[120px]">
-                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
-                        <span>{c.averageProgress}%</span>
+              {paginatedCourses.length > 0 ? (
+                paginatedCourses.map((c) => (
+                  <tr key={c.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-4 px-6 font-bold text-[#0B1B3D] max-w-xs">
+                      <div>{c.title}</div>
+                      <div className="text-[10px] text-slate-400 font-normal">
+                        {c.categoryName}
                       </div>
-                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className="bg-gradient-to-r from-[#FF6B00] to-amber-400 h-1.5 rounded-full"
-                          style={{ width: `${c.averageProgress}%` }}
-                        />
+                    </td>
+                    <td className="py-4 px-6 text-slate-700">
+                      {c.instructorName}
+                    </td>
+                    <td className="py-4 px-6 text-slate-700 font-semibold">
+                      {formatPrice(c.price)}
+                    </td>
+                    <td className="py-4 px-6 font-extrabold text-[#FF6B00]">
+                      {c.enrolledCount}
+                    </td>
+                    <td className="py-4 px-6 font-bold text-emerald-600">
+                      {c.completedCount}
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="space-y-1 max-w-[120px]">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                          <span>{c.averageProgress}%</span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className="bg-gradient-to-r from-[#FF6B00] to-amber-400 h-1.5 rounded-full"
+                            style={{ width: `${c.averageProgress}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 text-right font-bold text-[#0B1B3D]">
-                    {formatPrice(c.revenue)}
+                    </td>
+                    <td className="py-4 px-6 text-right font-bold text-[#0B1B3D]">
+                      {formatPrice(c.revenue)}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-slate-400">
+                    No course tracks match your search or filter.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+            <span className="text-xs text-slate-500">
+              Page <span className="font-bold text-slate-700">{currentPage}</span> of{" "}
+              <span className="font-bold text-slate-700">{totalPages}</span>
+            </span>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

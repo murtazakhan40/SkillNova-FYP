@@ -16,7 +16,8 @@ import {
   UserCheck,
   Compass,
   X,
-  Settings
+  Settings,
+  Layers
 } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 
@@ -55,6 +56,7 @@ export function DashboardSidebar({ user, onCloseMobile }: DashboardSidebarProps)
     { label: "Platform Metrics", href: "/dashboard/admin", icon: LayoutDashboard },
     { label: "Course Moderation", href: "/dashboard/admin/courses", icon: BookOpen },
     { label: "User Governance", href: "/dashboard/admin/users", icon: Users },
+    { label: "Enrollment Oversight", href: "/dashboard/admin/enrollments", icon: Layers },
     { label: "Academic Reports", href: "/dashboard/admin/reports", icon: BarChart3 },
     { label: "System Settings", href: "/dashboard/admin/settings", icon: Settings },
   ];

@@ -15,9 +15,10 @@ import {
   Mail,
   Phone,
   Calendar,
-  CheckCircle2
+  CheckCircle2,
+  AlertCircle
 } from "lucide-react";
-import { updateUserRole } from "@/app/actions/learning";
+import { updateUserRoleAction } from "@/app/actions/admin";
 
 export interface UserDirectoryItem {
   id: string;
@@ -59,6 +60,7 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
   } | null>(null);
 
   const [isUpdating, setIsUpdating] = useState(false);
+  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // Counts
   const counts = useMemo(() => {
@@ -98,11 +100,19 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
   const handleConfirmRoleChange = async () => {
     if (!pendingRoleChange) return;
     setIsUpdating(true);
+    setToast(null);
     try {
-      await updateUserRole(pendingRoleChange.user.id, pendingRoleChange.targetRole);
+      await updateUserRoleAction(pendingRoleChange.user.id, pendingRoleChange.targetRole);
+      setToast({
+        type: "success",
+        message: `Successfully changed ${pendingRoleChange.user.name}'s role to ${pendingRoleChange.targetRole}.`,
+      });
       setPendingRoleChange(null);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setToast({
+        type: "error",
+        message: err?.message || "Failed to update user role.",
+      });
     } finally {
       setIsUpdating(false);
     }
@@ -110,6 +120,33 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
 
   return (
     <div className="space-y-6">
+      {/* Toast Feedback */}
+      {toast && (
+        <div
+          className={`p-4 rounded-2xl flex items-center justify-between gap-3 text-xs font-semibold border ${
+            toast.type === "success"
+              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+              : "bg-rose-50 text-rose-800 border-rose-200"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {toast.type === "success" ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            )}
+            <span>{toast.message}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="text-xs font-bold hover:underline opacity-80"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Search and Role Filter Tabs */}
       <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

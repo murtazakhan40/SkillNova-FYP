@@ -39,7 +39,11 @@ export default async function AdminCoursesPage() {
       orderBy: { name: "asc" },
     }),
     db.category.findMany({
-      select: { id: true, name: true },
+      include: {
+        _count: {
+          select: { courses: true },
+        },
+      },
       orderBy: { name: "asc" },
     }),
   ]);
@@ -68,9 +72,13 @@ export default async function AdminCoursesPage() {
     email: t.email,
   }));
 
-  const categoryOptions: CategoryOption[] = categories.map((cat) => ({
+  const categoryOptions: CategoryOption[] = categories.map((cat: any) => ({
     id: cat.id,
     name: cat.name,
+    slug: cat.slug,
+    description: cat.description,
+    icon: cat.icon,
+    coursesCount: cat._count?.courses ?? 0,
   }));
 
   return (

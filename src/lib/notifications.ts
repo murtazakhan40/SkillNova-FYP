@@ -142,7 +142,32 @@ export async function getStudentNotifications(
     }
   });
 
-  // 6. Official Academic Announcement
+  // 6. Broadcast Announcements (if any published by administrators)
+  try {
+    const broadcasts = await dbClient.auditLog.findMany({
+      where: { action: "BROADCAST_ANNOUNCEMENT" },
+      orderBy: { createdAt: "desc" },
+      take: 2,
+    });
+    broadcasts.forEach((b: any) => {
+      try {
+        const details = JSON.parse(b.details || "{}");
+        if (!details.scope || details.scope === "ALL" || details.scope === "STUDENTS") {
+          notifications.unshift({
+            id: `broadcast-${b.id}`,
+            type: "SYSTEM",
+            title: details.title || "Institutional Announcement",
+            message: details.message || "Important platform update from administration.",
+            timestamp: formatDate(b.createdAt),
+            link: "/dashboard/student",
+            unread: details.priority === "URGENT",
+          });
+        }
+      } catch {}
+    });
+  } catch {}
+
+  // 7. Official Academic Announcement
   notifications.push({
     id: "academic-fyp-notice",
     type: "ACADEMIC",
@@ -159,16 +184,41 @@ export async function getStudentNotifications(
 /**
  * Fetch authentic notifications for an administrator
  */
-export async function getAdminNotifications(): Promise<DashboardNotification[]> {
+export async function getAdminNotifications(
+  dbClient: any = db
+): Promise<DashboardNotification[]> {
   const notifications: DashboardNotification[] = [];
 
+  // 0. Active Broadcast Announcements
+  try {
+    const broadcasts = await dbClient.auditLog.findMany({
+      where: { action: "BROADCAST_ANNOUNCEMENT" },
+      orderBy: { createdAt: "desc" },
+      take: 2,
+    });
+    broadcasts.forEach((b: any) => {
+      try {
+        const details = JSON.parse(b.details || "{}");
+        notifications.push({
+          id: `broadcast-${b.id}`,
+          type: "SYSTEM",
+          title: `[Announcement] ${details.title || "Institutional Notice"}`,
+          message: `${details.message} (Scope: ${details.scope || "ALL"}, Priority: ${details.priority || "NORMAL"})`,
+          timestamp: formatDate(b.createdAt),
+          link: "/dashboard/admin/settings",
+          unread: false,
+        });
+      } catch {}
+    });
+  } catch {}
+
   // 1. Recent Registrations
-  const recentUsers = await db.user.findMany({
+  const recentUsers = await dbClient.user.findMany({
     orderBy: { createdAt: "desc" },
     take: 2,
   });
 
-  recentUsers.forEach((u) => {
+  recentUsers.forEach((u: any) => {
     notifications.push({
       id: `admin-user-${u.id}`,
       type: "USER",
@@ -181,13 +231,13 @@ export async function getAdminNotifications(): Promise<DashboardNotification[]> 
   });
 
   // 2. Recent Enrollments
-  const recentEnrollments = await db.enrollment.findMany({
+  const recentEnrollments = await dbClient.enrollment.findMany({
     include: { user: true, course: true },
     orderBy: { createdAt: "desc" },
     take: 2,
   });
 
-  recentEnrollments.forEach((enr) => {
+  recentEnrollments.forEach((enr: any) => {
     notifications.push({
       id: `admin-enr-${enr.id}`,
       type: "ENROLLMENT",
@@ -221,6 +271,31 @@ export async function getTrainerNotifications(
   dbClient: any = db
 ): Promise<DashboardNotification[]> {
   const notifications: DashboardNotification[] = [];
+
+  // 0. Active Broadcast Announcements
+  try {
+    const broadcasts = await dbClient.auditLog.findMany({
+      where: { action: "BROADCAST_ANNOUNCEMENT" },
+      orderBy: { createdAt: "desc" },
+      take: 2,
+    });
+    broadcasts.forEach((b: any) => {
+      try {
+        const details = JSON.parse(b.details || "{}");
+        if (!details.scope || details.scope === "ALL" || details.scope === "TRAINERS") {
+          notifications.unshift({
+            id: `broadcast-${b.id}`,
+            type: "SYSTEM",
+            title: details.title || "Institutional Announcement",
+            message: details.message || "Important platform update from administration.",
+            timestamp: formatDate(b.createdAt),
+            link: "/dashboard/trainer",
+            unread: details.priority === "URGENT",
+          });
+        }
+      } catch {}
+    });
+  } catch {}
 
   // Find trainer's courses
   const trainerCourses = await dbClient.course.findMany({
