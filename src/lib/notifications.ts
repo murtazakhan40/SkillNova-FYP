@@ -3,7 +3,7 @@ import { formatDate } from "@/lib/utils";
 
 export interface DashboardNotification {
   id: string;
-  type: "CERTIFICATE" | "QUIZ" | "ENROLLMENT" | "ACADEMIC" | "SYSTEM" | "USER";
+  type: "CERTIFICATE" | "QUIZ" | "ENROLLMENT" | "ASSIGNMENT" | "ACADEMIC" | "SYSTEM" | "USER";
   title: string;
   message: string;
   timestamp: string;
@@ -15,11 +15,42 @@ export type StudentNotification = DashboardNotification;
 
 /**
  * Fetch genuine notifications for a student
+ * Strict user isolation: only retrieves events owned by this student
  */
 export async function getStudentNotifications(userId: string): Promise<DashboardNotification[]> {
   const notifications: DashboardNotification[] = [];
 
-  // 1. Earned Certificates
+  // 1. Assignment Evaluation Feedback (Graded or Revision Requested)
+  const assignmentSubmissions = await db.assignmentSubmission.findMany({
+    where: {
+      userId,
+      status: { in: ["GRADED", "RESUBMIT_REQUESTED"] },
+    },
+    include: {
+      assignment: {
+        include: { course: true },
+      },
+    },
+    orderBy: { updatedAt: "desc" },
+    take: 3,
+  });
+
+  assignmentSubmissions.forEach((sub) => {
+    const isResubmit = sub.status === "RESUBMIT_REQUESTED";
+    notifications.push({
+      id: `assign-feedback-${sub.id}-${sub.updatedAt.getTime()}`,
+      type: "ASSIGNMENT",
+      title: isResubmit ? "Assignment Needs Resubmission" : "Assignment Graded & Evaluated",
+      message: isResubmit
+        ? `Instructor feedback on "${sub.assignment.title}": "${sub.feedback || "Please revise and resubmit your work."}"`
+        : `You scored ${sub.score ?? 0}/${sub.assignment.maxScore} on "${sub.assignment.title}" (${sub.assignment.course.title}).${sub.feedback ? ` Note: "${sub.feedback}"` : ""}`,
+      timestamp: formatDate(sub.updatedAt),
+      link: `/courses/${sub.assignment.course.slug}/learn`,
+      unread: true,
+    });
+  });
+
+  // 2. Earned Digital Certificates
   const certificates = await db.certificate.findMany({
     where: { userId },
     include: { course: true },
@@ -39,7 +70,7 @@ export async function getStudentNotifications(userId: string): Promise<Dashboard
     });
   });
 
-  // 2. Recent Quiz Submissions
+  // 3. Recent Quiz Submissions
   const submissions = await db.quizSubmission.findMany({
     where: { userId },
     include: {
@@ -63,7 +94,30 @@ export async function getStudentNotifications(userId: string): Promise<Dashboard
     });
   });
 
-  // 3. Active Course Progress Milestone
+  // 4. Confirmed Enrollment / Orders
+  const recentOrders = await db.order.findMany({
+    where: {
+      userId,
+      status: "COMPLETED",
+    },
+    include: { course: true },
+    orderBy: { updatedAt: "desc" },
+    take: 2,
+  });
+
+  recentOrders.forEach((order) => {
+    notifications.push({
+      id: `order-enr-${order.id}`,
+      type: "ENROLLMENT",
+      title: "Enrollment Confirmed",
+      message: `Official access activated for "${order.course.title}". Course syllabus is ready.`,
+      timestamp: formatDate(order.updatedAt),
+      link: `/courses/${order.course.slug}/learn`,
+      unread: false,
+    });
+  });
+
+  // 5. Active Course Progress Milestone
   const enrollments = await db.enrollment.findMany({
     where: { userId },
     include: { course: true },
@@ -85,7 +139,7 @@ export async function getStudentNotifications(userId: string): Promise<Dashboard
     }
   });
 
-  // 4. Official Academic Announcement
+  // 6. Official Academic Announcement
   notifications.push({
     id: "academic-fyp-notice",
     type: "ACADEMIC",
@@ -170,7 +224,33 @@ export async function getTrainerNotifications(trainerId: string): Promise<Dashbo
 
   const courseIds = trainerCourses.map((c) => c.id);
 
-  // 1. Recent student enrollments in trainer's courses
+  // 1. Pending student assignment submissions awaiting evaluation
+  const pendingAssignments = await db.assignmentSubmission.findMany({
+    where: {
+      assignment: { courseId: { in: courseIds } },
+      status: "SUBMITTED",
+    },
+    include: {
+      user: true,
+      assignment: { include: { course: true } },
+    },
+    orderBy: { submittedAt: "desc" },
+    take: 4,
+  });
+
+  pendingAssignments.forEach((sub) => {
+    notifications.push({
+      id: `trainer-assign-${sub.id}-${sub.submittedAt.getTime()}`,
+      type: "ASSIGNMENT",
+      title: "New Assignment Submitted",
+      message: `${sub.user.name} submitted "${sub.assignment.title}" (${sub.assignment.course.title}) for review.`,
+      timestamp: formatDate(sub.submittedAt),
+      link: `/dashboard/trainer/assessments`,
+      unread: true,
+    });
+  });
+
+  // 2. Recent student enrollments in trainer's courses
   const studentEnrollments = await db.enrollment.findMany({
     where: { courseId: { in: courseIds } },
     include: { user: true, course: true },
@@ -190,7 +270,7 @@ export async function getTrainerNotifications(trainerId: string): Promise<Dashbo
     });
   });
 
-  // 2. Recent quiz submissions in trainer's courses
+  // 3. Recent quiz submissions in trainer's courses
   const quizSubs = await db.quizSubmission.findMany({
     where: {
       quiz: { courseId: { in: courseIds } },
@@ -215,7 +295,7 @@ export async function getTrainerNotifications(trainerId: string): Promise<Dashbo
     });
   });
 
-  // 3. Faculty broadcast
+  // 4. Faculty broadcast
   notifications.push({
     id: "trainer-faculty-notice",
     type: "ACADEMIC",

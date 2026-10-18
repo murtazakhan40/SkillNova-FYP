@@ -14,13 +14,13 @@ import {
   LogOut, 
   CheckCircle2, 
   Clock, 
-  ExternalLink,
   ChevronDown,
   Sparkles,
   ShieldCheck,
   LayoutDashboard,
   Users,
-  Settings
+  Settings,
+  FileCheck2
 } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 import type { DashboardNotification } from "@/lib/notifications";
@@ -66,10 +66,77 @@ export function DashboardHeader({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Hydrate persistent read state from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`sn_read_notifs_${user.id}`);
+      const readIds: string[] = raw ? JSON.parse(raw) : [];
+      if (readIds.length > 0) {
+        setUnreadList((prev) =>
+          prev.map((n) => (readIds.includes(n.id) ? { ...n, unread: false } : n))
+        );
+      }
+    } catch {
+      // Graceful local storage fallback
+    }
+  }, [user.id]);
+
+  // Periodic polling (every 45s) and window focus revalidation
+  useEffect(() => {
+    let isMounted = true;
+    const syncNotifications = async () => {
+      try {
+        const res = await fetch("/api/notifications");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (isMounted && Array.isArray(data.notifications)) {
+          const raw = localStorage.getItem(`sn_read_notifs_${user.id}`);
+          const readIds: string[] = raw ? JSON.parse(raw) : [];
+          setUnreadList(
+            data.notifications.map((n: DashboardNotification) =>
+              readIds.includes(n.id) ? { ...n, unread: false } : n
+            )
+          );
+        }
+      } catch {
+        // Silent network fallback
+      }
+    };
+
+    const intervalId = setInterval(syncNotifications, 45000);
+    window.addEventListener("focus", syncNotifications);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+      window.removeEventListener("focus", syncNotifications);
+    };
+  }, [user.id]);
+
   const unreadCount = unreadList.filter((n) => n.unread).length;
 
   const markAllRead = () => {
-    setUnreadList((prev) => prev.map((n) => ({ ...n, unread: false })));
+    setUnreadList((prev) => {
+      const allIds = prev.map((n) => n.id);
+      try {
+        localStorage.setItem(`sn_read_notifs_${user.id}`, JSON.stringify(allIds));
+      } catch {}
+      return prev.map((n) => ({ ...n, unread: false }));
+    });
+  };
+
+  const markItemRead = (id: string) => {
+    setUnreadList((prev) => {
+      try {
+        const raw = localStorage.getItem(`sn_read_notifs_${user.id}`);
+        const readIds: string[] = raw ? JSON.parse(raw) : [];
+        if (!readIds.includes(id)) {
+          readIds.push(id);
+          localStorage.setItem(`sn_read_notifs_${user.id}`, JSON.stringify(readIds));
+        }
+      } catch {}
+      return prev.map((n) => (n.id === id ? { ...n, unread: false } : n));
+    });
   };
 
   const portalLabel = {
@@ -184,6 +251,7 @@ export function DashboardHeader({
                         CERTIFICATE: <Award className="w-4 h-4 text-emerald-600" />,
                         QUIZ: <CheckCircle2 className="w-4 h-4 text-[#FF6B00]" />,
                         ENROLLMENT: <Clock className="w-4 h-4 text-blue-600" />,
+                        ASSIGNMENT: <FileCheck2 className="w-4 h-4 text-emerald-600" />,
                         ACADEMIC: <Sparkles className="w-4 h-4 text-purple-600" />,
                         USER: <Users className="w-4 h-4 text-indigo-600" />,
                         SYSTEM: <ShieldCheck className="w-4 h-4 text-emerald-600" />,
@@ -193,17 +261,27 @@ export function DashboardHeader({
                         <Link
                           key={item.id}
                           href={item.link}
-                          onClick={() => setIsNotifOpen(false)}
-                          className="flex items-start gap-3 p-3.5 hover:bg-slate-50 transition-colors block"
+                          onClick={() => {
+                            markItemRead(item.id);
+                            setIsNotifOpen(false);
+                          }}
+                          className={`flex items-start gap-3 p-3.5 hover:bg-slate-50 transition-colors block ${
+                            item.unread ? "bg-orange-50/20" : ""
+                          }`}
                         >
                           <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 mt-0.5">
                             {icon}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-1">
-                              <span className="text-xs font-bold text-[#0B1B3D] truncate">
-                                {item.title}
-                              </span>
+                              <div className="flex items-center gap-1.5 truncate">
+                                {item.unread && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] shrink-0" />
+                                )}
+                                <span className={`text-xs font-bold truncate ${item.unread ? "text-[#0B1B3D]" : "text-slate-700"}`}>
+                                  {item.title}
+                                </span>
+                              </div>
                               <span className="text-[10px] text-slate-400 shrink-0">
                                 {item.timestamp}
                               </span>

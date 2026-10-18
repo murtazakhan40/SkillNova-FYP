@@ -22,22 +22,30 @@ import {
   GraduationCap,
   PlayCircle,
   Terminal,
-  Zap,
-  Check
+  Zap
 } from "lucide-react";
 import { quickDemoLogin } from "@/app/actions/auth";
 
 export default async function HomePage() {
-  // Fetch featured courses directly from Prisma
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://skillnovaacademy.com";
+
+  // Efficient selective projection for fast server rendering
   const featuredCourses = await db.course.findMany({
     where: { published: true },
-    include: {
-      category: true,
-      instructor: true,
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      subtitle: true,
+      price: true,
+      level: true,
+      thumbnail: true,
+      category: { select: { name: true, slug: true } },
+      instructor: { select: { name: true, avatar: true } },
       sections: {
-        include: { lessons: true },
+        select: { lessons: { select: { id: true } } },
       },
-      reviews: true,
+      reviews: { select: { rating: true } },
     },
     take: 6,
     orderBy: { createdAt: "desc" },
@@ -51,8 +59,37 @@ export default async function HomePage() {
     },
   });
 
+  const orgJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "EducationalOrganization",
+        "@id": `${appUrl}/#organization`,
+        name: "SkillNova Academy",
+        url: appUrl,
+        logo: `${appUrl}/brand/logo.png`,
+        description:
+          "SkillNova Academy provides rigorous software development, artificial intelligence, and cloud engineering tracks with verified credentials.",
+        sameAs: ["https://github.com/murtazakhan40/SkillNova-FYP"],
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${appUrl}/#website`,
+        url: appUrl,
+        name: "SkillNova Academy",
+        publisher: {
+          "@id": `${appUrl}/#organization`,
+        },
+      },
+    ],
+  };
+
   return (
     <div suppressHydrationWarning className="min-h-screen flex flex-col bg-[#F8FAFC]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+      />
       <Navbar />
 
       {/* Hero Section */}

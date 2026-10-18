@@ -1,4 +1,5 @@
 import React from "react";
+import { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { Prisma } from "@prisma/client";
@@ -6,21 +7,34 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CourseCard } from "@/components/course/CourseCard";
 import { ScrollReveal } from "@/components/animations/ScrollReveal";
-import { Search, Filter, BookOpen, Sparkles } from "lucide-react";
+import { Search, Filter, BookOpen, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Academic Course Catalog | SkillNova Academy",
+  description:
+    "Explore rigorous computer science, web development, cloud computing, and AI engineering courses with verified certification.",
+  alternates: {
+    canonical: "https://skillnovaacademy.com/courses",
+  },
+};
 
 interface CoursesPageProps {
   searchParams: Promise<{
     category?: string;
     level?: string;
     q?: string;
+    page?: string;
   }>;
 }
+
+const PAGE_SIZE = 12;
 
 export default async function CoursesPage({ searchParams }: CoursesPageProps) {
   const params = await searchParams;
   const categorySlug = params.category;
   const levelParam = params.level;
   const searchQuery = params.q;
+  const currentPage = Math.max(1, parseInt(params.page || "1", 10) || 1);
 
   // Build where conditions
   const where: Prisma.CourseWhereInput = { published: true };
@@ -41,17 +55,27 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
     ];
   }
 
-  const [courses, categories] = await Promise.all([
+  const [totalCount, courses, categories] = await Promise.all([
+    db.course.count({ where }),
     db.course.findMany({
       where,
-      include: {
-        category: true,
-        instructor: true,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        subtitle: true,
+        price: true,
+        level: true,
+        thumbnail: true,
+        category: { select: { name: true, slug: true } },
+        instructor: { select: { name: true, avatar: true } },
         sections: {
-          include: { lessons: true },
+          select: { lessons: { select: { id: true } } },
         },
-        reviews: true,
+        reviews: { select: { rating: true } },
       },
+      skip: (currentPage - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
       orderBy: { createdAt: "desc" },
     }),
     db.category.findMany({
@@ -62,6 +86,8 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
       },
     }),
   ]);
+
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
@@ -168,9 +194,17 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
         {/* Courses Listing */}
         {courses.length > 0 ? (
           <div>
-            <div className="text-xs font-semibold text-slate-500 mb-6">
-              Showing {courses.length} curriculum module{courses.length > 1 ? "s" : ""}
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mb-6">
+              <span>
+                Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalCount)} of {totalCount} curriculum module{totalCount > 1 ? "s" : ""}
+              </span>
+              {totalPages > 1 && (
+                <span className="text-slate-400">
+                  Page {currentPage} of {totalPages}
+                </span>
+              )}
             </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {courses.map((course, idx) => (
                 <ScrollReveal key={course.id} delay={idx * 60} direction="up" distance={16}>
@@ -178,6 +212,61 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
                 </ScrollReveal>
               ))}
             </div>
+
+            {/* Pagination Nav */}
+            {totalPages > 1 && (
+              <div className="mt-12 flex items-center justify-center gap-2">
+                {currentPage > 1 ? (
+                  <Link
+                    href={`/courses?page=${currentPage - 1}${categorySlug ? `&category=${categorySlug}` : ""}${levelParam ? `&level=${levelParam}` : ""}${searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""}`}
+                    className="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>Previous</span>
+                  </Link>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-xs font-bold border border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed">
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>Previous</span>
+                  </span>
+                )}
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }).map((_, i) => {
+                    const pageNum = i + 1;
+                    const isCurrent = pageNum === currentPage;
+                    return (
+                      <Link
+                        key={pageNum}
+                        href={`/courses?page=${pageNum}${categorySlug ? `&category=${categorySlug}` : ""}${levelParam ? `&level=${levelParam}` : ""}${searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""}`}
+                        className={`w-9 h-9 rounded-xl text-xs font-bold flex items-center justify-center transition-colors ${
+                          isCurrent
+                            ? "bg-[#0B1B3D] text-white shadow-xs"
+                            : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                        }`}
+                      >
+                        {pageNum}
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                {currentPage < totalPages ? (
+                  <Link
+                    href={`/courses?page=${currentPage + 1}${categorySlug ? `&category=${categorySlug}` : ""}${levelParam ? `&level=${levelParam}` : ""}${searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""}`}
+                    className="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+                  >
+                    <span>Next</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-xs font-bold border border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed">
+                    <span>Next</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 p-8">

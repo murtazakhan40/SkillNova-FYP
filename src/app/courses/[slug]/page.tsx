@@ -1,4 +1,5 @@
 import React from "react";
+import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
@@ -19,12 +20,64 @@ import {
 import { formatPrice, formatDate } from "@/lib/utils";
 import { enrollInCourseAction } from "@/app/actions/enrollment";
 import { submitCourseReview } from "@/app/actions/learning";
-import { directCourseClassroomAccess } from "@/app/actions/auth";
 
 interface CourseDetailPageProps {
   params: Promise<{
     slug: string;
   }>;
+}
+
+export async function generateMetadata({ params }: CourseDetailPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const course = await db.course.findUnique({
+    where: { slug },
+    select: {
+      title: true,
+      subtitle: true,
+      description: true,
+      thumbnail: true,
+      category: { select: { name: true } },
+      instructor: { select: { name: true } },
+    },
+  });
+
+  if (!course) {
+    return {
+      title: "Course Not Found | SkillNova Academy",
+    };
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://skillnovaacademy.com";
+  const desc = course.subtitle || course.description.slice(0, 160);
+
+  return {
+    title: `${course.title} | SkillNova Academy`,
+    description: desc,
+    alternates: {
+      canonical: `${appUrl}/courses/${slug}`,
+    },
+    openGraph: {
+      title: `${course.title} | ${course.category?.name || "SkillNova"}`,
+      description: desc,
+      url: `${appUrl}/courses/${slug}`,
+      siteName: "SkillNova Academy",
+      images: [
+        {
+          url: course.thumbnail || `${appUrl}/brand/banner.png`,
+          width: 1200,
+          height: 630,
+          alt: course.title,
+        },
+      ],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: course.title,
+      description: desc,
+      images: [course.thumbnail || `${appUrl}/brand/banner.png`],
+    },
+  };
 }
 
 export default async function CourseDetailPage({ params }: CourseDetailPageProps) {
@@ -84,8 +137,57 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
         ).toFixed(1)
       : "5.0";
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://skillnovaacademy.com";
+
+  // Course structured data matching exact visible page content
+  const courseJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: course.title,
+    description: course.subtitle || course.description,
+    url: `${appUrl}/courses/${course.slug}`,
+    image: course.thumbnail || undefined,
+    provider: {
+      "@type": "EducationalOrganization",
+      name: "SkillNova Academy",
+      sameAs: appUrl,
+    },
+    instructor: {
+      "@type": "Person",
+      name: course.instructor.name,
+      jobTitle: course.instructor.headline || "Course Instructor",
+    },
+    offers: {
+      "@type": "Offer",
+      price: course.price > 0 ? course.price : "0",
+      priceCurrency: "PKR",
+      category: course.price > 0 ? "Paid Course" : "Free Foundation Track",
+    },
+    hasCourseInstance: {
+      "@type": "CourseInstance",
+      courseMode: "Online",
+      courseWorkload: `${totalLessons} lessons`,
+    },
+    educationalCredentialAwarded: "SkillNova Verified Digital Certificate",
+    ...(course.reviews.length > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: avgRating,
+            reviewCount: course.reviews.length,
+            bestRating: "5",
+            worstRating: "1",
+          },
+        }
+      : {}),
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(courseJsonLd) }}
+      />
       <Navbar />
 
       {/* Top Breadcrumb & Hero */}

@@ -42,6 +42,10 @@ export function CourseCard({ course }: CourseCardProps) {
         <img
           src={course.thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800"}
           alt={course.title}
+          loading="lazy"
+          decoding="async"
+          width={400}
+          height={225}
           className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#060E1E]/80 via-transparent to-transparent opacity-90 transition-opacity group-hover:opacity-75" />
@@ -110,6 +114,10 @@ export function CourseCard({ course }: CourseCardProps) {
               <img
                 src={course.instructor.avatar}
                 alt={course.instructor.name}
+                loading="lazy"
+                decoding="async"
+                width={28}
+                height={28}
                 className="w-7 h-7 rounded-full object-cover border border-slate-200 shadow-sm"
               />
             ) : (

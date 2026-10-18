@@ -1,4 +1,5 @@
 import React from "react";
+import { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -6,6 +7,15 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CheckoutClient } from "@/components/checkout/CheckoutClient";
 import { initiateCourseOrderAction } from "@/app/actions/checkout";
+
+export const metadata: Metadata = {
+  title: "Secure Checkout | SkillNova Academy",
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+  },
+};
 
 interface CheckoutPageProps {
   params: Promise<{

@@ -240,6 +240,21 @@ h1, h2, h3, h4, h5, h6, .font-heading {
               0 0 20px 0 rgba(255, 107, 0, 0.08);
 }
 
+/* Accessibility: High-contrast focus rings for keyboard navigation (WCAG 2.1 AA) */
+:focus-visible {
+  outline: 2px solid #ff6b00;
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #ff6b00;
+  outline-offset: 2px;
+}
+
 /* Accessibility: Respect Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
