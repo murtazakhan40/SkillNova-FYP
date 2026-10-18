@@ -11,7 +11,9 @@ import {
   X, 
   Mail, 
   Phone, 
-  Calendar 
+  Calendar,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 
 export interface TrainerStudentRosterItem {
@@ -43,6 +45,8 @@ export function TrainerStudentsClient({
   const [courseFilter, setCourseFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "IN_PROGRESS" | "COMPLETED">("ALL");
   const [inspectStudent, setInspectStudent] = useState<TrainerStudentRosterItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   // Counts
   const counts = useMemo(() => {
@@ -72,6 +76,13 @@ export function TrainerStudentsClient({
       return true;
     });
   }, [students, searchQuery, courseFilter, statusFilter]);
+
+  // Paginated
+  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / pageSize));
+  const paginatedStudents = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredStudents.slice(start, start + pageSize);
+  }, [filteredStudents, currentPage]);
 
   return (
     <div className="space-y-6">
@@ -172,7 +183,7 @@ export function TrainerStudentsClient({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {filteredStudents.map((s) => (
+                {paginatedStudents.map((s) => (
                   <tr key={s.id} className="hover:bg-slate-50/70 transition-colors">
                     <td className="py-4 px-6 flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-[#0B1B3D] text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden ring-1 ring-orange-500/30">
@@ -246,6 +257,37 @@ export function TrainerStudentsClient({
           <div className="py-12 text-center text-slate-400">
             <Users className="w-10 h-10 mx-auto mb-2 opacity-40" />
             <p className="text-xs font-semibold">No students match your filter criteria.</p>
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <span>
+              Page <span className="font-bold text-slate-700">{currentPage}</span> of{" "}
+              <span className="font-bold text-slate-700">{totalPages}</span> (
+              {filteredStudents.length} learners)
+            </span>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
+                aria-label="Previous page"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
+                aria-label="Next page"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>

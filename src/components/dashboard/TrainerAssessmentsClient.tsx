@@ -15,7 +15,9 @@ import {
   Edit3,
   Clock,
   Loader2,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { gradeAssignmentAction } from "@/app/actions/classroom";
 
@@ -72,7 +74,10 @@ export function TrainerAssessmentsClient({
   const [activeTab, setActiveTab] = useState<"QUIZZES" | "ASSIGNMENTS">("QUIZZES");
   const [searchQuery, setSearchQuery] = useState("");
   const [quizStatusFilter, setQuizStatusFilter] = useState<"ALL" | "PASSED" | "FAILED">("ALL");
-  const [assignmentStatusFilter, setAssignmentStatusFilter] = useState<"ALL" | "SUBMITTED" | "GRADED">("ALL");
+  const [assignmentStatusFilter, setAssignmentStatusFilter] = useState<"ALL" | "SUBMITTED" | "GRADED" | "RESUBMIT">("ALL");
+  const [quizPage, setQuizPage] = useState(1);
+  const [assignPage, setAssignPage] = useState(1);
+  const pageSize = 8;
 
   // Grading Modal State
   const [selectedSubmission, setSelectedSubmission] = useState<TrainerAssignmentSubmissionItem | null>(null);
@@ -80,6 +85,7 @@ export function TrainerAssessmentsClient({
   const [gradeFeedback, setGradeFeedback] = useState<string>("");
   const [gradeStatus, setGradeStatus] = useState<string>("GRADED");
   const [gradingError, setGradingError] = useState<string | null>(null);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   // Quiz Stats
@@ -101,13 +107,14 @@ export function TrainerAssessmentsClient({
     const total = assignmentSubmissions.length;
     const pending = assignmentSubmissions.filter((s) => s.status === "SUBMITTED").length;
     const graded = assignmentSubmissions.filter((s) => s.status === "GRADED").length;
+    const resubmit = assignmentSubmissions.filter((s) => s.status === "RESUBMIT_REQUESTED").length;
     const gradedList = assignmentSubmissions.filter((s) => s.score !== null);
     const avgScore =
       gradedList.length > 0
         ? Math.round(gradedList.reduce((acc, s) => acc + (s.score || 0), 0) / gradedList.length)
         : 0;
 
-    return { total, pending, graded, avgScore };
+    return { total, pending, graded, resubmit, avgScore };
   }, [assignmentSubmissions]);
 
   // Filtered Quizzes
@@ -128,6 +135,13 @@ export function TrainerAssessmentsClient({
     });
   }, [submissions, searchQuery, quizStatusFilter]);
 
+  // Paginated Quizzes
+  const totalQuizPages = Math.max(1, Math.ceil(filteredQuizzes.length / pageSize));
+  const paginatedQuizzes = useMemo(() => {
+    const start = (quizPage - 1) * pageSize;
+    return filteredQuizzes.slice(start, start + pageSize);
+  }, [filteredQuizzes, quizPage]);
+
   // Filtered Assignments
   const filteredAssignments = useMemo(() => {
     return assignmentSubmissions.filter((s) => {
@@ -141,10 +155,18 @@ export function TrainerAssessmentsClient({
 
       if (assignmentStatusFilter === "SUBMITTED" && s.status !== "SUBMITTED") return false;
       if (assignmentStatusFilter === "GRADED" && s.status !== "GRADED") return false;
+      if (assignmentStatusFilter === "RESUBMIT" && s.status !== "RESUBMIT_REQUESTED") return false;
 
       return true;
     });
   }, [assignmentSubmissions, searchQuery, assignmentStatusFilter]);
+
+  // Paginated Assignments
+  const totalAssignPages = Math.max(1, Math.ceil(filteredAssignments.length / pageSize));
+  const paginatedAssignments = useMemo(() => {
+    const start = (assignPage - 1) * pageSize;
+    return filteredAssignments.slice(start, start + pageSize);
+  }, [filteredAssignments, assignPage]);
 
   const openGradingModal = (sub: TrainerAssignmentSubmissionItem) => {
     setSelectedSubmission(sub);
@@ -168,7 +190,10 @@ export function TrainerAssessmentsClient({
     startTransition(async () => {
       try {
         await gradeAssignmentAction(formData);
+        const name = selectedSubmission.studentName;
         setSelectedSubmission(null);
+        setSuccessToast(`Evaluation successfully saved for ${name}.`);
+        setTimeout(() => setSuccessToast(null), 4000);
       } catch (err: unknown) {
         setGradingError(err instanceof Error ? err.message : "Grading evaluation failed.");
       }
@@ -177,6 +202,27 @@ export function TrainerAssessmentsClient({
 
   return (
     <div className="space-y-6">
+      {successToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between shadow-xs animate-in fade-in"
+        >
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{successToast}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSuccessToast(null)}
+            className="p-1 rounded-md text-emerald-600 hover:bg-emerald-100"
+            aria-label="Dismiss message"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Top Assessment Mode Tab Selector */}
       <div className="flex border-b border-slate-200 bg-white p-2 rounded-2xl shadow-xs gap-2">
         <button
@@ -341,7 +387,7 @@ export function TrainerAssessmentsClient({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium">
-                    {filteredQuizzes.map((sub) => (
+                    {paginatedQuizzes.map((sub) => (
                       <tr key={sub.id} className="hover:bg-slate-50/70 transition-colors">
                         <td className="py-4 px-6 flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-[#0B1B3D] text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden ring-1 ring-orange-500/30">
@@ -404,6 +450,36 @@ export function TrainerAssessmentsClient({
               <div className="py-12 text-center text-slate-400">
                 <HelpCircle className="w-10 h-10 mx-auto mb-2 opacity-40" />
                 <p className="text-xs font-semibold">No assessment attempts found.</p>
+              </div>
+            )}
+
+            {totalQuizPages > 1 && (
+              <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span>
+                  Page <span className="font-bold text-slate-700">{quizPage}</span> of{" "}
+                  <span className="font-bold text-slate-700">{totalQuizPages}</span> (
+                  {filteredQuizzes.length} records)
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setQuizPage((p) => Math.max(1, p - 1))}
+                    disabled={quizPage === 1}
+                    className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
+                    aria-label="Previous quiz page"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuizPage((p) => Math.min(totalQuizPages, p + 1))}
+                    disabled={quizPage === totalQuizPages}
+                    className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
+                    aria-label="Next quiz page"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -535,7 +611,7 @@ export function TrainerAssessmentsClient({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium">
-                    {filteredAssignments.map((sub) => (
+                    {paginatedAssignments.map((sub) => (
                       <tr key={sub.id} className="hover:bg-slate-50/70 transition-colors">
                         <td className="py-4 px-6 flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-[#0B1B3D] text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden ring-1 ring-orange-500/30">
@@ -621,6 +697,36 @@ export function TrainerAssessmentsClient({
               <div className="py-12 text-center text-slate-400">
                 <FileCheck className="w-10 h-10 mx-auto mb-2 opacity-40" />
                 <p className="text-xs font-semibold">No project submissions match current filter.</p>
+              </div>
+            )}
+
+            {totalAssignPages > 1 && (
+              <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span>
+                  Page <span className="font-bold text-slate-700">{assignPage}</span> of{" "}
+                  <span className="font-bold text-slate-700">{totalAssignPages}</span> (
+                  {filteredAssignments.length} records)
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setAssignPage((p) => Math.max(1, p - 1))}
+                    disabled={assignPage === 1}
+                    className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
+                    aria-label="Previous assignment page"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAssignPage((p) => Math.min(totalAssignPages, p + 1))}
+                    disabled={assignPage === totalAssignPages}
+                    className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
+                    aria-label="Next assignment page"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             )}
           </div>

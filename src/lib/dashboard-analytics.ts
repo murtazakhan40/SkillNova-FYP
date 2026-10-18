@@ -41,7 +41,7 @@ export async function getStudentAnalytics(
   });
 
   const totalEnrolled = enrollments.length;
-  const completedCount = enrollments.filter((e) => e.progress >= 100).length;
+  const completedCount = enrollments.filter((e: any) => e.progress >= 100).length;
   const inProgressCount = totalEnrolled - completedCount;
 
   // 2. Quiz Submissions & Average Score
@@ -53,19 +53,19 @@ export async function getStudentAnalytics(
   const averageQuizScore =
     submissions.length > 0
       ? Math.round(
-          submissions.reduce((acc, sub) => acc + sub.score, 0) / submissions.length
+          submissions.reduce((acc: number, sub: any) => acc + sub.score, 0) / submissions.length
         )
       : 0;
 
   // 3. Pending Quizzes
-  const attemptedQuizIds = new Set(submissions.map((s) => s.quizId));
-  const allEnrolledQuizzes = enrollments.flatMap((e) => e.course.quizzes);
+  const attemptedQuizIds = new Set(submissions.map((s: any) => s.quizId));
+  const allEnrolledQuizzes = enrollments.flatMap((e: any) => e.course.quizzes);
   const pendingQuizzesCount = allEnrolledQuizzes.filter(
-    (q) => !attemptedQuizIds.has(q.id)
+    (q: any) => !attemptedQuizIds.has(q.id)
   ).length;
 
   // 4. Pending Assignments
-  const enrolledCourseIds = enrollments.map((e) => e.courseId);
+  const enrolledCourseIds = enrollments.map((e: any) => e.courseId);
   const totalCourseAssignments = await dbClient.assignment.findMany({
     where: { courseId: { in: enrolledCourseIds } },
     select: { id: true },
@@ -74,9 +74,9 @@ export async function getStudentAnalytics(
     where: { userId },
     select: { assignmentId: true },
   });
-  const submittedAssignmentIds = new Set(mySubmissions.map((s) => s.assignmentId));
+  const submittedAssignmentIds = new Set(mySubmissions.map((s: any) => s.assignmentId));
   const pendingAssignmentsCount = totalCourseAssignments.filter(
-    (a) => !submittedAssignmentIds.has(a.id)
+    (a: any) => !submittedAssignmentIds.has(a.id)
   ).length;
 
   // 5. Certificates
@@ -135,7 +135,7 @@ export async function getStudentAnalytics(
   }
 
   // Count completions
-  recentLessons.forEach((l) => {
+  recentLessons.forEach((l: any) => {
     if (l.completedAt) {
       const key = l.completedAt.toISOString().split("T")[0];
       if (dayBuckets[key] !== undefined) {
@@ -144,14 +144,14 @@ export async function getStudentAnalytics(
     }
   });
 
-  recentQuizzes.forEach((q) => {
+  recentQuizzes.forEach((q: any) => {
     const key = q.createdAt.toISOString().split("T")[0];
     if (dayBuckets[key] !== undefined) {
       dayBuckets[key] += 1;
     }
   });
 
-  recentAssignments.forEach((a) => {
+  recentAssignments.forEach((a: any) => {
     const key = a.submittedAt.toISOString().split("T")[0];
     if (dayBuckets[key] !== undefined) {
       dayBuckets[key] += 1;
@@ -192,3 +192,230 @@ export async function getStudentAnalytics(
     totalActionsThisWeek,
   };
 }
+
+export interface TrainerDashboardAnalytics {
+  assignedCoursesCount: number;
+  enrolledLearnersCount: number;
+  uniqueLearnersCount: number;
+  pendingReviewsCount: number;
+  completedGraduatesCount: number;
+  totalLessonsCount: number;
+  totalQuizzesCount: number;
+  totalAssignmentsCount: number;
+  averageRating: string;
+  weeklyActivity: DayActivity[];
+  totalActionsThisWeek: number;
+}
+
+export async function getTrainerAnalytics(
+  trainerId: string,
+  isAdmin: boolean = false,
+  dbClient: any = db
+): Promise<TrainerDashboardAnalytics> {
+  // 1. Fetch courses taught by this trainer (or all if admin)
+  const courses = await dbClient.course.findMany({
+    where: isAdmin ? {} : { instructorId: trainerId },
+    include: {
+      enrollments: true,
+      reviews: true,
+      sections: {
+        include: { lessons: true },
+      },
+      quizzes: true,
+      assignments: true,
+    },
+  });
+
+  const assignedCoursesCount = courses.length;
+  const enrolledLearnersCount = courses.reduce(
+    (acc: number, c: any) => acc + c.enrollments.length,
+    0
+  );
+  const uniqueLearnerIds = new Set(
+    courses.flatMap((c: any) => c.enrollments.map((e: any) => e.userId))
+  );
+  const uniqueLearnersCount = uniqueLearnerIds.size;
+
+  const completedGraduatesCount = courses.reduce(
+    (acc: number, c: any) =>
+      acc + c.enrollments.filter((e: any) => e.progress >= 100).length,
+    0
+  );
+
+  const totalLessonsCount = courses.reduce(
+    (acc: number, c: any) =>
+      acc +
+      c.sections.reduce(
+        (sAcc: number, s: any) => sAcc + s.lessons.length,
+        0
+      ),
+    0
+  );
+
+  const totalQuizzesCount = courses.reduce(
+    (acc: number, c: any) => acc + c.quizzes.length,
+    0
+  );
+
+  const totalAssignmentsCount = courses.reduce(
+    (acc: number, c: any) => acc + c.assignments.length,
+    0
+  );
+
+  const allReviews = courses.flatMap((c: any) => c.reviews);
+  const averageRating =
+    allReviews.length > 0
+      ? (
+          allReviews.reduce((acc: number, r: any) => acc + r.rating, 0) /
+          allReviews.length
+        ).toFixed(1)
+      : "5.0";
+
+  // 2. Pending assignment reviews awaiting grading
+  const courseIds = courses.map((c: any) => c.id);
+  const pendingReviewsCount =
+    courseIds.length > 0
+      ? await dbClient.assignmentSubmission.count({
+          where: {
+            assignment: { courseId: { in: courseIds } },
+            status: "SUBMITTED",
+          },
+        })
+      : 0;
+
+  // 3. Weekly Course Activity (7 days window)
+  const now = new Date();
+  const past7DaysStart = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
+  past7DaysStart.setHours(0, 0, 0, 0);
+
+  // Lesson completions across trainer's courses
+  const recentLessons =
+    courseIds.length > 0
+      ? await dbClient.lessonProgress.findMany({
+          where: {
+            lesson: { section: { courseId: { in: courseIds } } },
+            isCompleted: true,
+            completedAt: { gte: past7DaysStart },
+          },
+          select: { completedAt: true },
+        })
+      : [];
+
+  // Quiz submissions across trainer's courses
+  const recentQuizzes =
+    courseIds.length > 0
+      ? await dbClient.quizSubmission.findMany({
+          where: {
+            quiz: { courseId: { in: courseIds } },
+            createdAt: { gte: past7DaysStart },
+          },
+          select: { createdAt: true },
+        })
+      : [];
+
+  // Assignment submissions across trainer's courses
+  const recentAssignments =
+    courseIds.length > 0
+      ? await dbClient.assignmentSubmission.findMany({
+          where: {
+            assignment: { courseId: { in: courseIds } },
+            submittedAt: { gte: past7DaysStart },
+          },
+          select: { submittedAt: true },
+        })
+      : [];
+
+  // Enrollments across trainer's courses
+  const recentEnrollments =
+    courseIds.length > 0
+      ? await dbClient.enrollment.findMany({
+          where: {
+            courseId: { in: courseIds },
+            createdAt: { gte: past7DaysStart },
+          },
+          select: { createdAt: true },
+        })
+      : [];
+
+  const dayBuckets: Record<string, number> = {};
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  const daysList: { key: string; dayName: string; isToday: boolean }[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    const dateKey = d.toISOString().split("T")[0];
+    const isToday = i === 0;
+    daysList.push({
+      key: dateKey,
+      dayName: dayNames[d.getDay()],
+      isToday,
+    });
+    dayBuckets[dateKey] = 0;
+  }
+
+  recentLessons.forEach((l: any) => {
+    if (l.completedAt) {
+      const key = l.completedAt.toISOString().split("T")[0];
+      if (dayBuckets[key] !== undefined) {
+        dayBuckets[key] += 1;
+      }
+    }
+  });
+
+  recentQuizzes.forEach((q: any) => {
+    const key = q.createdAt.toISOString().split("T")[0];
+    if (dayBuckets[key] !== undefined) {
+      dayBuckets[key] += 1;
+    }
+  });
+
+  recentAssignments.forEach((a: any) => {
+    const key = a.submittedAt.toISOString().split("T")[0];
+    if (dayBuckets[key] !== undefined) {
+      dayBuckets[key] += 1;
+    }
+  });
+
+  recentEnrollments.forEach((e: any) => {
+    const key = e.createdAt.toISOString().split("T")[0];
+    if (dayBuckets[key] !== undefined) {
+      dayBuckets[key] += 1;
+    }
+  });
+
+  let totalActionsThisWeek = 0;
+  let maxCount = 1;
+
+  daysList.forEach((d) => {
+    const count = dayBuckets[d.key] || 0;
+    totalActionsThisWeek += count;
+    if (count > maxCount) maxCount = count;
+  });
+
+  const weeklyActivity: DayActivity[] = daysList.map((d) => {
+    const count = dayBuckets[d.key] || 0;
+    const heightPercent = count === 0 ? 12 : Math.round((count / maxCount) * 100);
+    return {
+      dayName: d.dayName,
+      dateStr: d.key,
+      count,
+      isToday: d.isToday,
+      heightPercent,
+    };
+  });
+
+  return {
+    assignedCoursesCount,
+    enrolledLearnersCount,
+    uniqueLearnersCount,
+    pendingReviewsCount,
+    completedGraduatesCount,
+    totalLessonsCount,
+    totalQuizzesCount,
+    totalAssignmentsCount,
+    averageRating,
+    weeklyActivity,
+    totalActionsThisWeek,
+  };
+}
+

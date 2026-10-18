@@ -149,7 +149,10 @@ export async function submitAssignmentAction(formData: FormData) {
  * 2. ASSIGNMENTS: Trainer Review, Grading & Feedback
  * -----------------------------------------------------------------------------
  */
-export async function gradeAssignmentAction(formData: FormData) {
+export async function gradeAssignmentAction(
+  formData: FormData,
+  dbClient: any = db
+) {
   const reviewer = await requireRole(["TRAINER", "ADMIN"]);
 
   const submissionId = formData.get("submissionId") as string;
@@ -161,7 +164,7 @@ export async function gradeAssignmentAction(formData: FormData) {
     throw new Error("Submission ID required.");
   }
 
-  const submission = await db.assignmentSubmission.findUnique({
+  const submission = await dbClient.assignmentSubmission.findUnique({
     where: { id: submissionId },
     include: {
       assignment: {
@@ -187,7 +190,7 @@ export async function gradeAssignmentAction(formData: FormData) {
 
   const feedback = sanitizeText(feedbackRaw);
 
-  await db.assignmentSubmission.update({
+  await dbClient.assignmentSubmission.update({
     where: { id: submissionId },
     data: {
       score,
@@ -199,7 +202,7 @@ export async function gradeAssignmentAction(formData: FormData) {
   });
 
   // Record sanitized audit trace (strictly zero credentials)
-  await db.auditLog.create({
+  await dbClient.auditLog.create({
     data: {
       action: "ASSIGNMENT_EVALUATED",
       entity: "AssignmentSubmission",
@@ -215,9 +218,13 @@ export async function gradeAssignmentAction(formData: FormData) {
     },
   });
 
-  revalidatePath(`/courses/${submission.assignment.course.slug}/learn`);
-  revalidatePath(`/dashboard/trainer/assessments`);
-  revalidatePath(`/dashboard/student`);
+  try {
+    revalidatePath(`/courses/${submission.assignment.course.slug}/learn`);
+    revalidatePath(`/dashboard/trainer/assessments`);
+    revalidatePath(`/dashboard/student`);
+  } catch {
+    // Graceful fallback in non-Next.js runtime (e.g. unit tests)
+  }
 
   return { success: true };
 }
@@ -472,4 +479,314 @@ export async function deleteLessonDiscussionAction(discussionId: string) {
   revalidatePath(`/courses/${discussion.lesson.section.course.slug}/learn/${discussion.lessonId}`);
 
   return { success: true };
+}
+
+/**
+ * -----------------------------------------------------------------------------
+ * 8. ASSIGNMENTS: Authorized Trainer/Admin Create Assignment
+ * -----------------------------------------------------------------------------
+ */
+export async function createCourseAssignmentAction(
+  formData: FormData,
+  dbClient: any = db
+) {
+  const user = await requireRole(["TRAINER", "ADMIN"]);
+
+  const courseId = formData.get("courseId") as string;
+  const titleRaw = (formData.get("title") as string)?.trim();
+  const descriptionRaw = (formData.get("description") as string)?.trim();
+  const dueDateRaw = formData.get("dueDate") as string;
+  const maxScoreRaw = formData.get("maxScore") as string;
+
+  if (!courseId || !titleRaw || !descriptionRaw) {
+    throw new Error("Course ID, assignment title, and description are required.");
+  }
+
+  const course = await dbClient.course.findUnique({
+    where: { id: courseId },
+  });
+
+  if (!course) {
+    throw new Error("Course not found.");
+  }
+
+  // Strict ownership enforcement
+  if (user.role !== "ADMIN" && course.instructorId !== user.id) {
+    throw new Error("Authorization Violation: You can only create assignments for your own assigned courses.");
+  }
+
+  const title = sanitizeText(titleRaw);
+  const description = sanitizeText(descriptionRaw);
+  if (title.length < 3) {
+    throw new Error("Assignment title must be at least 3 characters.");
+  }
+
+  const parsedMaxScore = parseInt(maxScoreRaw, 10);
+  const maxScore = isNaN(parsedMaxScore) || parsedMaxScore <= 0 ? 100 : parsedMaxScore;
+  const dueDate = dueDateRaw ? new Date(dueDateRaw) : null;
+
+  const assignment = await dbClient.assignment.create({
+    data: {
+      title,
+      description,
+      dueDate,
+      maxScore,
+      courseId,
+    },
+  });
+
+  await dbClient.auditLog.create({
+    data: {
+      action: "ASSIGNMENT_CREATED",
+      entity: "Assignment",
+      entityId: assignment.id,
+      details: JSON.stringify({
+        title,
+        courseId,
+        maxScore,
+        instructorId: user.id,
+      }),
+      userId: user.id,
+    },
+  });
+
+  try {
+    revalidatePath("/dashboard/trainer");
+    revalidatePath("/dashboard/trainer/assessments");
+    revalidatePath(`/courses/${course.slug}`);
+    revalidatePath(`/courses/${course.slug}/learn`);
+  } catch {
+    // Non-Next runtime fallback
+  }
+
+  return { success: true, assignmentId: assignment.id };
+}
+
+/**
+ * -----------------------------------------------------------------------------
+ * 9. QUIZZES: Authorized Trainer/Admin Create Quiz with Questions
+ * -----------------------------------------------------------------------------
+ */
+export async function createCourseQuizAction(
+  formData: FormData,
+  dbClient: any = db
+) {
+  const user = await requireRole(["TRAINER", "ADMIN"]);
+
+  const courseId = formData.get("courseId") as string;
+  const titleRaw = (formData.get("title") as string)?.trim();
+  const passingScoreRaw = formData.get("passingScore") as string;
+  const questionsRaw = formData.get("questions") as string;
+
+  if (!courseId || !titleRaw) {
+    throw new Error("Course ID and quiz title are required.");
+  }
+
+  const course = await dbClient.course.findUnique({
+    where: { id: courseId },
+  });
+
+  if (!course) {
+    throw new Error("Course not found.");
+  }
+
+  // Strict ownership enforcement
+  if (user.role !== "ADMIN" && course.instructorId !== user.id) {
+    throw new Error("Authorization Violation: You can only create quizzes for your own assigned courses.");
+  }
+
+  const title = sanitizeText(titleRaw);
+  const parsedPassing = parseInt(passingScoreRaw, 10);
+  const passingScore = isNaN(parsedPassing) ? 70 : Math.max(10, Math.min(100, parsedPassing));
+
+  let questions: Array<{
+    text: string;
+    options: string[];
+    correctIndex: number;
+    explanation?: string;
+  }> = [];
+
+  try {
+    questions = JSON.parse(questionsRaw || "[]");
+  } catch {
+    throw new Error("Invalid questions JSON payload.");
+  }
+
+  if (!Array.isArray(questions) || questions.length === 0) {
+    throw new Error("A quiz must include at least one multiple-choice question.");
+  }
+
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i];
+    if (!q.text || !Array.isArray(q.options) || q.options.length < 2) {
+      throw new Error(`Question #${i + 1} must include question text and at least 2 options.`);
+    }
+    if (q.correctIndex < 0 || q.correctIndex >= q.options.length) {
+      throw new Error(`Question #${i + 1} has an invalid correct option index.`);
+    }
+  }
+
+  const quiz = await dbClient.quiz.create({
+    data: {
+      title,
+      passingScore,
+      courseId,
+      questions: {
+        create: questions.map((q) => ({
+          text: sanitizeText(q.text),
+          optionsJson: JSON.stringify(q.options.map((opt) => sanitizeText(opt))),
+          correctIndex: q.correctIndex,
+          explanation: q.explanation ? sanitizeText(q.explanation) : null,
+        })),
+      },
+    },
+  });
+
+  await dbClient.auditLog.create({
+    data: {
+      action: "QUIZ_CREATED",
+      entity: "Quiz",
+      entityId: quiz.id,
+      details: JSON.stringify({
+        title,
+        courseId,
+        questionsCount: questions.length,
+        passingScore,
+        instructorId: user.id,
+      }),
+      userId: user.id,
+    },
+  });
+
+  try {
+    revalidatePath("/dashboard/trainer");
+    revalidatePath("/dashboard/trainer/assessments");
+    revalidatePath(`/courses/${course.slug}`);
+  } catch {
+    // Non-Next runtime fallback
+  }
+
+  return { success: true, quizId: quiz.id };
+}
+
+/**
+ * -----------------------------------------------------------------------------
+ * 10. CURRICULUM: Authorized Trainer/Admin Create Section
+ * -----------------------------------------------------------------------------
+ */
+export async function createCourseSectionAction(
+  formData: FormData,
+  dbClient: any = db
+) {
+  const user = await requireRole(["TRAINER", "ADMIN"]);
+
+  const courseId = formData.get("courseId") as string;
+  const titleRaw = (formData.get("title") as string)?.trim();
+
+  if (!courseId || !titleRaw) {
+    throw new Error("Course ID and section title are required.");
+  }
+
+  const course = await dbClient.course.findUnique({
+    where: { id: courseId },
+    include: { sections: true },
+  });
+
+  if (!course) {
+    throw new Error("Course not found.");
+  }
+
+  if (user.role !== "ADMIN" && course.instructorId !== user.id) {
+    throw new Error("Authorization Violation: You can only add sections to your own courses.");
+  }
+
+  const title = sanitizeText(titleRaw);
+  const nextOrder = course.sections.length + 1;
+
+  const section = await dbClient.section.create({
+    data: {
+      title,
+      order: nextOrder,
+      courseId,
+    },
+  });
+
+  try {
+    revalidatePath(`/courses/${course.slug}`);
+    revalidatePath(`/courses/${course.slug}/learn`);
+    revalidatePath("/dashboard/trainer");
+    revalidatePath("/dashboard/trainer/courses");
+  } catch {
+    // Non-Next runtime fallback
+  }
+
+  return { success: true, sectionId: section.id };
+}
+
+/**
+ * -----------------------------------------------------------------------------
+ * 11. CURRICULUM: Authorized Trainer/Admin Create Lesson
+ * -----------------------------------------------------------------------------
+ */
+export async function createCourseLessonAction(
+  formData: FormData,
+  dbClient: any = db
+) {
+  const user = await requireRole(["TRAINER", "ADMIN"]);
+
+  const sectionId = formData.get("sectionId") as string;
+  const titleRaw = (formData.get("title") as string)?.trim();
+  const durationRaw = (formData.get("duration") as string)?.trim();
+  const videoUrlRaw = (formData.get("videoUrl") as string)?.trim();
+  const contentRaw = (formData.get("content") as string)?.trim();
+  const isFree = formData.get("isFree") === "true";
+
+  if (!sectionId || !titleRaw) {
+    throw new Error("Section ID and lesson title are required.");
+  }
+
+  const section = await dbClient.section.findUnique({
+    where: { id: sectionId },
+    include: {
+      course: true,
+      lessons: true,
+    },
+  });
+
+  if (!section) {
+    throw new Error("Curriculum section not found.");
+  }
+
+  if (user.role !== "ADMIN" && section.course.instructorId !== user.id) {
+    throw new Error("Authorization Violation: You can only add lessons to your own courses.");
+  }
+
+  const title = sanitizeText(titleRaw);
+  const duration = durationRaw || "10 mins";
+  const videoUrl = videoUrlRaw || null;
+  const content = contentRaw ? sanitizeText(contentRaw) : null;
+  const nextOrder = section.lessons.length + 1;
+
+  const lesson = await dbClient.lesson.create({
+    data: {
+      title,
+      duration,
+      videoUrl,
+      content,
+      isFree,
+      order: nextOrder,
+      sectionId,
+    },
+  });
+
+  try {
+    revalidatePath(`/courses/${section.course.slug}`);
+    revalidatePath(`/courses/${section.course.slug}/learn`);
+    revalidatePath("/dashboard/trainer");
+    revalidatePath("/dashboard/trainer/courses");
+  } catch {
+    // Non-Next runtime fallback
+  }
+
+  return { success: true, lessonId: lesson.id };
 }

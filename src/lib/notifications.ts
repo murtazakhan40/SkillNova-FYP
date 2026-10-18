@@ -38,7 +38,7 @@ export async function getStudentNotifications(
     take: 3,
   });
 
-  assignmentSubmissions.forEach((sub) => {
+  assignmentSubmissions.forEach((sub: any) => {
     const isResubmit = sub.status === "RESUBMIT_REQUESTED";
     notifications.push({
       id: `assign-feedback-${sub.id}-${sub.updatedAt.getTime()}`,
@@ -128,7 +128,7 @@ export async function getStudentNotifications(
     take: 2,
   });
 
-  enrollments.forEach((enr) => {
+  enrollments.forEach((enr: any) => {
     if (enr.progress > 0 && enr.progress < 100) {
       notifications.push({
         id: `enr-${enr.id}`,
@@ -216,19 +216,22 @@ export async function getAdminNotifications(): Promise<DashboardNotification[]> 
 /**
  * Fetch authentic notifications for a trainer
  */
-export async function getTrainerNotifications(trainerId: string): Promise<DashboardNotification[]> {
+export async function getTrainerNotifications(
+  trainerId: string,
+  dbClient: any = db
+): Promise<DashboardNotification[]> {
   const notifications: DashboardNotification[] = [];
 
   // Find trainer's courses
-  const trainerCourses = await db.course.findMany({
+  const trainerCourses = await dbClient.course.findMany({
     where: { instructorId: trainerId },
     select: { id: true, title: true, slug: true },
   });
 
-  const courseIds = trainerCourses.map((c) => c.id);
+  const courseIds = trainerCourses.map((c: any) => c.id);
 
   // 1. Pending student assignment submissions awaiting evaluation
-  const pendingAssignments = await db.assignmentSubmission.findMany({
+  const pendingAssignments = await dbClient.assignmentSubmission.findMany({
     where: {
       assignment: { courseId: { in: courseIds } },
       status: "SUBMITTED",
@@ -241,7 +244,7 @@ export async function getTrainerNotifications(trainerId: string): Promise<Dashbo
     take: 4,
   });
 
-  pendingAssignments.forEach((sub) => {
+  pendingAssignments.forEach((sub: any) => {
     notifications.push({
       id: `trainer-assign-${sub.id}-${sub.submittedAt.getTime()}`,
       type: "ASSIGNMENT",
@@ -254,14 +257,14 @@ export async function getTrainerNotifications(trainerId: string): Promise<Dashbo
   });
 
   // 2. Recent student enrollments in trainer's courses
-  const studentEnrollments = await db.enrollment.findMany({
+  const studentEnrollments = await dbClient.enrollment.findMany({
     where: { courseId: { in: courseIds } },
     include: { user: true, course: true },
     orderBy: { createdAt: "desc" },
     take: 3,
   });
 
-  studentEnrollments.forEach((enr) => {
+  studentEnrollments.forEach((enr: any) => {
     notifications.push({
       id: `trainer-enr-${enr.id}`,
       type: "ENROLLMENT",
@@ -274,7 +277,7 @@ export async function getTrainerNotifications(trainerId: string): Promise<Dashbo
   });
 
   // 3. Recent quiz submissions in trainer's courses
-  const quizSubs = await db.quizSubmission.findMany({
+  const quizSubs = await dbClient.quizSubmission.findMany({
     where: {
       quiz: { courseId: { in: courseIds } },
     },
@@ -286,7 +289,7 @@ export async function getTrainerNotifications(trainerId: string): Promise<Dashbo
     take: 3,
   });
 
-  quizSubs.forEach((sub) => {
+  quizSubs.forEach((sub: any) => {
     notifications.push({
       id: `trainer-sub-${sub.id}`,
       type: "QUIZ",
