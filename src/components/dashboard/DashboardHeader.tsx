@@ -146,7 +146,7 @@ export function DashboardHeader({
             >
               <Bell className="w-5 h-5" />
               {unreadCount > 0 ? (
-                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-[#FF6B00] ring-2 ring-white animate-pulse" />
+                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-[#FF6B00] ring-2 ring-white" />
               ) : (
                 unreadList.length > 0 && (
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-blue-500 ring-2 ring-white" />

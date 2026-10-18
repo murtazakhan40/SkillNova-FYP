@@ -236,10 +236,7 @@ export default async function StudentDashboardPage() {
             <div>
               <div className="flex items-center justify-between gap-4 mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="relative flex h-2.5 w-2.5 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#FF6B00]"></span>
-                  </span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B00] shadow-2xs shrink-0" />
                   <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
                     Continue Learning
                   </h2>
