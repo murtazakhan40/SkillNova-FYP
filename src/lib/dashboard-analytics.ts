@@ -13,15 +13,19 @@ export interface StudentDashboardAnalytics {
   inProgressCount: number;
   completedCount: number;
   pendingQuizzesCount: number;
+  pendingAssignmentsCount: number;
   averageQuizScore: number;
   certificatesCount: number;
   weeklyActivity: DayActivity[];
   totalActionsThisWeek: number;
 }
 
-export async function getStudentAnalytics(userId: string): Promise<StudentDashboardAnalytics> {
+export async function getStudentAnalytics(
+  userId: string,
+  dbClient: any = db
+): Promise<StudentDashboardAnalytics> {
   // 1. Enrollments
-  const enrollments = await db.enrollment.findMany({
+  const enrollments = await dbClient.enrollment.findMany({
     where: { userId },
     include: {
       course: {
@@ -41,7 +45,7 @@ export async function getStudentAnalytics(userId: string): Promise<StudentDashbo
   const inProgressCount = totalEnrolled - completedCount;
 
   // 2. Quiz Submissions & Average Score
-  const submissions = await db.quizSubmission.findMany({
+  const submissions = await dbClient.quizSubmission.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
   });
@@ -60,18 +64,33 @@ export async function getStudentAnalytics(userId: string): Promise<StudentDashbo
     (q) => !attemptedQuizIds.has(q.id)
   ).length;
 
-  // 4. Certificates
-  const certificatesCount = await db.certificate.count({
+  // 4. Pending Assignments
+  const enrolledCourseIds = enrollments.map((e) => e.courseId);
+  const totalCourseAssignments = await dbClient.assignment.findMany({
+    where: { courseId: { in: enrolledCourseIds } },
+    select: { id: true },
+  });
+  const mySubmissions = await dbClient.assignmentSubmission.findMany({
+    where: { userId },
+    select: { assignmentId: true },
+  });
+  const submittedAssignmentIds = new Set(mySubmissions.map((s) => s.assignmentId));
+  const pendingAssignmentsCount = totalCourseAssignments.filter(
+    (a) => !submittedAssignmentIds.has(a.id)
+  ).length;
+
+  // 5. Certificates
+  const certificatesCount = await dbClient.certificate.count({
     where: { userId },
   });
 
-  // 5. Weekly Learning Activity (7 days window)
+  // 6. Weekly Learning Activity (7 days window)
   const now = new Date();
   const past7DaysStart = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
   past7DaysStart.setHours(0, 0, 0, 0);
 
   // Lesson completions in last 7 days
-  const recentLessons = await db.lessonProgress.findMany({
+  const recentLessons = await dbClient.lessonProgress.findMany({
     where: {
       userId,
       isCompleted: true,
@@ -81,12 +100,21 @@ export async function getStudentAnalytics(userId: string): Promise<StudentDashbo
   });
 
   // Quiz submissions in last 7 days
-  const recentQuizzes = await db.quizSubmission.findMany({
+  const recentQuizzes = await dbClient.quizSubmission.findMany({
     where: {
       userId,
       createdAt: { gte: past7DaysStart },
     },
     select: { createdAt: true },
+  });
+
+  // Assignment submissions in last 7 days
+  const recentAssignments = await dbClient.assignmentSubmission.findMany({
+    where: {
+      userId,
+      submittedAt: { gte: past7DaysStart },
+    },
+    select: { submittedAt: true },
   });
 
   const dayBuckets: Record<string, number> = {};
@@ -123,6 +151,13 @@ export async function getStudentAnalytics(userId: string): Promise<StudentDashbo
     }
   });
 
+  recentAssignments.forEach((a) => {
+    const key = a.submittedAt.toISOString().split("T")[0];
+    if (dayBuckets[key] !== undefined) {
+      dayBuckets[key] += 1;
+    }
+  });
+
   let totalActionsThisWeek = 0;
   let maxCount = 1;
 
@@ -150,6 +185,7 @@ export async function getStudentAnalytics(userId: string): Promise<StudentDashbo
     inProgressCount,
     completedCount,
     pendingQuizzesCount,
+    pendingAssignmentsCount,
     averageQuizScore,
     certificatesCount,
     weeklyActivity,

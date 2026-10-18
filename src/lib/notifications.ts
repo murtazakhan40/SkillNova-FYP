@@ -17,11 +17,14 @@ export type StudentNotification = DashboardNotification;
  * Fetch genuine notifications for a student
  * Strict user isolation: only retrieves events owned by this student
  */
-export async function getStudentNotifications(userId: string): Promise<DashboardNotification[]> {
+export async function getStudentNotifications(
+  userId: string,
+  dbClient: any = db
+): Promise<DashboardNotification[]> {
   const notifications: DashboardNotification[] = [];
 
   // 1. Assignment Evaluation Feedback (Graded or Revision Requested)
-  const assignmentSubmissions = await db.assignmentSubmission.findMany({
+  const assignmentSubmissions = await dbClient.assignmentSubmission.findMany({
     where: {
       userId,
       status: { in: ["GRADED", "RESUBMIT_REQUESTED"] },
@@ -51,14 +54,14 @@ export async function getStudentNotifications(userId: string): Promise<Dashboard
   });
 
   // 2. Earned Digital Certificates
-  const certificates = await db.certificate.findMany({
+  const certificates = await dbClient.certificate.findMany({
     where: { userId },
     include: { course: true },
     orderBy: { issuedAt: "desc" },
     take: 3,
   });
 
-  certificates.forEach((cert) => {
+  certificates.forEach((cert: any) => {
     notifications.push({
       id: `cert-${cert.id}`,
       type: "CERTIFICATE",
@@ -71,7 +74,7 @@ export async function getStudentNotifications(userId: string): Promise<Dashboard
   });
 
   // 3. Recent Quiz Submissions
-  const submissions = await db.quizSubmission.findMany({
+  const submissions = await dbClient.quizSubmission.findMany({
     where: { userId },
     include: {
       quiz: {
@@ -82,7 +85,7 @@ export async function getStudentNotifications(userId: string): Promise<Dashboard
     take: 3,
   });
 
-  submissions.forEach((sub) => {
+  submissions.forEach((sub: any) => {
     notifications.push({
       id: `quiz-${sub.id}`,
       type: "QUIZ",
@@ -95,7 +98,7 @@ export async function getStudentNotifications(userId: string): Promise<Dashboard
   });
 
   // 4. Confirmed Enrollment / Orders
-  const recentOrders = await db.order.findMany({
+  const recentOrders = await dbClient.order.findMany({
     where: {
       userId,
       status: "COMPLETED",
@@ -105,7 +108,7 @@ export async function getStudentNotifications(userId: string): Promise<Dashboard
     take: 2,
   });
 
-  recentOrders.forEach((order) => {
+  recentOrders.forEach((order: any) => {
     notifications.push({
       id: `order-enr-${order.id}`,
       type: "ENROLLMENT",
@@ -118,7 +121,7 @@ export async function getStudentNotifications(userId: string): Promise<Dashboard
   });
 
   // 5. Active Course Progress Milestone
-  const enrollments = await db.enrollment.findMany({
+  const enrollments = await dbClient.enrollment.findMany({
     where: { userId },
     include: { course: true },
     orderBy: { updatedAt: "desc" },
