@@ -22,7 +22,7 @@ export async function enrollInCourseAction(courseId: string) {
 
   // Enforce pricing policy: paid courses cannot be directly enrolled for free
   if (course.price > 0) {
-    redirect(`/courses/${course.slug}?checkout_required=true`);
+    redirect(`/checkout/${course.slug}`);
   }
 
   // Check if enrollment already exists

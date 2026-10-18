@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
+import QRCode from "qrcode";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { 
   CertificateGalleryClient, 
@@ -60,20 +61,42 @@ export default async function StudentCertificatesPage() {
     }),
   ]);
 
-  const certificateData: CertificateData[] = certificates.map((cert) => ({
-    id: cert.id,
-    certificateCode: cert.certificateCode,
-    issuedAt: formatDate(cert.issuedAt),
-    studentName: user.name,
-    course: {
-      id: cert.course.id,
-      title: cert.course.title,
-      slug: cert.course.slug,
-      categoryName: cert.course.category.name,
-      instructorName: cert.course.instructor.name,
-      instructorHeadline: cert.course.instructor.headline,
-    },
-  }));
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  const certificateData: CertificateData[] = await Promise.all(
+    certificates.map(async (cert) => {
+      let qrCodeDataUrl = "";
+      try {
+        const verifyUrl = `${baseUrl.replace(/\/$/, "")}/verify?code=${encodeURIComponent(cert.certificateCode)}`;
+        qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, {
+          width: 120,
+          margin: 1,
+          color: { dark: "#0B1B3D", light: "#FFFFFF" },
+        });
+      } catch (err) {
+        console.error("Failed to generate QR data url:", err);
+      }
+
+      return {
+        id: cert.id,
+        certificateCode: cert.certificateCode,
+        issuedAt: formatDate(cert.issuedAt),
+        studentName: user.name,
+        grade: cert.grade,
+        isRevoked: cert.isRevoked,
+        revokedReason: cert.revokedReason,
+        qrCodeDataUrl,
+        course: {
+          id: cert.course.id,
+          title: cert.course.title,
+          slug: cert.course.slug,
+          categoryName: cert.course.category.name,
+          instructorName: cert.course.instructor.name,
+          instructorHeadline: cert.course.instructor.headline,
+        },
+      };
+    })
+  );
 
   const inProgressData: InProgressCourseData[] = inProgressEnrollments.map((enr) => {
     const allLessons = enr.course.sections.flatMap((s) => s.lessons);

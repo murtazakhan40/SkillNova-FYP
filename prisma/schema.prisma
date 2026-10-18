@@ -30,9 +30,13 @@ model User {
   lessonProgress  LessonProgress[]
   quizSubmissions QuizSubmission[]
   reviews         Review[]
-  certificates    Certificate[]
+  certificates          Certificate[]
+  assignmentSubmissions AssignmentSubmission[]
+  lessonDiscussions     LessonDiscussion[]
+  orders                Order[]
 
   @@index([role])
+  @@index([createdAt])
 }
 
 // Category for catalog classification
@@ -74,11 +78,14 @@ model Course {
   quizzes      Quiz[]
   reviews      Review[]
   certificates Certificate[]
+  assignments  Assignment[]
+  orders       Order[]
 
   @@index([instructorId])
   @@index([categoryId])
   @@index([published])
   @@index([featured])
+  @@index([published, createdAt])
 }
 
 // Curriculum Section
@@ -92,6 +99,7 @@ model Section {
 
   @@index([courseId])
   @@index([order])
+  @@index([courseId, order])
 }
 
 // Individual Course Lesson
@@ -106,9 +114,12 @@ model Lesson {
   sectionId   String
   section     Section          @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   progress    LessonProgress[]
+  resources   LessonResource[]
+  discussions LessonDiscussion[]
 
   @@index([sectionId])
   @@index([order])
+  @@index([sectionId, order])
 }
 
 // Student Course Enrollment
@@ -128,6 +139,8 @@ model Enrollment {
   @@index([userId])
   @@index([courseId])
   @@index([progress])
+  @@index([userId, updatedAt])
+  @@index([userId, progress])
 }
 
 // Progress for individual lessons
@@ -145,6 +158,7 @@ model LessonProgress {
   @@index([userId])
   @@index([lessonId])
   @@index([isCompleted])
+  @@index([userId, isCompleted, completedAt])
 }
 
 // Assessment Quiz
@@ -188,6 +202,8 @@ model QuizSubmission {
   @@index([quizId])
   @@index([userId])
   @@index([passed])
+  @@index([userId, createdAt])
+  @@index([quizId, createdAt])
 }
 
 // Course Review & Rating
@@ -206,13 +222,18 @@ model Review {
   @@index([userId])
   @@index([courseId])
   @@index([rating])
+  @@index([courseId, createdAt])
 }
 
 // Verified Course Completion Certificate
 model Certificate {
-  id              String   @id @default(uuid())
-  certificateCode String   @unique // e.g. "SN-2026-X89J21"
-  issuedAt        DateTime @default(now())
+  id              String    @id @default(uuid())
+  certificateCode String    @unique // e.g. "SN-2026-A8F2-7E91-C4B3"
+  issuedAt        DateTime  @default(now())
+  grade           Float?    // Verified final assessment score (e.g. 92.5%) - null if course has no quiz
+  isRevoked       Boolean   @default(false)
+  revokedReason   String?   // Reason for revocation (if any)
+  revokedAt       DateTime?
 
   userId   String
   courseId String
@@ -223,6 +244,8 @@ model Certificate {
   @@index([userId])
   @@index([courseId])
   @@index([issuedAt])
+  @@index([userId, issuedAt])
+  @@index([isRevoked])
 }
 
 // System & Governance Audit Log
@@ -241,4 +264,123 @@ model AuditLog {
   @@index([userId])
   @@index([action])
   @@index([createdAt])
+  @@index([action, createdAt])
+}
+
+// Lesson Supplementary Materials & Downloads
+model LessonResource {
+  id        String   @id @default(uuid())
+  title     String
+  fileName  String
+  fileUrl   String   // Protected storage path e.g. "/uploads/resources/xxx.pdf"
+  fileSize  Int      // Bytes
+  fileType  String   // MIME type
+  lessonId  String
+  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([lessonId])
+}
+
+// Course Practical Project / Coding Assignment
+model Assignment {
+  id          String                 @id @default(uuid())
+  title       String
+  description String
+  dueDate     DateTime?
+  maxScore    Int                    @default(100)
+  courseId    String
+  course      Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  submissions AssignmentSubmission[]
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  @@index([courseId])
+  @@index([createdAt])
+}
+
+// Student Assignment Submission & Trainer Evaluation
+model AssignmentSubmission {
+  id           String     @id @default(uuid())
+  assignmentId String
+  userId       String
+  textContent  String?    // Solution notes, text writeup, or git repo URL
+  fileUrl      String?    // Attached submission archive / PDF (if uploaded)
+  fileName     String?
+  fileSize     Int?
+  score        Float?     // Grade (0 to 100%)
+  feedback     String?    // Trainer review and feedback notes
+  status       String     @default("SUBMITTED") // "SUBMITTED", "GRADED", "RESUBMIT_REQUESTED"
+  gradedAt     DateTime?
+  gradedById   String?    // User ID of evaluator
+  submittedAt  DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, userId])
+  @@index([assignmentId])
+  @@index([userId])
+  @@index([status])
+}
+
+// Lesson Discussion, Academic Q&A & Peer Inquiry
+model LessonDiscussion {
+  id        String   @id @default(uuid())
+  lessonId  String
+  userId    String
+  content   String
+  isAnswer  Boolean  @default(false)
+  reported  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId, createdAt])
+  @@index([userId])
+  @@index([reported])
+}
+
+// Order Lifecycle & Payment Tracking
+model Order {
+  id             String    @id @default(uuid())
+  orderNumber    String    @unique // e.g. "ORD-2026-X89J21"
+  userId         String
+  courseId       String
+  amount         Float     // Canonical course fee (PKR) looked up from db
+  currency       String    @default("PKR")
+  status         String    @default("PENDING") // "PENDING", "COMPLETED", "FAILED", "CANCELLED"
+  provider       String    @default("DEMO_SANDBOX") // "DEMO_SANDBOX", "STRIPE", "PAYFAST"
+  idempotencyKey String    @unique // Client session checkout idempotency key
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course         Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  payment        Payment?
+
+  @@index([userId, status])
+  @@index([courseId])
+  @@index([createdAt])
+}
+
+// Payment Ledger (PCI-DSS Compliant: NEVER Store PAN or CVV)
+model Payment {
+  id            String   @id @default(uuid())
+  orderId       String   @unique
+  providerTxnId String   @unique // External transaction reference from gateway/webhook
+  amount        Float
+  currency      String
+  status        String   // "SUCCESS", "FAILED"
+  paymentMethod String   // "DEMO_SIMULATOR", "CARD", "WALLET"
+  metadata      String?  // Sanitized JSON (Zero secrets/PAN)
+  processedAt   DateTime @default(now())
+
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([providerTxnId])
+  @@index([status])
 }

@@ -1,14 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 
 export function HeroHeadline() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const phrases = [
     { text: "Ignite", delay: 0 },
     { text: "Your", delay: 80 },
@@ -23,11 +17,7 @@ export function HeroHeadline() {
         {phrases.map((item, index) => (
           <span
             key={index}
-            className={`inline-block transition-all duration-700 ease-out ${
-              mounted
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
-            }`}
+            className="inline-block transition-all duration-700 ease-out opacity-100 translate-y-0"
             style={{
               transitionDelay: `${item.delay}ms`,
             }}
@@ -37,13 +27,11 @@ export function HeroHeadline() {
         ))}
       </span>{" "}
       <span
-        className={`inline-block mt-1 sm:mt-0 transition-all duration-700 ease-out ${
-          mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-        }`}
+        className="inline-block mt-1 sm:mt-0 transition-all duration-700 ease-out opacity-100 translate-y-0"
         style={{ transitionDelay: "420ms" }}
       >
         <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] via-[#FFA566] to-white drop-shadow-[0_2px_15px_rgba(255,107,0,0.35)] font-black">
-          SkillNova Academy
+          Industry Mastery.
         </span>
       </span>
     </h1>

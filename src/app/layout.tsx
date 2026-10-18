@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import { CustomCursor } from "@/components/animations/CustomCursor";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -173,7 +172,6 @@ export default function RootLayout({
         suppressHydrationWarning
         className="min-h-full flex flex-col bg-[#F8FAFC] text-[#0F172A]"
       >
-        <CustomCursor />
         {children}
       </body>
     </html>

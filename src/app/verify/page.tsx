@@ -1,6 +1,8 @@
 import React from "react";
 import Link from "next/link";
+import QRCode from "qrcode";
 import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { HeroParticles } from "@/components/animations/HeroParticles";
@@ -11,8 +13,12 @@ import {
   Calendar, 
   User, 
   ShieldCheck,
+  ShieldAlert,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Download,
+  AlertTriangle,
+  QrCode as QrIcon
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -27,19 +33,49 @@ export default async function VerifyCertificatePage({
 }: VerifyPageProps) {
   const params = await searchParams;
   const searchCode = params.code?.trim().toUpperCase();
+  const currentUser = await getCurrentUser();
 
   let certificate = null;
+  let qrCodeDataUrl = "";
+
   if (searchCode) {
     certificate = await db.certificate.findUnique({
       where: { certificateCode: searchCode },
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
         course: {
           include: { instructor: true },
         },
       },
     });
+
+    if (certificate) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      const verifyUrl = `${baseUrl.replace(/\/$/, "")}/verify?code=${encodeURIComponent(certificate.certificateCode)}`;
+      try {
+        qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, {
+          width: 160,
+          margin: 1,
+          color: {
+            dark: "#0B1B3D",
+            light: "#FFFFFF",
+          },
+          errorCorrectionLevel: "M",
+        });
+      } catch (e) {
+        console.error("QR Code generation error:", e);
+      }
+    }
   }
+
+  const isOwner = currentUser && certificate && currentUser.id === certificate.user.id;
+  const canDownload = isOwner || (currentUser && (currentUser.role === "ADMIN" || currentUser.id === certificate?.course.instructorId));
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
@@ -71,7 +107,7 @@ export default async function VerifyCertificatePage({
                   type="text"
                   name="code"
                   defaultValue={searchCode || ""}
-                  placeholder="e.g. SN-2026-X89J21"
+                  placeholder="e.g. SN-2026-A8F2-7E91-C4B3"
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-700 bg-[#132752] text-white text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
                 />
               </div>
@@ -89,7 +125,7 @@ export default async function VerifyCertificatePage({
                 href="/verify?code=SN-2026-X89J21"
                 className="font-mono text-[#FF6B00] hover:underline"
               >
-                SN-2026-X89J21 (Click to Test)
+                SN-2026-X89J21
               </Link>
             </div>
           </form>
@@ -100,69 +136,166 @@ export default async function VerifyCertificatePage({
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-14 flex-1 w-full">
         {searchCode ? (
           certificate ? (
-            <div className="bg-white rounded-3xl border-2 border-emerald-500/30 p-8 sm:p-12 shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-bl-full pointer-events-none" />
+            certificate.isRevoked ? (
+              /* REVOKED CERTIFICATE DISPLAY */
+              <div className="bg-white rounded-3xl border-2 border-red-500/40 p-8 sm:p-12 shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-36 h-36 bg-red-500/10 rounded-bl-full pointer-events-none" />
 
-              <div className="flex items-center gap-3 text-emerald-600 font-bold text-sm mb-6 pb-6 border-b border-slate-100">
-                <CheckCircle2 className="w-6 h-6 shrink-0" />
-                <span>Officially Verified & Authenticated Credential</span>
-              </div>
+                <div className="flex items-center gap-3 text-red-600 font-bold text-sm mb-6 pb-6 border-b border-red-100">
+                  <ShieldAlert className="w-6 h-6 shrink-0" />
+                  <span>Credential Revocation Notice: This Certificate Has Been Revoked</span>
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                <div className="space-y-4">
-                  <div>
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Recipient Student
-                    </span>
-                    <h2 className="text-2xl font-extrabold text-[#0B1B3D] mt-0.5">
-                      {certificate.user.name}
-                    </h2>
-                    <span className="text-xs text-slate-500">
-                      {certificate.user.email}
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Course Curriculum
-                    </span>
-                    <h3 className="text-lg font-bold text-[#FF6B00] mt-0.5">
-                      {certificate.course.title}
-                    </h3>
-                  </div>
-
-                  <div className="flex items-center gap-6 text-xs text-slate-600 pt-2">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-slate-400" />
-                      <span>Issued: {formatDate(certificate.issuedAt)}</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                  <div className="space-y-4">
+                    <div>
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                        Recipient Student
+                      </span>
+                      <h2 className="text-2xl font-extrabold text-[#0B1B3D] mt-0.5">
+                        {certificate.user.name}
+                      </h2>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-slate-400" />
-                      <span>Instructor: {certificate.course.instructor.name}</span>
+
+                    <div>
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                        Course Curriculum
+                      </span>
+                      <h3 className="text-lg font-bold text-slate-700 mt-0.5">
+                        {certificate.course.title}
+                      </h3>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 space-y-1">
+                      <div className="font-bold flex items-center gap-1.5">
+                        <AlertTriangle className="w-4 h-4 text-red-600" />
+                        <span>Revocation Reason:</span>
+                      </div>
+                      <p>{certificate.revokedReason || "Administrative or academic review action."}</p>
+                      {certificate.revokedAt && (
+                        <div className="text-[11px] text-red-600 pt-1">
+                          Revoked on: {formatDate(certificate.revokedAt)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-900 text-white p-6 rounded-2xl border border-red-900/50 text-center space-y-3">
+                    <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-center mx-auto shadow-inner">
+                      <ShieldAlert className="w-8 h-8" />
+                    </div>
+                    <div className="font-mono text-xs font-bold text-red-400 line-through">
+                      {certificate.certificateCode}
+                    </div>
+                    <div className="text-[10px] text-slate-400 uppercase tracking-widest">
+                      SkillNova Academic Registry
+                    </div>
+                    <div>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-400 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">
+                        Invalidated / Revoked
+                      </span>
                     </div>
                   </div>
                 </div>
+              </div>
+            ) : (
+              /* ACTIVE VALID VERIFIED CERTIFICATE DISPLAY */
+              <div className="bg-white rounded-3xl border-2 border-emerald-500/30 p-8 sm:p-12 shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-36 h-36 bg-emerald-500/10 rounded-bl-full pointer-events-none" />
 
-                {/* Digital Certificate Badge Seal */}
-                <div className="bg-[#0B1B3D] text-white p-6 rounded-2xl border border-slate-800 text-center space-y-3">
-                  <div className="w-16 h-16 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-[#FF6B00] flex items-center justify-center mx-auto shadow-inner">
-                    <Award className="w-8 h-8" />
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-100">
+                  <div className="flex items-center gap-3 text-emerald-600 font-bold text-sm">
+                    <CheckCircle2 className="w-6 h-6 shrink-0" />
+                    <span>Officially Verified & Authenticated Credential</span>
                   </div>
-                  <div className="font-mono text-xs font-bold text-[#FF6B00]">
-                    {certificate.certificateCode}
+
+                  {canDownload && (
+                    <a
+                      href={`/api/certificates/${encodeURIComponent(certificate.certificateCode)}/download`}
+                      download
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#0B1B3D] text-white hover:bg-[#132752] transition-colors shadow-xs"
+                    >
+                      <Download className="w-3.5 h-3.5 text-[#FF6B00]" />
+                      <span>Download Official PDF</span>
+                    </a>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                  <div className="md:col-span-2 space-y-4">
+                    <div>
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                        Recipient Student
+                      </span>
+                      <h2 className="text-2xl font-extrabold text-[#0B1B3D] mt-0.5">
+                        {certificate.user.name}
+                      </h2>
+                    </div>
+
+                    <div>
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                        Course Curriculum
+                      </span>
+                      <h3 className="text-lg font-bold text-[#FF6B00] mt-0.5">
+                        {certificate.course.title}
+                      </h3>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 text-xs text-slate-600 pt-1">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-slate-400" />
+                        <span>Issued: {formatDate(certificate.issuedAt)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-slate-400" />
+                        <span>Instructor: {certificate.course.instructor.name}</span>
+                      </div>
+                    </div>
+
+                    {/* Grade Section: Only when verified and available */}
+                    {certificate.grade !== null && certificate.grade !== undefined && (
+                      <div className="pt-2">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 border border-amber-200 text-amber-900">
+                          <Award className="w-3.5 h-3.5 text-[#FF6B00]" />
+                          <span>Verified Assessment Grade: {Math.round(certificate.grade)}% (Passed)</span>
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  <div className="text-[10px] text-slate-400 uppercase tracking-widest">
-                    SkillNova Academic Board Verification
-                  </div>
-                  <div className="pt-2">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      Tamper-Proof Record
-                    </span>
+
+                  {/* Digital Certificate Badge Seal & QR Code */}
+                  <div className="bg-[#0B1B3D] text-white p-6 rounded-2xl border border-slate-800 text-center space-y-3 flex flex-col items-center">
+                    {qrCodeDataUrl ? (
+                      <div className="bg-white p-2 rounded-xl shadow-inner">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={qrCodeDataUrl}
+                          alt={`QR Code verification for ${certificate.certificateCode}`}
+                          className="w-24 h-24 rounded"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-[#FF6B00] flex items-center justify-center mx-auto shadow-inner">
+                        <Award className="w-8 h-8" />
+                      </div>
+                    )}
+
+                    <div className="font-mono text-xs font-bold text-[#FF6B00] tracking-wider">
+                      {certificate.certificateCode}
+                    </div>
+                    <div className="text-[10px] text-slate-400 uppercase tracking-widest">
+                      SkillNova Academic Registry
+                    </div>
+                    <div className="pt-1">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        Tamper-Proof Record
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )
           ) : (
             <div className="bg-white rounded-2xl border border-red-200 p-8 text-center max-w-md mx-auto">
               <div className="w-12 h-12 rounded-xl bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-3">
@@ -172,7 +305,7 @@ export default async function VerifyCertificatePage({
                 Certificate Not Found
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                No verified certificate found with code &ldquo;{searchCode}&rdquo;. Please verify the code and try again.
+                No verified certificate found with code &ldquo;{searchCode}&rdquo;. Please verify the identifier and try again.
               </p>
             </div>
           )

@@ -27,12 +27,35 @@
   --foreground: #0f172a;
 }
 
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scroll-padding-top: 5rem;
+}
+
+@keyframes pageEnter {
+  0% {
+    opacity: 0.92;
+    transform: translateY(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
   overflow-x: hidden;
   letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  animation: pageEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 /* Headings with modern Outfit / Plus Jakarta Sans geometric typography */
@@ -224,21 +247,6 @@ h1, h2, h3, h4, h5, h6, .font-heading {
               0 0 20px 0 rgba(255, 107, 0, 0.08);
 }
 
-@keyframes cursorRipple {
-  0% {
-    transform: translate(-50%, -50%) scale(0.8);
-    opacity: 0.8;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(2.2);
-    opacity: 0;
-  }
-}
-
-.animate-cursor-ripple {
-  animation: cursorRipple 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
 /* Accessibility: Respect Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
@@ -246,6 +254,9 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  body {
+    animation: none !important;
   }
   .animate-float-slow,
   .animate-float-reverse,

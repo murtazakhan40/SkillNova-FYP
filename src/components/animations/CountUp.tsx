@@ -13,13 +13,13 @@ interface CountUpProps {
 
 export function CountUp({
   end,
-  duration = 1.8,
+  duration = 1.6,
   prefix = "",
   suffix = "",
   decimals = 0,
   className = "",
 }: CountUpProps) {
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(end); // Default to target number to avoid jarring zero flash on reload
   const [hasStarted, setHasStarted] = useState(false);
   const elementRef = useRef<HTMLSpanElement>(null);
 
@@ -29,12 +29,14 @@ export function CountUp({
     ).matches;
 
     if (prefersReducedMotion) {
-      setCount(end);
       return;
     }
 
     const current = elementRef.current;
     if (!current) return;
+
+    // Reset to 0 and trigger counter animation smoothly once in viewport
+    setCount(0);
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -43,13 +45,13 @@ export function CountUp({
           observer.unobserve(entry.target);
         }
       },
-      { threshold: 0.2 }
+      { threshold: 0.15 }
     );
 
     observer.observe(current);
 
     return () => observer.disconnect();
-  }, [hasStarted, end]);
+  }, [hasStarted]);
 
   useEffect(() => {
     if (!hasStarted) return;
@@ -61,7 +63,7 @@ export function CountUp({
       if (!startTime) startTime = timestamp;
       const progress = Math.min((timestamp - startTime) / (duration * 1000), 1);
 
-      // Ease out expo curve for snappy modern finish
+      // Smooth easeOutExpo curve
       const easeOutExpo =
         progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
       const currentVal = easeOutExpo * end;

@@ -17,15 +17,14 @@ export function ScrollReveal({
   className = "",
   delay = 0,
   direction = "up",
-  distance = 24,
-  duration = 0.6,
+  distance = 16,
+  duration = 0.45,
   once = true,
 }: ScrollRevealProps) {
   const [isVisible, setIsVisible] = useState(false);
   const elementRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Respect user's reduced motion preference
     const prefersReducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)"
     ).matches;
@@ -37,6 +36,13 @@ export function ScrollReveal({
 
     const currentElement = elementRef.current;
     if (!currentElement) return;
+
+    // Check if element is already inside or near viewport on mount/reload for immediate smooth rendering
+    const rect = currentElement.getBoundingClientRect();
+    if (rect.top < window.innerHeight + 50) {
+      setIsVisible(true);
+      return;
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -50,8 +56,8 @@ export function ScrollReveal({
         }
       },
       {
-        threshold: 0.1,
-        rootMargin: "0px 0px -40px 0px",
+        threshold: 0.05,
+        rootMargin: "50px 0px 0px 0px",
       }
     );
 
@@ -83,13 +89,12 @@ export function ScrollReveal({
       ref={elementRef}
       className={className}
       style={{
-        opacity: isVisible ? 1 : 0,
+        opacity: isVisible ? 1 : 0.8,
         transform: getTransform(),
         transitionProperty: "opacity, transform",
         transitionDuration: `${duration}s`,
         transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
         transitionDelay: `${delay}ms`,
-        willChange: isVisible ? "auto" : "opacity, transform",
       }}
     >
       {children}

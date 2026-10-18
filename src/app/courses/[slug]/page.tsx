@@ -413,10 +413,14 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
               <div className="p-6 space-y-5">
                 <div className="flex items-baseline justify-between">
                   <span className="text-3xl font-heading font-extrabold text-[#0B1B3D]">
-                    {formatPrice(course.price)}
+                    {course.price > 0 ? formatPrice(course.price) : "Free Access"}
                   </span>
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
-                    Full Academic Access
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-md border ${
+                    course.price > 0
+                      ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                      : "text-blue-700 bg-blue-50 border-blue-200"
+                  }`}>
+                    {course.price > 0 ? "Full Academic License" : "Free Foundation Track"}
                   </span>
                 </div>
 
@@ -428,27 +432,31 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                     <span>Already Enrolled • Enter Classroom</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
+                ) : course.price <= 0 ? (
+                  /* FREE COURSE PATH: Direct zero-dollar enrollment */
+                  <form action={enrollInCourseAction.bind(null, course.id)}>
+                    <button
+                      type="submit"
+                      className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-heading font-bold bg-gradient-to-r from-emerald-600 to-teal-700 hover:opacity-95 text-white shadow-lg shadow-emerald-500/25 btn-lift text-sm cursor-pointer"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>Enroll for Free • Start Learning</span>
+                    </button>
+                  </form>
                 ) : (
+                  /* PAID COURSE PATH: Routed through server-verified checkout */
                   <div className="space-y-2">
-                    <form action={enrollInCourseAction.bind(null, course.id)}>
-                      <button
-                        type="submit"
-                        className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-heading font-bold bg-gradient-to-r from-[#FF6B00] to-[#EA580C] text-white shadow-lg shadow-orange-500/25 btn-lift text-sm cursor-pointer"
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        <span>Enroll in Course</span>
-                      </button>
-                    </form>
+                    <Link
+                      href={`/checkout/${course.slug}`}
+                      className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-heading font-bold bg-gradient-to-r from-[#FF6B00] to-[#EA580C] text-white shadow-lg shadow-orange-500/25 btn-lift text-sm cursor-pointer"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>Proceed to Checkout</span>
+                    </Link>
 
-                    <form action={directCourseClassroomAccess.bind(null, course.id, course.slug)}>
-                      <button
-                        type="submit"
-                        className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl font-heading font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs btn-lift cursor-pointer shadow-sm"
-                      >
-                        <PlayCircle className="w-4 h-4 text-blue-600" />
-                        <span>Instant Demo: Enter Course Classroom</span>
-                      </button>
-                    </form>
+                    <div className="text-[11px] text-center text-slate-400">
+                      Academic Demo Simulator • Zero real charges
+                    </div>
                   </div>
                 )}
 

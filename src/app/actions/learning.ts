@@ -9,6 +9,7 @@ import {
   requireCourseEnrollment,
 } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { evaluateAndIssueCertificate } from "@/lib/certificates";
 
 /**
  * Mark a lesson as completed, calculate course progress, and auto-issue certificate at 100%.
@@ -115,35 +116,15 @@ export async function toggleLessonProgress(lessonId: string, courseSlug: string)
       },
     });
 
-    // 4. Automatically award certificate if 100% completed and not yet issued
+    // 4. Rigorous Certificate Eligibility Evaluation (100% lessons + passed quiz if required)
     if (progressPercent === 100) {
-      const existingCert = await tx.certificate.findUnique({
-        where: {
-          userId_courseId: {
-            userId: user.id,
-            courseId: course.id,
-          },
-        },
-      });
-
-      if (!existingCert) {
-        const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
-        const code = `SN-2026-${randomSuffix}`;
-
-        await tx.certificate.create({
-          data: {
-            certificateCode: code,
-            userId: user.id,
-            courseId: course.id,
-            issuedAt: new Date(),
-          },
-        });
-      }
+      await evaluateAndIssueCertificate(user.id, course.id, tx);
     }
   });
 
   revalidatePath(`/courses/${courseSlug}/learn/${lessonId}`);
   revalidatePath(`/dashboard/student`);
+  revalidatePath(`/dashboard/student/certificates`);
   revalidatePath(`/courses/${courseSlug}`);
 }
 
@@ -196,7 +177,14 @@ export async function submitQuizAttempt(
     },
   });
 
+  // If passed, evaluate whether all requirements are now satisfied to issue certificate
+  if (passed) {
+    await evaluateAndIssueCertificate(user.id, quiz.courseId);
+  }
+
   revalidatePath(`/dashboard/student`);
+  revalidatePath(`/dashboard/student/certificates`);
+  revalidatePath(`/dashboard/student/quizzes`);
 
   return {
     submissionId: submission.id,
