@@ -16,7 +16,7 @@ export function WeeklyActivityCard({
   const activeDays = activity.filter((a) => a.count > 0).length;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 flex flex-col justify-between">
+    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 flex flex-col justify-between h-full">
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
           <div>
@@ -58,7 +58,7 @@ export function WeeklyActivityCard({
                 <div className="w-full max-w-[36px] bg-slate-100 rounded-t-lg overflow-hidden flex items-end h-full">
                   <div
                     style={{ height: `${day.heightPercent}%` }}
-                    className={`w-full rounded-t-lg transition-all duration-500 ${
+                    className={`w-full rounded-t-lg transition-[height] duration-500 ${
                       day.isToday
                         ? "bg-gradient-to-t from-[#FF6B00] to-amber-400 shadow-sm"
                         : day.count > 0

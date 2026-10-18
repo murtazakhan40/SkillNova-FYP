@@ -85,7 +85,7 @@ export function DashboardHeader({
   }[user.role] || { label: "User", color: "bg-slate-100 text-slate-700 border-slate-200" };
 
   return (
-    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-xs px-4 sm:px-6 lg:px-8 py-3.5 transition-all shrink-0">
+    <header className="w-full bg-white border-b border-slate-200/90 shadow-2xs px-4 sm:px-6 lg:px-8 py-3.5 shrink-0 z-20">
       <div className="flex items-center justify-between gap-4">
         {/* Left: Mobile Sidebar Toggle + Mobile Logo */}
         <div className="flex items-center gap-3">

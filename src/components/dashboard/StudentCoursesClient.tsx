@@ -256,7 +256,7 @@ export function StudentCoursesClient({ initialCourses }: StudentCoursesClientPro
             return (
               <div
                 key={item.id}
-                className="bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between overflow-hidden group"
+                className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs hover:border-slate-300 transition-colors duration-150 flex flex-col justify-between overflow-hidden group min-w-0"
               >
                 <div>
                   {/* Thumbnail / Header Area */}
