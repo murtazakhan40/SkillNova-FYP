@@ -14,7 +14,18 @@ export function proxy(request: NextRequest) {
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   const user = verifySessionToken(sessionCookie);
 
-  // 1. Admin Dashboard: Strictly requires authenticated session with ADMIN role
+  // 1. Auth Pages: Authenticated users should not revisit /login or /register
+  if ((pathname === "/login" || pathname === "/register") && user) {
+    const targetDashboard =
+      user.role === "ADMIN"
+        ? "/dashboard/admin"
+        : user.role === "TRAINER"
+        ? "/dashboard/trainer"
+        : "/dashboard/student";
+    return NextResponse.redirect(new URL(targetDashboard, request.url));
+  }
+
+  // 2. Admin Dashboard: Strictly requires authenticated session with ADMIN role
   if (pathname.startsWith("/dashboard/admin")) {
     if (!user) {
       const loginUrl = new URL("/login", request.url);
@@ -30,7 +41,7 @@ export function proxy(request: NextRequest) {
     }
   }
 
-  // 2. Trainer Studio: Strictly requires authenticated session with TRAINER or ADMIN role
+  // 3. Trainer Studio: Strictly requires authenticated session with TRAINER or ADMIN role
   if (pathname.startsWith("/dashboard/trainer")) {
     if (!user) {
       const loginUrl = new URL("/login", request.url);
@@ -43,8 +54,8 @@ export function proxy(request: NextRequest) {
     }
   }
 
-  // 3. Student Dashboard: Requires authenticated session
-  if (pathname.startsWith("/dashboard/student")) {
+  // 4. Student Dashboard & Checkout: Requires authenticated session
+  if (pathname.startsWith("/dashboard/student") || pathname.startsWith("/checkout")) {
     if (!user) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
@@ -52,7 +63,7 @@ export function proxy(request: NextRequest) {
     }
   }
 
-  // 4. Learning Classroom: Requires authenticated session
+  // 5. Learning Classroom: Requires authenticated session
   if (pathname.includes("/learn/")) {
     if (!user) {
       const loginUrl = new URL("/login", request.url);
@@ -66,12 +77,16 @@ export function proxy(request: NextRequest) {
   response.headers.set("X-Frame-Options", "SAMEORIGIN");
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), browsing-topics=()");
   return response;
 }
 
 export const config = {
   matcher: [
     "/dashboard/:path*",
+    "/checkout/:path*",
+    "/login",
+    "/register",
     "/courses/:slug/learn/:path*",
   ],
 };

@@ -1,149 +1,108 @@
-import React from "react";
+import React, { Suspense } from "react";
 import Link from "next/link";
 import { SkillNovaLogo } from "@/components/brand/SkillNovaLogo";
 import { HeroParticles } from "@/components/animations/HeroParticles";
-import { registerAction } from "@/app/actions/auth";
+import { RegisterForm } from "@/components/auth/RegisterForm";
 import { 
-  User, 
-  Mail, 
-  Lock, 
-  ArrowRight
+  ShieldCheck, 
+  Sparkles, 
+  CheckCircle2,
+  Loader2
 } from "lucide-react";
+
+export const metadata = {
+  title: "Create Your Account | SkillNova Academy",
+  description:
+    "Register as a Student to enroll in industry-aligned courses, or join as a Faculty Trainer to mentor and publish technical curricula.",
+};
 
 export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-[#0B1B3D] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      <HeroParticles particleCount={25} />
-      <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-[#FF6B00]/10 blur-3xl pointer-events-none animate-pulse-glow" />
-      <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full bg-blue-600/15 blur-3xl pointer-events-none animate-pulse-glow" style={{ animationDelay: "2s" }} />
+      {/* Background Interactive Elements */}
+      <HeroParticles particleCount={30} />
+      <div 
+        className="absolute top-0 right-1/4 w-[500px] h-[500px] rounded-full bg-[#FF6B00]/10 blur-3xl pointer-events-none animate-pulse-glow" 
+        aria-hidden="true" 
+      />
+      <div 
+        className="absolute bottom-0 left-1/4 w-[500px] h-[500px] rounded-full bg-blue-600/15 blur-3xl pointer-events-none animate-pulse-glow" 
+        style={{ animationDelay: "2s" }} 
+        aria-hidden="true" 
+      />
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10">
-        <div className="flex justify-center mb-4">
+      {/* Header Container */}
+      <div className="sm:mx-auto sm:w-full sm:max-w-2xl text-center relative z-10 mb-8">
+        <div className="flex justify-center mb-5">
           <SkillNovaLogo variant="light" size="lg" />
         </div>
-        <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-white tracking-tight">
-          Create Your Free Account
-        </h2>
-        <p className="mt-2 text-xs sm:text-sm text-slate-400 font-normal">
-          Join thousands of learners and instructors on SkillNova Academy.
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-orange-300 text-xs font-semibold backdrop-blur-sm border border-white/15 mb-3">
+          <Sparkles className="w-3.5 h-3.5 text-[#FF6B00]" />
+          <span>SkillNova Academy Onboarding</span>
+        </div>
+        <h1 className="text-3xl sm:text-4xl font-heading font-extrabold text-white tracking-tight">
+          Join SkillNova Academy
+        </h1>
+        <p className="mt-2 text-sm sm:text-base text-slate-300 max-w-lg mx-auto font-normal">
+          Register before enrolling in technical courses or applying as an accredited faculty trainer.
         </p>
+
+        {/* Value Highlights Pill Row */}
+        <div className="mt-5 flex flex-wrap justify-center items-center gap-3 sm:gap-6 text-xs text-slate-300">
+          <div className="flex items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4 text-[#FF6B00]" />
+            <span>Accredited Certifications</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4 text-[#FF6B00]" />
+            <span>Faculty Authoring Studio</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4 text-[#FF6B00]" />
+            <span>Under-18 Guardian Oversight</span>
+          </div>
+        </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        <div className="bg-white py-8 px-6 shadow-2xl rounded-2xl sm:px-10 border border-slate-100">
-          <form action={async (formData) => {
-            "use server";
-            await registerAction(null, formData);
-          }} className="space-y-4">
-            {/* Role Selection */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Registering As
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <label className="cursor-pointer border border-slate-200 rounded-xl p-2.5 flex items-center gap-2 hover:bg-slate-50 has-[:checked]:border-[#FF6B00] has-[:checked]:bg-orange-50/50">
-                  <input
-                    type="radio"
-                    name="role"
-                    value="STUDENT"
-                    defaultChecked
-                    className="accent-[#FF6B00]"
-                  />
-                  <div className="text-xs">
-                    <span className="font-bold text-[#0B1B3D] block">Student</span>
-                    <span className="text-[10px] text-slate-500">Learn & get certified</span>
-                  </div>
-                </label>
-
-                <label className="cursor-pointer border border-slate-200 rounded-xl p-2.5 flex items-center gap-2 hover:bg-slate-50 has-[:checked]:border-[#FF6B00] has-[:checked]:bg-orange-50/50">
-                  <input
-                    type="radio"
-                    name="role"
-                    value="TRAINER"
-                    className="accent-[#FF6B00]"
-                  />
-                  <div className="text-xs">
-                    <span className="font-bold text-[#0B1B3D] block">Trainer</span>
-                    <span className="text-[10px] text-slate-500">Teach & author courses</span>
-                  </div>
-                </label>
+      {/* Registration Card */}
+      <div className="sm:mx-auto sm:w-full sm:max-w-2xl relative z-10">
+        <div className="bg-white py-8 px-6 sm:px-10 shadow-2xl rounded-3xl border border-slate-100 backdrop-blur-sm">
+          <Suspense
+            fallback={
+              <div className="py-20 flex flex-col items-center justify-center gap-3 text-slate-500">
+                <Loader2 className="w-8 h-8 animate-spin text-[#FF6B00]" />
+                <p className="text-xs font-medium">Preparing onboarding registration...</p>
               </div>
-            </div>
+            }
+          >
+            <RegisterForm />
+          </Suspense>
 
+          {/* Card Footer Links */}
+          <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Full Name
-              </label>
-              <div className="relative">
-                <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  name="name"
-                  required
-                  placeholder="e.g. John Doe"
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
-                />
-              </div>
+              Already have an active account?{" "}
+              <Link
+                href="/login"
+                className="font-bold text-[#0B1B3D] hover:text-[#FF6B00] transition-colors underline"
+              >
+                Sign In
+              </Link>
             </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="email"
-                  name="email"
-                  required
-                  placeholder="you@domain.com"
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
-                />
-              </div>
+            <div className="flex items-center gap-1.5 text-slate-400">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>TLS 256-bit Encrypted Registration</span>
             </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="password"
-                  name="password"
-                  required
-                  placeholder="Minimum 6 characters"
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-heading font-bold text-white bg-gradient-to-r from-[#FF6B00] to-[#EA580C] shadow-md shadow-orange-500/25 btn-lift cursor-pointer mt-2"
-            >
-              <span>Create Account</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
-
-          <div className="mt-6 text-center text-xs text-slate-500">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="font-bold text-[#0B1B3D] hover:underline"
-            >
-              Sign In
-            </Link>
           </div>
         </div>
 
-        <div className="mt-6 text-center">
+        {/* Back Link */}
+        <div className="mt-8 text-center">
           <Link
             href="/"
-            className="text-xs text-slate-400 hover:text-white transition-colors"
+            className="text-xs text-slate-400 hover:text-white transition-colors inline-flex items-center gap-1.5"
           >
-            ← Back to SkillNova Academy Home
+            ← Return to SkillNova Academy Home
           </Link>
         </div>
       </div>

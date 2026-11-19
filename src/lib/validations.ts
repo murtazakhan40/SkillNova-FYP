@@ -35,6 +35,147 @@ export const RegisterSchema = z.object({
 });
 
 /**
+ * Dedicated Student Onboarding & Registration Schema
+ * Validates age, academic profile, and under-18 guardian requirements
+ */
+export const StudentRegistrationSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(2, "Name must be at least 2 characters long.")
+      .max(80, "Name cannot exceed 80 characters."),
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .email("Please provide a valid email address."),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters long.")
+      .max(128, "Password cannot exceed 128 characters."),
+    phone: z
+      .string()
+      .trim()
+      .optional()
+      .nullable()
+      .or(z.literal("")),
+    age: z
+      .preprocess(
+        (val) => (val === "" || val === null || val === undefined ? null : Number(val)),
+        z.number().int().min(10, "Students must be at least 10 years old.").max(100, "Please enter a valid age.").nullable()
+      )
+      .optional(),
+    parentName: z
+      .string()
+      .trim()
+      .optional()
+      .nullable()
+      .or(z.literal("")),
+    parentEmail: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .optional()
+      .nullable()
+      .or(z.literal("")),
+    parentPhone: z
+      .string()
+      .trim()
+      .optional()
+      .nullable()
+      .or(z.literal("")),
+    parentRelationship: z
+      .string()
+      .trim()
+      .optional()
+      .nullable()
+      .or(z.literal("")),
+    educationLevel: z
+      .string()
+      .trim()
+      .optional()
+      .nullable()
+      .or(z.literal("")),
+    fieldOfInterest: z
+      .string()
+      .trim()
+      .optional()
+      .nullable()
+      .or(z.literal("")),
+    parentConsentGiven: z
+      .boolean()
+      .optional()
+      .default(false),
+  })
+  .refine(
+    (data) => {
+      if (data.age && data.age < 18) {
+        const hasParentName = Boolean(data.parentName && data.parentName.length >= 2);
+        const hasParentEmail = Boolean(data.parentEmail && data.parentEmail.includes("@"));
+        const hasParentPhone = Boolean(data.parentPhone && data.parentPhone.length >= 7);
+        return hasParentName && hasParentEmail && hasParentPhone;
+      }
+      return true;
+    },
+    {
+      message: "Learners under 18 must provide parent/guardian name, valid email, and contact phone.",
+      path: ["parentEmail"],
+    }
+  );
+
+/**
+ * Dedicated Trainer / Faculty Registration Schema
+ * Validates domain expertise, professional headline, years of experience, and bio
+ */
+export const TrainerRegistrationSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "Name must be at least 2 characters long.")
+    .max(80, "Name cannot exceed 80 characters."),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email("Please provide a valid professional or academic email address."),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters long.")
+    .max(128, "Password cannot exceed 128 characters."),
+  phone: z
+    .string()
+    .trim()
+    .min(7, "Contact phone / WhatsApp number is required for instructor verification.")
+    .max(30, "Phone number is too long."),
+  headline: z
+    .string()
+    .trim()
+    .min(3, "Professional title is required (e.g. Senior Full-Stack Engineer, Lead Data Scientist).")
+    .max(120, "Headline cannot exceed 120 characters."),
+  teachingDomain: z
+    .string()
+    .trim()
+    .min(2, "Please select or specify your primary teaching domain.")
+    .max(80, "Teaching domain is too long."),
+  experienceYears: z
+    .string()
+    .trim()
+    .min(1, "Please select your professional or teaching experience level."),
+  portfolioUrl: z
+    .string()
+    .trim()
+    .optional()
+    .nullable()
+    .or(z.literal("")),
+  bio: z
+    .string()
+    .trim()
+    .min(20, "Please provide at least 20 characters summarizing your teaching motivation and technical background.")
+    .max(1500, "Bio cannot exceed 1500 characters."),
+});
+
+/**
  * Learning & Assessment Schemas
  */
 export const QuizSubmissionSchema = z.object({

@@ -10,7 +10,12 @@ import {
   destroySession,
   getCurrentUser,
 } from "@/lib/auth";
-import { LoginSchema, RegisterSchema } from "@/lib/validations";
+import {
+  LoginSchema,
+  StudentRegistrationSchema,
+  TrainerRegistrationSchema,
+} from "@/lib/validations";
+import { sendParentAcademicReport } from "@/lib/parent-reports";
 
 // In-Memory Sliding Window Rate Limiter for Brute-Force Defense
 interface RateLimitEntry {
@@ -219,21 +224,162 @@ export async function requestPasswordResetAction(prevState: unknown, formData: F
 
 export async function registerAction(prevState: unknown, formData: FormData) {
   const roleInput = (formData.get("role") as string)?.toUpperCase();
-  // Only permit student or trainer self-registration; ADMIN cannot be self-registered
   const role = roleInput === "TRAINER" ? "TRAINER" : "STUDENT";
+  const rawRedirect = formData.get("redirectTo") || formData.get("redirect");
+  let targetRedirect: string | null = null;
+  if (
+    typeof rawRedirect === "string" &&
+    rawRedirect.startsWith("/") &&
+    !rawRedirect.startsWith("//") &&
+    !rawRedirect.startsWith("/\\")
+  ) {
+    targetRedirect = rawRedirect;
+  }
 
-  const parsed = RegisterSchema.safeParse({
+  // 1. Process Trainer / Faculty Registration
+  if (role === "TRAINER") {
+    const parsedTrainer = TrainerRegistrationSchema.safeParse({
+      name: formData.get("name"),
+      email: formData.get("email"),
+      password: formData.get("password"),
+      phone: formData.get("phone"),
+      headline: formData.get("headline"),
+      teachingDomain: formData.get("teachingDomain"),
+      experienceYears: formData.get("experienceYears"),
+      portfolioUrl: formData.get("portfolioUrl") || null,
+      bio: formData.get("bio"),
+    });
+
+    if (!parsedTrainer.success) {
+      return {
+        error:
+          parsedTrainer.error.issues[0]?.message ||
+          "Please verify all required trainer credentials.",
+      };
+    }
+
+    const {
+      name,
+      email,
+      password,
+      phone,
+      headline,
+      teachingDomain,
+      experienceYears,
+      portfolioUrl,
+      bio,
+    } = parsedTrainer.data;
+
+    const existingUser = await db.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      return { error: "An account with this email address already exists." };
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    const formattedHeadline = `${headline} • ${experienceYears} Experience`;
+    const formattedBio = `${bio}\n\nPrimary Teaching Domain: ${teachingDomain}${
+      portfolioUrl ? `\nPortfolio/Profile: ${portfolioUrl}` : ""
+    }`;
+
+    const newTrainer = await db.user.create({
+      data: {
+        name,
+        email,
+        passwordHash,
+        role: "TRAINER",
+        phone,
+        headline: formattedHeadline,
+        bio: formattedBio,
+      },
+    });
+
+    // In-app Welcome Notification
+    try {
+      await db.notification.create({
+        data: {
+          userId: newTrainer.id,
+          type: "SYSTEM",
+          title: "Welcome to SkillNova Faculty!",
+          message: `Welcome aboard, Instructor ${newTrainer.name}! Your Trainer Studio is ready. You can now author new courses, design quizzes, and grade student submissions.`,
+          link: "/dashboard/trainer",
+        },
+      });
+
+      await db.auditLog.create({
+        data: {
+          action: "USER_REGISTERED_TRAINER",
+          entity: "User",
+          entityId: newTrainer.id,
+          userId: newTrainer.id,
+          details: JSON.stringify({
+            email: newTrainer.email,
+            headline: formattedHeadline,
+            teachingDomain,
+            experienceYears,
+          }),
+        },
+      });
+    } catch {
+      // Non-blocking telemetry
+    }
+
+    await createSession({
+      id: newTrainer.id,
+      name: newTrainer.name,
+      email: newTrainer.email,
+      role: "TRAINER",
+      avatar: newTrainer.avatar,
+      headline: newTrainer.headline,
+      phone: newTrainer.phone,
+    });
+
+    if (targetRedirect) {
+      redirect(targetRedirect);
+    }
+    redirect("/dashboard/trainer");
+  }
+
+  // 2. Process Student Registration
+  const ageRaw = formData.get("age");
+  const parsedStudent = StudentRegistrationSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
     password: formData.get("password"),
-    role,
+    phone: formData.get("phone") || null,
+    age: ageRaw !== null && ageRaw !== "" ? Number(ageRaw) : null,
+    parentName: formData.get("parentName") || null,
+    parentEmail: formData.get("parentEmail") || null,
+    parentPhone: formData.get("parentPhone") || null,
+    parentRelationship: formData.get("parentRelationship") || null,
+    educationLevel: formData.get("educationLevel") || null,
+    fieldOfInterest: formData.get("fieldOfInterest") || null,
+    parentConsentGiven: formData.get("parentConsentGiven") === "true",
   });
 
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message || "All fields are required." };
+  if (!parsedStudent.success) {
+    return {
+      error:
+        parsedStudent.error.issues[0]?.message ||
+        "Please check your student registration details.",
+    };
   }
 
-  const { name, email, password } = parsed.data;
+  const {
+    name,
+    email,
+    password,
+    phone,
+    age,
+    parentName,
+    parentEmail,
+    parentPhone,
+    parentRelationship,
+    educationLevel,
+    fieldOfInterest,
+  } = parsedStudent.data;
 
   const existingUser = await db.user.findUnique({
     where: { email },
@@ -243,34 +389,88 @@ export async function registerAction(prevState: unknown, formData: FormData) {
     return { error: "An account with this email address already exists." };
   }
 
+  const isMinor = Boolean(age !== null && age !== undefined && age < 18);
   const passwordHash = await bcrypt.hash(password, 12);
 
-  const newUser = await db.user.create({
+  const formattedHeadline = educationLevel
+    ? `${educationLevel}${fieldOfInterest ? ` • Focus: ${fieldOfInterest}` : ""}`
+    : fieldOfInterest
+    ? `Student • Focus: ${fieldOfInterest}`
+    : "Student Learner";
+
+  const newStudent = await db.user.create({
     data: {
       name,
       email,
       passwordHash,
-      role,
-      headline: role === "TRAINER" ? "Course Instructor at SkillNova" : "Student Learner",
+      role: "STUDENT",
+      phone: phone || null,
+      age: age ?? null,
+      headline: formattedHeadline,
+      parentName: parentName || null,
+      parentEmail: parentEmail || null,
+      parentPhone: parentPhone || null,
+      parentRelationship: parentRelationship || null,
+      parentConsentGiven: isMinor,
+      parentConsentAt: isMinor ? new Date() : null,
     },
   });
 
-  // Issue cryptographically signed session
+  // Welcome Notification & Parent Report Onboarding
+  try {
+    await db.notification.create({
+      data: {
+        userId: newStudent.id,
+        type: "SYSTEM",
+        title: "Welcome to SkillNova Academy!",
+        message: `Welcome, ${newStudent.name}! Your student account is active. Browse our accredited curricula, enroll, and start building your project portfolio.`,
+        link: "/courses",
+      },
+    });
+
+    await db.auditLog.create({
+      data: {
+        action: "USER_REGISTERED_STUDENT",
+        entity: "User",
+        entityId: newStudent.id,
+        userId: newStudent.id,
+        details: JSON.stringify({
+          email: newStudent.email,
+          age: newStudent.age,
+          isMinor,
+          hasGuardian: Boolean(newStudent.parentEmail),
+        }),
+      },
+    });
+
+    // If student is minor and has guardian email, notify parent
+    if (isMinor && newStudent.parentEmail) {
+      await sendParentAcademicReport({
+        studentId: newStudent.id,
+        reportType: "PROGRESS_UPDATE",
+        customNote: `Account Registration: ${newStudent.name} has enrolled in SkillNova Academy with guardian oversight enabled. You will receive progress reports as courses and quizzes are completed.`,
+      });
+    }
+  } catch {
+    // Non-blocking telemetry
+  }
+
   await createSession({
-    id: newUser.id,
-    name: newUser.name,
-    email: newUser.email,
-    role: newUser.role as "STUDENT" | "TRAINER" | "ADMIN",
-    avatar: newUser.avatar,
-    headline: newUser.headline,
-    phone: newUser.phone,
+    id: newStudent.id,
+    name: newStudent.name,
+    email: newStudent.email,
+    role: "STUDENT",
+    avatar: newStudent.avatar,
+    headline: newStudent.headline,
+    phone: newStudent.phone,
+    age: newStudent.age,
+    parentEmail: newStudent.parentEmail,
   });
 
-  if (newUser.role === "TRAINER") {
-    redirect("/dashboard/trainer");
-  } else {
-    redirect("/dashboard/student");
+  if (targetRedirect) {
+    redirect(targetRedirect);
   }
+  redirect("/dashboard/student");
 }
 
 /**

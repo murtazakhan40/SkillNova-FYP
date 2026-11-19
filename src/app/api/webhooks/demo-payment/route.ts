@@ -16,8 +16,16 @@ function verifyWebhookAuth(request: NextRequest, rawBody: string): boolean {
     const signature = request.headers.get("x-webhook-signature");
     const headerSecret = request.headers.get("x-webhook-secret");
 
-    if (headerSecret && headerSecret === secret) {
-      return true;
+    if (headerSecret) {
+      try {
+        const secBuf = Buffer.from(secret);
+        const hdrBuf = Buffer.from(headerSecret);
+        if (secBuf.length === hdrBuf.length && crypto.timingSafeEqual(secBuf, hdrBuf)) {
+          return true;
+        }
+      } catch {
+        // Fall through
+      }
     }
 
     if (signature) {

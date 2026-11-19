@@ -360,11 +360,14 @@ export async function deleteLessonResourceAction(resourceId: string) {
     throw new Error("Unauthorized to remove this resource.");
   }
 
-  // Attempt file removal from disk
+  // Attempt file removal from disk (with strict path traversal guard)
   try {
+    const uploadsRoot = path.resolve(process.cwd(), "uploads");
     const relativePath = resource.fileUrl.replace(/^\/?uploads\/?/, "");
-    const filePath = path.join(process.cwd(), "uploads", relativePath);
-    await fs.unlink(filePath);
+    const filePath = path.resolve(uploadsRoot, relativePath);
+    if (filePath.startsWith(uploadsRoot)) {
+      await fs.unlink(filePath);
+    }
   } catch {
     // Continue even if file already pruned
   }

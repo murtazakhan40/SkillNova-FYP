@@ -38,6 +38,17 @@ export async function updateUserRoleAction(
   const updated = await dbClient.user.update({
     where: { id: userId },
     data: { role },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      avatar: true,
+      headline: true,
+      phone: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 
   // Log sanitized operational audit trace (NO secrets, passwords, or tokens)
@@ -84,6 +95,18 @@ export async function adminUpdateUserProfileAction(
   const updated = await dbClient.user.update({
     where: { id: userId },
     data: { name, headline, bio, phone },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      avatar: true,
+      headline: true,
+      bio: true,
+      phone: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 
   await dbClient.auditLog.create({

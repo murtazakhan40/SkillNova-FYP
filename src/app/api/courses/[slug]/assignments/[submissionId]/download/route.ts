@@ -57,8 +57,18 @@ export async function GET(request: NextRequest, { params }: RouteProps) {
   }
 
   try {
+    const uploadsRoot = path.resolve(process.cwd(), "uploads");
     const relativePath = submission.fileUrl.replace(/^\/?uploads\/?/, "");
-    const fullFilePath = path.join(process.cwd(), "uploads", relativePath);
+    const fullFilePath = path.resolve(uploadsRoot, relativePath);
+
+    // Defense-in-depth: Strict path traversal prevention
+    if (!fullFilePath.startsWith(uploadsRoot)) {
+      return NextResponse.json(
+        { error: "Access Denied: Path traversal detected." },
+        { status: 403 }
+      );
+    }
+
     const fileBuffer = await fs.readFile(fullFilePath);
 
     return new NextResponse(fileBuffer, {

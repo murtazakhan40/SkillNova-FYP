@@ -40,6 +40,13 @@ export function getAuthSecret(): string {
     return "skillnova-dev-local-secret-32-chars-key!!";
   }
 
+  // Enforce cryptographic entropy in production (minimum 256-bit / 32 characters)
+  if (secret.length < 32 && process.env.NODE_ENV === "production") {
+    throw new Error(
+      "FATAL SECURITY CONFIGURATION: AUTH_SECRET must be at least 32 characters long in production for HMAC-SHA256 strength."
+    );
+  }
+
   return secret;
 }
 

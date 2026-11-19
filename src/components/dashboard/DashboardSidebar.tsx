@@ -34,20 +34,21 @@ interface DashboardSidebarProps {
 export function DashboardSidebar({ user, onCloseMobile }: DashboardSidebarProps) {
   const pathname = usePathname();
 
-  // 2-Letter Initials for yellow circle (e.g., "MK" for Murtaza Khan, matching screenshot!)
-  const initials = user.name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("") || user.name.slice(0, 2).toUpperCase();
+  // 2-Letter Initials for yellow circle
+  const initials =
+    user.name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || user.name.slice(0, 2).toUpperCase();
 
   // Role-specific Navigation Groups
   const studentLinks = [
     { label: "Dashboard", href: "/dashboard/student", icon: LayoutDashboard },
     { label: "Programs", href: "/dashboard/student/courses", icon: BookOpen },
     { label: "My applications", href: "/dashboard/student/quizzes", icon: HelpCircle },
-    { label: "My enrolment", href: "/dashboard/student/certificates", icon: Award },
+    { label: "Certificates", href: "/dashboard/student/certificates", icon: Award },
   ];
 
   const trainerLinks = [
@@ -124,7 +125,7 @@ export function DashboardSidebar({ user, onCloseMobile }: DashboardSidebarProps)
 
       {/* Scrollable Navigation Area */}
       <nav className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-1 custom-sidebar-scrollbar">
-        {/* Main Section Header (ADMISSIONS style) */}
+        {/* Main Section Header */}
         <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-400/90">
           {sectionTitle}
         </div>
@@ -146,7 +147,7 @@ export function DashboardSidebar({ user, onCloseMobile }: DashboardSidebarProps)
               }`}
             >
               <Icon
-                className={`w-4 h-4 ${
+                className={`w-4 h-4 shrink-0 ${
                   isActive ? "text-amber-400" : "text-slate-400"
                 }`}
               />
@@ -155,7 +156,7 @@ export function DashboardSidebar({ user, onCloseMobile }: DashboardSidebarProps)
           );
         })}
 
-        {/* MY ACCOUNT Section (matching screenshot) */}
+        {/* MY ACCOUNT Section */}
         <div className="pt-5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-400/90">
           MY ACCOUNT
         </div>
@@ -213,7 +214,7 @@ export function DashboardSidebar({ user, onCloseMobile }: DashboardSidebarProps)
         </Link>
       </nav>
 
-      {/* User Footer Card (Matching yellow MK avatar pill from screenshot) */}
+      {/* User Footer Card */}
       <div className="p-4 border-t border-slate-800 bg-[#060E1E] shrink-0">
         <div className="flex items-center gap-3 overflow-hidden">
           <div className="w-10 h-10 rounded-full bg-amber-400 text-[#0B1B3D] flex items-center justify-center font-black text-sm shrink-0 overflow-hidden ring-1 ring-amber-300 shadow-xs">

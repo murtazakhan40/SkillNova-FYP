@@ -82,26 +82,35 @@ export async function generateCertificatePdf(payload: CertificatePdfPayload): Pr
   const orangeLight = rgb(255 / 255, 165 / 255, 102 / 255); // #FFA566 (Highlight Soft Orange)
   const slateText = rgb(15 / 255, 23 / 255, 42 / 255);      // #0F172A
   const slateMuted = rgb(100 / 255, 116 / 255, 139 / 255);  // #64748B
-  const bgWhite = rgb(1, 1, 1);
 
-  // 1. Base Canvas Background (Crisp White)
+  // 1. Base Canvas Background (Crisp Ivory)
   page.drawRectangle({
     x: 0,
     y: 0,
     width,
     height,
-    color: bgWhite,
+    color: rgb(253 / 255, 250 / 255, 245 / 255),
   });
 
-  // Subtle outer hairline frame
-  const margin = 16;
+  // Double Regal Security Borders
+  // Outer Deep Navy Border
   page.drawRectangle({
-    x: margin,
-    y: margin,
-    width: width - margin * 2,
-    height: height - margin * 2,
-    borderColor: rgb(241 / 255, 245 / 255, 249 / 255),
-    borderWidth: 1,
+    x: 18,
+    y: 18,
+    width: width - 36,
+    height: height - 36,
+    borderColor: navyDark,
+    borderWidth: 1.8,
+  });
+
+  // Inner Brand Orange Hairline Border
+  page.drawRectangle({
+    x: 23,
+    y: 23,
+    width: width - 46,
+    height: height - 46,
+    borderColor: orangeBrand,
+    borderWidth: 0.8,
   });
 
   // 2. Corner Ribbon Graphic: TOP-LEFT Wave Ribbons
@@ -382,41 +391,53 @@ export async function generateCertificatePdf(payload: CertificatePdfPayload): Pr
     drawCenteredText(gradeText, height - 344, 10, helveticaBold, orangeBrand);
   }
 
-  // 11. BOTTOM ROW: DATE & CERTIFIED SEAL (LEFT) | SIGNATURE (RIGHT)
+  // 11. BOTTOM ROW: DUAL EXECUTIVE SIGNATURES & OFFICIAL REGISTRY SEAL
   const footerBaseY = 92;
 
-  // A. Left: Date Column
-  const dateCenterX = 150;
-  const dateStrWidth = helveticaBold.widthOfTextAtSize(formattedDate, 12);
-  page.drawText(formattedDate, {
-    x: dateCenterX - dateStrWidth / 2,
+  // A. Left: Faculty Director Signature
+  const facultyName = payload.instructorName || "Lead Faculty Director";
+  const leftSigCenterX = 150;
+  const facultySigWidth = timesRomanItalic.widthOfTextAtSize(facultyName, 20);
+  page.drawText(facultyName, {
+    x: leftSigCenterX - facultySigWidth / 2,
     y: footerBaseY + 22,
-    size: 12,
-    font: helveticaBold,
-    color: slateText,
+    size: 20,
+    font: timesRomanItalic,
+    color: navyDark,
   });
 
   // Underline
   page.drawLine({
-    start: { x: dateCenterX - 65, y: footerBaseY + 16 },
-    end: { x: dateCenterX + 65, y: footerBaseY + 16 },
+    start: { x: leftSigCenterX - 75, y: footerBaseY + 16 },
+    end: { x: leftSigCenterX + 75, y: footerBaseY + 16 },
     thickness: 1.5,
-    color: slateText,
+    color: navyDark,
   });
 
-  // "DATE" Label
-  const dateLabel = "DATE";
-  const dateLabelWidth = helveticaBold.widthOfTextAtSize(dateLabel, 9.5);
-  page.drawText(dateLabel, {
-    x: dateCenterX - dateLabelWidth / 2,
-    y: footerBaseY + 4,
-    size: 9.5,
+  // "LEAD FACULTY DIRECTOR" Label
+  const facultyLabel = "LEAD FACULTY DIRECTOR";
+  const facultyLabelWidth = helveticaBold.widthOfTextAtSize(facultyLabel, 8.5);
+  page.drawText(facultyLabel, {
+    x: leftSigCenterX - facultyLabelWidth / 2,
+    y: footerBaseY + 5,
+    size: 8.5,
     font: helveticaBold,
-    color: slateText,
+    color: navyDark,
   });
 
-  // Left: Official Accreditation & Verification Stamp with embedded QR code
-  const qrX = 240;
+  // Date beneath signature
+  const dateSubText = `Conferred: ${formattedDate}`;
+  const dateSubWidth = helvetica.widthOfTextAtSize(dateSubText, 8);
+  page.drawText(dateSubText, {
+    x: leftSigCenterX - dateSubWidth / 2,
+    y: footerBaseY - 6,
+    size: 8,
+    font: helvetica,
+    color: slateMuted,
+  });
+
+  // B. Center: Official Accreditation & Verification Stamp with embedded QR code
+  const qrX = width / 2 - 60;
   try {
     const qrPngBuffer = await QRCode.toBuffer(verificationUrl, {
       type: "png",
@@ -430,7 +451,7 @@ export async function generateCertificatePdf(payload: CertificatePdfPayload): Pr
     });
 
     const qrImage = await pdfDoc.embedPng(qrPngBuffer);
-    const qrSize = 54;
+    const qrSize = 52;
 
     page.drawImage(qrImage, {
       x: qrX,
@@ -440,21 +461,21 @@ export async function generateCertificatePdf(payload: CertificatePdfPayload): Pr
     });
 
     page.drawText("SKILLNOVA CERTIFIED", {
-      x: qrX + 62,
+      x: qrX + 60,
       y: footerBaseY + 22,
       size: 8.5,
       font: helveticaBold,
       color: navyDark,
     });
     page.drawText("ACADEMIC REGISTRY", {
-      x: qrX + 62,
+      x: qrX + 60,
       y: footerBaseY + 10,
       size: 7.5,
       font: helveticaBold,
       color: orangeBrand,
     });
     page.drawText(certificateCode, {
-      x: qrX + 62,
+      x: qrX + 60,
       y: footerBaseY - 2,
       size: 7.5,
       font: helvetica,
@@ -464,8 +485,8 @@ export async function generateCertificatePdf(payload: CertificatePdfPayload): Pr
     console.error("Failed to embed QR code into certificate PDF:", err);
   }
 
-  // B. Right: Digital Signature & Founder & CEO Column
-  const sigCenterX = width - 190;
+  // C. Right: Digital Signature & Founder & CEO Column
+  const sigCenterX = width - 150;
 
   // Cursive Executive Signature Text
   const sigText = signerName;
@@ -496,21 +517,31 @@ export async function generateCertificatePdf(payload: CertificatePdfPayload): Pr
 
   // Solid Signature Underline in Midnight Navy
   page.drawLine({
-    start: { x: sigCenterX - 80, y: footerBaseY + 14 },
-    end: { x: sigCenterX + 80, y: footerBaseY + 14 },
-    thickness: 2,
+    start: { x: sigCenterX - 75, y: footerBaseY + 16 },
+    end: { x: sigCenterX + 75, y: footerBaseY + 16 },
+    thickness: 1.5,
     color: navyDark,
   });
 
   // "FOUNDER & CEO" Label
   const sigLabel = signerTitle.toUpperCase();
-  const sigLabelWidth = helveticaBold.widthOfTextAtSize(sigLabel, 10);
+  const sigLabelWidth = helveticaBold.widthOfTextAtSize(sigLabel, 8.5);
   page.drawText(sigLabel, {
     x: sigCenterX - sigLabelWidth / 2,
-    y: footerBaseY + 2,
-    size: 10,
+    y: footerBaseY + 5,
+    size: 8.5,
     font: helveticaBold,
     color: navyDark,
+  });
+
+  const councilText = "SkillNova Academic Council";
+  const councilWidth = helvetica.widthOfTextAtSize(councilText, 8);
+  page.drawText(councilText, {
+    x: sigCenterX - councilWidth / 2,
+    y: footerBaseY - 6,
+    size: 8,
+    font: helvetica,
+    color: slateMuted,
   });
 
   return await pdfDoc.save();

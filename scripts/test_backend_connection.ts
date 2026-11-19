@@ -3,10 +3,16 @@ import { db } from "../src/lib/db";
 async function main() {
   console.log("Testing backend connection via src/lib/db.ts...");
   
-  // Query PostgreSQL server directly through the ORM client
-  const serverInfo = await db.$queryRawUnsafe<any[]>(
-    "SELECT current_database() as db_name, current_user as user_name, inet_server_addr() as server_ip, inet_server_port() as server_port, version() as pg_version;"
-  );
+  // Query PostgreSQL server safely using tagged template literal (No Unsafe string concatenation)
+  const serverInfo = await db.$queryRaw<
+    Array<{
+      db_name: string;
+      user_name: string;
+      server_ip: string | null;
+      server_port: number | null;
+      pg_version: string;
+    }>
+  >`SELECT current_database() as db_name, current_user as user_name, inet_server_addr() as server_ip, inet_server_port() as server_port, version() as pg_version;`;
   
   console.log("Connected Successfully! Details from PostgreSQL:");
   console.log(`- Database Name: ${serverInfo[0].db_name}`);

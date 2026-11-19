@@ -27,7 +27,8 @@ export interface ProfileUpdateResult {
 }
 
 const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
-const ALLOWED_IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".svg"]);
+// Strictly disallow SVG in avatars to prevent Stored XSS vectors (embedded <script> or event handlers)
+const ALLOWED_IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp"]);
 
 export async function updateStudentProfileAction(
   _prevState: ProfileUpdateResult | null,
@@ -107,14 +108,14 @@ export async function updateStudentProfileAction(
 
     const ext = path.extname(avatarFile.name).toLowerCase();
     if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
-      return { error: "Invalid image format. Allowed formats: PNG, JPG, JPEG, WEBP, SVG." };
+      return { error: "Invalid image format. Allowed formats: PNG, JPG, JPEG, WEBP." };
     }
 
     try {
       const storageDir = path.join(process.cwd(), "public", "uploads", "avatars");
       await fs.mkdir(storageDir, { recursive: true });
 
-      const safeBaseName = avatarFile.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+      const safeBaseName = path.basename(avatarFile.name).replace(/[^a-zA-Z0-9._-]/g, "_");
       const storedFileName = `avatar_${currentUser.id}_${Date.now()}_${safeBaseName}`;
       const destinationPath = path.join(storageDir, storedFileName);
 
@@ -150,6 +151,21 @@ export async function updateStudentProfileAction(
         parentRelationship: validatedData.parentRelationship || null,
         parentConsentGiven: isMinor,
         parentConsentAt: isMinor ? new Date() : null,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        avatar: true,
+        headline: true,
+        bio: true,
+        phone: true,
+        age: true,
+        parentName: true,
+        parentEmail: true,
+        parentPhone: true,
+        parentRelationship: true,
       },
     });
 
@@ -243,13 +259,13 @@ export async function quickUpdateAvatarAction(formData: FormData): Promise<{
     }
     const ext = path.extname(avatarFile.name).toLowerCase();
     if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
-      return { error: "Allowed formats: PNG, JPG, JPEG, WEBP, SVG." };
+      return { error: "Allowed formats: PNG, JPG, JPEG, WEBP." };
     }
 
     try {
       const storageDir = path.join(process.cwd(), "public", "uploads", "avatars");
       await fs.mkdir(storageDir, { recursive: true });
-      const safeBaseName = avatarFile.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+      const safeBaseName = path.basename(avatarFile.name).replace(/[^a-zA-Z0-9._-]/g, "_");
       const storedFileName = `avatar_${currentUser.id}_${Date.now()}_${safeBaseName}`;
       const destinationPath = path.join(storageDir, storedFileName);
       const buffer = Buffer.from(await avatarFile.arrayBuffer());
@@ -265,6 +281,21 @@ export async function quickUpdateAvatarAction(formData: FormData): Promise<{
     const updated = await db.user.update({
       where: { id: currentUser.id },
       data: { avatar: finalAvatar },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        avatar: true,
+        headline: true,
+        bio: true,
+        phone: true,
+        age: true,
+        parentName: true,
+        parentEmail: true,
+        parentPhone: true,
+        parentRelationship: true,
+      },
     });
 
     await createSession({

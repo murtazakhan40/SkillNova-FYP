@@ -245,7 +245,9 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(courseJsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(courseJsonLd).replace(/</g, "\\u003c"),
+        }}
       />
       <Navbar />
 
