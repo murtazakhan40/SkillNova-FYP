@@ -1,12 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { execSync } from "child_process";
 
-// Dedicated isolated Prisma Client connected strictly to test.db
+// Dedicated isolated Prisma Client connected strictly to test database
 export const testDb = new PrismaClient({
   datasources: {
     db: {
-      url: "file:./test.db",
+      url: process.env.DATABASE_URL || "postgresql://postgres:12345@localhost:5432/skillnova_test_db?schema=public",
     },
   },
   log: ["error"],
@@ -42,15 +43,16 @@ export async function initTestDatabase(): Promise<SeededEntities> {
       stdio: "pipe",
       env: {
         ...process.env,
-        DATABASE_URL: "file:./test.db",
+        DATABASE_URL: process.env.DATABASE_URL || "postgresql://postgres:12345@localhost:5432/skillnova_test_db?schema=public",
       },
     });
   } catch (err) {
-    console.error("Failed to push schema to test.db:", err);
+    console.error("Failed to push schema to skillnova_test_db:", err);
   }
 
   // 2. Clear all tables in test database to guarantee clean baseline
   await testDb.auditLog.deleteMany({});
+  await testDb.parentReport.deleteMany({});
   await testDb.payment.deleteMany({});
   await testDb.order.deleteMany({});
   await testDb.certificate.deleteMany({});
@@ -296,6 +298,7 @@ export async function initTestDatabase(): Promise<SeededEntities> {
  */
 export async function resetTestState() {
   await testDb.auditLog.deleteMany({});
+  await testDb.parentReport.deleteMany({});
   await testDb.payment.deleteMany({});
   await testDb.order.deleteMany({});
   await testDb.certificate.deleteMany({});

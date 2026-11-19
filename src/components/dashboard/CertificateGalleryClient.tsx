@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { CopyCodeButton } from "@/components/dashboard/CopyCodeButton";
 import { SkillNovaLogo } from "@/components/brand/SkillNovaLogo";
+import { SkillNovaCertificate } from "@/components/certificate/SkillNovaCertificate";
 
 export interface CertificateData {
   id: string;
@@ -332,14 +333,14 @@ export function CertificateGalleryClient({
           onClick={() => setSelectedCert(null)}
         >
           <div
-            className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl overflow-hidden border border-slate-200 relative animate-in fade-in zoom-in-95 duration-200"
+            className="bg-white rounded-3xl max-w-4xl w-full shadow-2xl overflow-hidden border border-slate-200 relative animate-in fade-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header Controls */}
-            <div className="bg-[#0B1B3D] text-white px-6 py-4 flex items-center justify-between">
+            <div className="bg-[#0B1B3D] text-white px-6 py-4 flex items-center justify-between no-print">
               <div className="flex items-center gap-2 text-xs font-bold">
                 <Award className="w-4 h-4 text-[#FF6B00]" />
-                <span>SkillNova Verified Certificate • Credential Viewer</span>
+                <span>SkillNova Verified Certificate • Official Credential Preview</span>
               </div>
               <div className="flex items-center gap-2">
                 {!selectedCert.isRevoked && (
@@ -355,7 +356,7 @@ export function CertificateGalleryClient({
                 <button
                   type="button"
                   onClick={handlePrint}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold transition-colors cursor-pointer"
                 >
                   <Printer className="w-3.5 h-3.5" />
                   <span>Print</span>
@@ -363,7 +364,7 @@ export function CertificateGalleryClient({
                 <button
                   type="button"
                   onClick={() => setSelectedCert(null)}
-                  className="p-1.5 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white"
+                  className="p-1.5 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -371,98 +372,22 @@ export function CertificateGalleryClient({
             </div>
 
             {/* Printable Certificate Canvas */}
-            <div className="p-8 sm:p-12 bg-radial from-white via-amber-50/20 to-slate-50 text-center relative border-8 border-double border-[#0B1B3D]/10 m-4 rounded-2xl">
-              {/* Corner Accents */}
-              <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-[#FF6B00]" />
-              <div className="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-[#FF6B00]" />
-              <div className="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-[#FF6B00]" />
-              <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-[#FF6B00]" />
-
-              <div className="space-y-6">
-                <div className="flex justify-center">
-                  <SkillNovaLogo variant="dark" size="md" />
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[11px] font-extrabold uppercase tracking-[0.25em] text-[#FF6B00]">
-                    Official Academic Certificate of Mastery
-                  </span>
-                  <h2 className="text-xs uppercase tracking-widest text-slate-400 font-bold">
-                    This certifies that
-                  </h2>
-                </div>
-
-                <div className="text-2xl sm:text-3xl font-black text-[#0B1B3D] border-b-2 border-[#0B1B3D]/10 pb-2 max-w-md mx-auto">
-                  {selectedCert.studentName}
-                </div>
-
-                <p className="text-xs text-slate-600 max-w-lg mx-auto leading-relaxed">
-                  has demonstrated rigorous technical proficiency and successfully completed all
-                  academic coursework, laboratory exercises, and assessments for
-                </p>
-
-                <div className="text-lg sm:text-xl font-extrabold text-[#0B1B3D] max-w-xl mx-auto">
-                  {selectedCert.course.title}
-                </div>
-
-                {/* Grade display in modal only when available */}
-                {selectedCert.grade !== null && selectedCert.grade !== undefined && !selectedCert.isRevoked && (
-                  <div className="inline-block px-3.5 py-1 rounded-full text-xs font-bold bg-amber-50 border border-amber-200 text-amber-900">
-                    Verified Assessment Grade: {Math.round(selectedCert.grade)}% (Passed)
-                  </div>
-                )}
-
-                {/* Signatures & Verification Details */}
-                <div className="pt-8 border-t border-slate-200/80 grid grid-cols-2 sm:grid-cols-3 gap-6 items-end max-w-xl mx-auto">
-                  <div>
-                    <div className="text-sm font-semibold text-slate-800 border-b border-slate-300 pb-1">
-                      {selectedCert.course.instructorName}
-                    </div>
-                    <div className="text-[10px] font-bold text-slate-500 uppercase mt-1">
-                      Lead Faculty Instructor
-                    </div>
-                  </div>
-
-                  <div className="hidden sm:flex flex-col items-center">
-                    {selectedCert.qrCodeDataUrl ? (
-                      <div className="bg-white p-1 rounded-lg border border-slate-200 shadow-xs">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={selectedCert.qrCodeDataUrl}
-                          alt="Verification QR Code"
-                          className="w-14 h-14 rounded"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-14 h-14 rounded-full border-2 border-[#FF6B00] bg-orange-50 flex items-center justify-center text-[#FF6B00] shadow-sm">
-                        <Award className="w-8 h-8" />
-                      </div>
-                    )}
-                    <span className="text-[9px] uppercase font-bold text-[#FF6B00] mt-1 tracking-wider">
-                      Verified QR
-                    </span>
-                  </div>
-
-                  <div>
-                    <div className="font-mono text-xs font-bold text-slate-800 border-b border-slate-300 pb-1">
-                      {selectedCert.certificateCode}
-                    </div>
-                    <div className="text-[10px] font-bold text-slate-500 uppercase mt-1">
-                      Issued: {selectedCert.issuedAt}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-[10px] text-slate-400 pt-2">
-                  Verify credential authenticity online at:{" "}
-                  <Link
-                    href={`/verify?code=${encodeURIComponent(selectedCert.certificateCode)}`}
-                    className="font-mono text-slate-600 hover:text-[#FF6B00] underline"
-                  >
-                    skillnova.edu/verify?code={selectedCert.certificateCode}
-                  </Link>
-                </div>
-              </div>
+            <div className="p-4 sm:p-6 bg-slate-100/60 print-certificate-container">
+              <SkillNovaCertificate
+                studentName={selectedCert.studentName}
+                courseTitle={selectedCert.course.title}
+                issuedAt={selectedCert.issuedAt}
+                certificateCode={selectedCert.certificateCode}
+                instructorName={selectedCert.course.instructorName}
+                grade={selectedCert.grade}
+                qrCodeDataUrl={selectedCert.qrCodeDataUrl}
+                isRevoked={selectedCert.isRevoked}
+                revokedReason={selectedCert.revokedReason}
+                academyName="SKILLNOVA ACADEMY"
+                tagline="THE DIGITAL LEARNING PLATFORM"
+                signerTitle="FOUNDER & CEO"
+                signerName="Murtaza Wazir"
+              />
             </div>
           </div>
         </div>

@@ -11,14 +11,10 @@ import {
 } from "@/components/dashboard/AdminSettingsClient";
 import { 
   ArrowLeft, 
-  Settings, 
   ShieldCheck, 
-  Database, 
   Server, 
   CheckCircle2, 
-  Lock,
-  Sparkles,
-  Layers
+  Lock
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 

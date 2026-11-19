@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -21,6 +21,14 @@ model User {
   bio          String?
   headline     String?
   phone        String?
+  age          Int?      // Student age in years
+  dateOfBirth  DateTime? // Optional birth date
+  parentName   String?   // Parent / Guardian full name (Mandatory if student age < 18)
+  parentEmail  String?   // Parent email address for academic progress reports
+  parentPhone  String?   // Parent phone / WhatsApp contact number
+  parentRelationship String? // e.g. "Father", "Mother", "Legal Guardian"
+  parentConsentGiven Boolean   @default(false)
+  parentConsentAt    DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -32,11 +40,15 @@ model User {
   reviews         Review[]
   certificates          Certificate[]
   assignmentSubmissions AssignmentSubmission[]
+  evaluatedSubmissions  AssignmentSubmission[] @relation("EvaluatorSubmissions")
   lessonDiscussions     LessonDiscussion[]
+  notifications         Notification[]
   orders                Order[]
+  parentReports         ParentReport[]   @relation("StudentParentReports")
 
   @@index([role])
   @@index([createdAt])
+  @@index([age])
 }
 
 // Category for catalog classification
@@ -80,6 +92,7 @@ model Course {
   certificates Certificate[]
   assignments  Assignment[]
   orders       Order[]
+  parentReports ParentReport[]
 
   @@index([instructorId])
   @@index([categoryId])
@@ -318,10 +331,12 @@ model AssignmentSubmission {
 
   assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evaluator    User?      @relation("EvaluatorSubmissions", fields: [gradedById], references: [id], onDelete: SetNull)
 
   @@unique([assignmentId, userId])
   @@index([assignmentId])
   @@index([userId])
+  @@index([gradedById])
   @@index([status])
 }
 
@@ -336,11 +351,16 @@ model LessonDiscussion {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  parentId  String?
+  parent    LessonDiscussion?  @relation("DiscussionReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   LessonDiscussion[] @relation("DiscussionReplies")
+
   lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([lessonId, createdAt])
   @@index([userId])
+  @@index([parentId])
   @@index([reported])
 }
 
@@ -384,3 +404,55 @@ model Payment {
   @@index([providerTxnId])
   @@index([status])
 }
+
+// User Notification Center (In-App real-time persistent notifications)
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String    // "CERTIFICATE", "QUIZ", "ENROLLMENT", "ASSIGNMENT", "ACADEMIC", "SYSTEM"
+  title     String
+  message   String
+  link      String?   // Target navigation route e.g. "/courses/my-course/learn"
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+}
+
+// Account Security & Password Recovery Token
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([token])
+}
+
+// Parent Academic Progress & Performance Report Audit Ledger
+// Records reports generated and dispatched to parents of students (especially under-18 learners)
+model ParentReport {
+  id             String    @id @default(uuid())
+  studentId      String
+  student        User      @relation("StudentParentReports", fields: [studentId], references: [id], onDelete: Cascade)
+  courseId       String?
+  course         Course?   @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  recipientEmail String    // Parent or guardian email
+  recipientPhone String?   // Parent WhatsApp or mobile contact
+  reportType     String    // "ENROLLMENT", "QUIZ_RESULT", "PROGRESS_UPDATE", "CERTIFICATE_ACHIEVED", "COMPREHENSIVE"
+  title          String    // e.g. "Academic Progress Report — Murtaza Wazir (Web Development)"
+  summary        String    // Sanitized JSON or structured summary of completion %, grades, attendance
+  sentAt         DateTime  @default(now())
+  deliveryStatus String    @default("DELIVERED") // "DELIVERED", "SIMULATED", "QUEUED"
+
+  @@index([studentId])
+  @@index([courseId])
+  @@index([sentAt])
+  @@index([studentId, sentAt])
+}
+

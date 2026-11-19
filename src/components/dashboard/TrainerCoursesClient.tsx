@@ -8,7 +8,6 @@ import {
   PlusCircle, 
   Edit3, 
   ExternalLink, 
-  CheckCircle, 
   X, 
   Save,
   Video,

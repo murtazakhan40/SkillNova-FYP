@@ -15,7 +15,7 @@ The schema powers an end-to-end learning lifecycle for students, instructors, an
 
 | Table Name | Description | Key Attributes & Relational Constraints |
 | :--- | :--- | :--- |
-| **`User`** | Platform actors across all roles (RBAC: `STUDENT`, `TRAINER`, `ADMIN`). | Primary Key: `id` (UUID), `email` (Unique), `passwordHash` (Bcrypt), `role`, `phone`, `avatar`, `headline`, `bio`. Indexes on `role`, `createdAt`. |
+| **`User`** | Platform actors across all roles (RBAC: `STUDENT`, `TRAINER`, `ADMIN`). | Primary Key: `id` (UUID), `email` (Unique), `passwordHash` (Bcrypt), `role`, `phone`, `avatar`, `headline`, `bio`, `age` (Int?), `dateOfBirth` (DateTime?), `parentName` (String?), `parentEmail` (String?), `parentPhone` (String?), `parentRelationship` (String?), `parentConsentGiven` (Boolean). Indexes on `role`, `createdAt`, `age`. |
 | **`Category`** | Academic disciplines and course tracks. | Primary Key: `id`, `name` (Unique), `slug` (Unique), `icon`. |
 | **`Course`** | Published & draft curricula with PKR fees. | Foreign Keys: `instructorId -> User.id`, `categoryId -> Category.id`. Cascade deletion. Indexes on `instructorId`, `categoryId`, `published`, `featured`, compound `[published, createdAt]`. |
 | **`Section`** | Curriculum modules within courses. | Foreign Key: `courseId -> Course.id` (Cascade). Integer `order`. Compound index on `[courseId, order]`. |
@@ -34,6 +34,9 @@ The schema powers an end-to-end learning lifecycle for students, instructors, an
 | **`LessonDiscussion`** | Lesson-level academic inquiry & faculty answers. | Foreign Keys: `lessonId -> Lesson.id`, `userId -> User.id`. Content, `isAnswer`, `reported` moderation flag. Indexes on `[lessonId, createdAt]`, `userId`, `reported`. |
 | **`Order`** | Financial checkout intents, canonical course pricing, and idempotency tracking. | Primary Key: `id` (UUID), Unique `orderNumber` (e.g. `ORD-2026-X7Y8Z`), Unique `idempotencyKey`, `amount` (Float), `currency` (`PKR`), `status` (`PENDING`, `COMPLETED`, `FAILED`, `CANCELLED`), `provider` (`DEMO_SANDBOX`). Foreign Keys: `userId -> User.id`, `courseId -> Course.id`. Compound indexes on `[userId, status]`, `[courseId, status]`. |
 | **`Payment`** | Atomic transaction reconciliation ledger and gateway callback proof. | Primary Key: `id` (UUID), Unique `orderId -> Order.id`, Unique `providerTxnId` (e.g. `TXN-DEMO-9K2L1`), `amount`, `currency`, `status` (`PENDING`, `SUCCESS`, `FAILED`, `REFUNDED`), `paymentMethod` (`DEMO_CARD`, `DEMO_WALLET`, `WEBHOOK_CALLBACK`), sanitized `metadata` JSON (PCI-DSS compliant: zero card numbers or CVVs). Index on `status`. |
+| **`Notification`** | Real-time user notification center with read tracking. | Primary Key: `id` (UUID), Foreign Key: `userId -> User.id` (Cascade). Attributes: `type`, `title`, `message`, `link`, `isRead`, `readAt`, `createdAt`. Compound indexes on `[userId, isRead]`, `[userId, createdAt]`. |
+| **`PasswordResetToken`** | Cryptographic account recovery and password reset verification. | Primary Key: `id` (UUID), `email`, Unique `token`, `expiresAt`, `createdAt`. Indexes on `email`, `token`. |
+| **`ParentReport`** | Parent & legal guardian academic progress report audit ledger. | Primary Key: `id` (UUID), Foreign Keys: `studentId -> User.id` (Cascade), `courseId -> Course.id` (SetNull). Attributes: `recipientEmail`, `recipientPhone`, `reportType`, `title`, `summary` (sanitized JSON), `sentAt`, `deliveryStatus`. Compound indexes on `[studentId, sentAt]`, `[studentId]`, `[courseId]`. |
 
 ---
 
@@ -96,26 +99,19 @@ The indexing strategy directly mirrors application query patterns across Server 
 
 ---
 
-## 5. Architectural Evaluation: SQLite vs. PostgreSQL for FYP
+## 5. Active Production & Development Database: PostgreSQL
 
-### Current Database Risks (SQLite)
-1. **File-Level Concurrency Locking (`SQLITE_BUSY`)**:
-   SQLite locks the entire database file on write operations. Under concurrent evaluation (e.g., multiple committee members or students testing quiz submissions and enrollments simultaneously), writes queue up and risk timing out with `database is locked`.
-2. **Serverless Ephemeral Storage Limitations**:
-   Modern cloud hosts (such as Vercel, Netlify, and AWS Lambda) run stateless ephemeral containers. File writes to `./dev.db` do not persist across function recycles or edge nodes.
-3. **Absence of Versioned Migrations (`db push` drift)**:
-   Prototyping with `npx prisma db push` modifies schemas without generating reproducible, version-controlled SQL migration scripts, creating drift risk between local development and hosted servers.
-4. **Data Type Strictness**:
-   SQLite lacks native ENUM, UUID, and timezone-aware TIMESTAMP types, relying on string/integer representations managed at the ORM layer.
+SkillNova Academy permanently uses **PostgreSQL 18** as its official relational database engine across development, testing, and production.
 
-### Is PostgreSQL Necessary for FYP Deployment?
-- **For Local Evaluation / Defense Presentation (Recommended Default)**:
-  **No.** SQLite is completely self-contained, requires **zero external software or Docker installation**, and operates reliably offline on any presentation machine. Evaluators can clone the repo and run `npm run dev` with immediate 100% functionality.
-- **For Live Public Cloud Deployment (e.g. Vercel + Neon / Supabase / Railway)**:
-  **Yes.** A managed PostgreSQL instance is mandatory for persistent cloud storage, connection pooling, and multi-user concurrent traffic.
-
-### Strategic Dual-Mode Approach
-Keep SQLite active and verified as the local default for seamless, zero-dependency academic grading. Maintain complete, verified PostgreSQL migration scripts and environment configurations so cloud deployment can be activated upon approval.
+### Key Architectural Advantages of PostgreSQL in SkillNova:
+1. **Multi-User Concurrency & Connection Handling**:
+   Unlike SQLite's file-level locking (`SQLITE_BUSY`), PostgreSQL supports high-throughput concurrent transactions, allowing multiple evaluators, students, and instructors to submit quizzes and checkout simultaneously without deadlocks.
+2. **ACID Compliance & Strong Relational Integrity**:
+   Native UUID primary keys, strict foreign key cascade enforcement, and transactional integrity guarantees across complex operations like course enrollment recalculation and certificate issuance.
+3. **Dedicated Test Database Isolation**:
+   Testing is isolated into a separate `skillnova_test_db` PostgreSQL instance, ensuring development data in `skillnova_db` is never modified by automated test suites.
+4. **Cloud & Microservices Ready**:
+   Seamlessly compatible with cloud hosting (Neon, Supabase, Railway, AWS RDS, Docker) using standard connection pooling.
 
 ---
 

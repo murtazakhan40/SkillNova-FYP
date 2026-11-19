@@ -10,10 +10,6 @@ import {
   XCircle, 
   ArrowRight, 
   RotateCcw, 
-  BookOpen, 
-  ShieldCheck, 
-  Calendar, 
-  CreditCard, 
   Sparkles 
 } from "lucide-react";
 import { formatDate, formatPrice } from "@/lib/utils";

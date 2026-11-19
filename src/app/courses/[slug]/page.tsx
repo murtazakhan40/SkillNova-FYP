@@ -14,11 +14,10 @@ import {
   PlayCircle, 
   HelpCircle, 
   Lock,
-  ArrowRight,
   Sparkles
 } from "lucide-react";
 import { formatPrice, formatDate } from "@/lib/utils";
-import { enrollInCourseAction } from "@/app/actions/enrollment";
+import { CourseEnrollmentButton } from "@/components/enrollment/CourseEnrollmentButton";
 import { submitCourseReview } from "@/app/actions/learning";
 
 interface CourseDetailPageProps {
@@ -100,6 +99,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
       quizzes: {
         include: { questions: true },
       },
+      assignments: true,
       reviews: {
         include: { user: true },
       },
@@ -110,9 +110,35 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
     notFound();
   }
 
-  // Check if current user is already enrolled
+  const totalLessons = course.sections.reduce(
+    (acc, s) => acc + s.lessons.length,
+    0
+  );
+
+  // Check if current user is already enrolled and fetch clearance state
   let isEnrolled = false;
+  let certificate = null;
+  let completedLessonsCount = 0;
+  let isQuizzesPassed = false;
+  let isAssignmentsPassed = false;
+  let isAllCleared = false;
+
+  let fullStudentUser = null;
   if (user) {
+    fullStudentUser = await db.user.findUnique({
+      where: { id: user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        age: true,
+        parentName: true,
+        parentEmail: true,
+        parentPhone: true,
+        parentRelationship: true,
+      },
+    });
+
     const enrollment = await db.enrollment.findUnique({
       where: {
         userId_courseId: {
@@ -122,12 +148,45 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
       },
     });
     isEnrolled = !!enrollment;
-  }
 
-  const totalLessons = course.sections.reduce(
-    (acc, s) => acc + s.lessons.length,
-    0
-  );
+    if (isEnrolled) {
+      const allLessonIds = course.sections.flatMap((s) => s.lessons.map((l) => l.id));
+      const [cert, completedProgress, quizSubmissions, assignmentSubmissions] = await Promise.all([
+        db.certificate.findUnique({
+          where: { userId_courseId: { userId: user.id, courseId: course.id } },
+        }),
+        db.lessonProgress.count({
+          where: { userId: user.id, lessonId: { in: allLessonIds }, isCompleted: true },
+        }),
+        db.quizSubmission.findMany({
+          where: { userId: user.id, quizId: { in: course.quizzes.map((q) => q.id) } },
+        }),
+        db.assignmentSubmission.findMany({
+          where: {
+            userId: user.id,
+            assignmentId: { in: course.assignments.map((a) => a.id) },
+          },
+        }),
+      ]);
+
+      certificate = cert;
+      completedLessonsCount = completedProgress;
+      isQuizzesPassed =
+        course.quizzes.length === 0 ||
+        course.quizzes.every((q) => quizSubmissions.some((qs) => qs.quizId === q.id && qs.passed));
+      isAssignmentsPassed =
+        course.assignments.length === 0 ||
+        course.assignments.every((a) =>
+          assignmentSubmissions.some(
+            (as) => as.assignmentId === a.id && as.status === "GRADED" && as.score !== null && as.score / a.maxScore >= 0.7
+          )
+        );
+      isAllCleared =
+        (totalLessons === 0 || completedLessonsCount >= totalLessons) &&
+        isQuizzesPassed &&
+        isAssignmentsPassed;
+    }
+  }
 
   const avgRating =
     course.reviews.length > 0
@@ -306,6 +365,109 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                   </p>
                 </div>
               </div>
+
+              {/* Enrolled Student Academic Clearance & Certificate Tracker */}
+              {isEnrolled && (
+                <div className="mb-6 p-5 rounded-2xl bg-gradient-to-r from-slate-900 to-[#0B1B3D] text-white border border-slate-800 shadow-md">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3 mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-amber-400/20 text-amber-400 flex items-center justify-center font-bold">
+                        <Award className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-extrabold text-white">Your Course Progress & Credential Status</h3>
+                        <p className="text-[11px] text-slate-300">
+                          Clear all curriculum lectures, quizzes, and deliverables to unlock your official verified certificate.
+                        </p>
+                      </div>
+                    </div>
+                    {certificate ? (
+                      <Link
+                        href={`/verify?code=${encodeURIComponent(certificate.certificateCode)}`}
+                        className="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 w-fit shadow-xs"
+                      >
+                        <Award className="w-3.5 h-3.5" />
+                        <span>View Certificate ({certificate.certificateCode})</span>
+                      </Link>
+                    ) : isAllCleared ? (
+                      <span className="px-3 py-1 rounded-full bg-amber-400 text-slate-950 font-extrabold text-[11px]">
+                        100% Cleared • Ready to Claim 🎓
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 text-[11px] font-semibold flex items-center gap-1">
+                        <Lock className="w-3 h-3 text-slate-400" />
+                        <span>Certificate Locked</span>
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                      <div className="text-[10px] uppercase font-bold text-slate-400">1. Lectures Progress</div>
+                      <div className="font-extrabold text-sm text-white mt-0.5 flex items-center gap-1.5">
+                        {completedLessonsCount >= totalLessons && totalLessons > 0 ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        ) : (
+                          <span className="text-amber-400">⏳</span>
+                        )}
+                        <span>{completedLessonsCount} / {totalLessons} Completed</span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                      <div className="text-[10px] uppercase font-bold text-slate-400">2. Assessment Quiz</div>
+                      <div className="font-extrabold text-sm text-white mt-0.5 flex items-center gap-1.5">
+                        {course.quizzes.length === 0 ? (
+                          <span className="text-slate-400">Not Required</span>
+                        ) : isQuizzesPassed ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                            <span className="text-emerald-300">Passed & Cleared</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-amber-400">⏳</span>
+                            <span className="text-amber-300">Passing Grade Required</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                      <div className="text-[10px] uppercase font-bold text-slate-400">3. Capstone Project</div>
+                      <div className="font-extrabold text-sm text-white mt-0.5 flex items-center gap-1.5">
+                        {course.assignments.length === 0 ? (
+                          <span className="text-slate-400">Not Required</span>
+                        ) : isAssignmentsPassed ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                            <span className="text-emerald-300">Cleared & Approved</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-amber-400">⏳</span>
+                            <span className="text-amber-300">Deliverable Required</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {fullStudentUser?.parentEmail && (
+                      <div className="sm:col-span-3 p-3 rounded-xl bg-orange-500/10 border border-orange-400/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                        <div className="flex items-center gap-2 text-slate-200">
+                          <Sparkles className="w-4 h-4 text-[#FF6B00] shrink-0" />
+                          <span>
+                            Parent Reporting Active: Progress reports delivered to <strong>{fullStudentUser.parentName || "Parent"}</strong> (<span className="text-orange-300 font-mono">{fullStudentUser.parentEmail}</span>)
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
+                          ✓ Automated Sync
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Section Accordions */}
               <div className="space-y-4">
@@ -526,41 +688,17 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                   </span>
                 </div>
 
-                {isEnrolled ? (
-                  <Link
-                    href={`/courses/${course.slug}/learn/${course.sections[0]?.lessons[0]?.id || ""}`}
-                    className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-heading font-bold bg-[#0B1B3D] hover:bg-[#132752] text-white shadow-md btn-lift text-sm"
-                  >
-                    <span>Already Enrolled • Enter Classroom</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                ) : course.price <= 0 ? (
-                  /* FREE COURSE PATH: Direct zero-dollar enrollment */
-                  <form action={enrollInCourseAction.bind(null, course.id)}>
-                    <button
-                      type="submit"
-                      className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-heading font-bold bg-gradient-to-r from-emerald-600 to-teal-700 hover:opacity-95 text-white shadow-lg shadow-emerald-500/25 btn-lift text-sm cursor-pointer"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      <span>Enroll for Free • Start Learning</span>
-                    </button>
-                  </form>
-                ) : (
-                  /* PAID COURSE PATH: Routed through server-verified checkout */
-                  <div className="space-y-2">
-                    <Link
-                      href={`/checkout/${course.slug}`}
-                      className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-heading font-bold bg-gradient-to-r from-[#FF6B00] to-[#EA580C] text-white shadow-lg shadow-orange-500/25 btn-lift text-sm cursor-pointer"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      <span>Proceed to Checkout</span>
-                    </Link>
-
-                    <div className="text-[11px] text-center text-slate-400">
-                      Academic Demo Simulator • Zero real charges
-                    </div>
-                  </div>
-                )}
+                <CourseEnrollmentButton
+                  course={{
+                    id: course.id,
+                    title: course.title,
+                    slug: course.slug,
+                    price: course.price,
+                    firstLessonId: course.sections[0]?.lessons[0]?.id || "",
+                  }}
+                  currentUser={fullStudentUser}
+                  isEnrolled={isEnrolled}
+                />
 
                 {/* Features included */}
                 <div className="space-y-2.5 pt-4 border-t border-slate-100 text-xs text-slate-600">

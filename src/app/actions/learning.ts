@@ -3,13 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
-  getCurrentUser,
   requireAuth,
   requireRole,
   requireCourseEnrollment,
 } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { evaluateAndIssueCertificate } from "@/lib/certificates";
+import { sendParentAcademicReport } from "@/lib/parent-reports";
 
 /**
  * Mark a lesson as completed, calculate course progress, and auto-issue certificate at 100%.
@@ -129,6 +129,57 @@ export async function toggleLessonProgress(lessonId: string, courseSlug: string)
 }
 
 /**
+ * Explicit Student Certificate Claim Action.
+ * Verifies that all course requirements (lessons, quizzes, assignments) are 100% completed and cleared.
+ */
+export async function claimCertificateAction(courseId: string) {
+  const user = await requireAuth();
+  await requireCourseEnrollment(user.id, courseId);
+
+  const result = await evaluateAndIssueCertificate(user.id, courseId);
+  if (!result.eligible) {
+    throw new Error(result.reason || "You have not yet cleared all course requirements.");
+  }
+
+  const course = await db.course.findUnique({
+    where: { id: courseId },
+    select: { slug: true },
+  });
+
+  if (course) {
+    revalidatePath(`/courses/${course.slug}`);
+    revalidatePath(`/courses/${course.slug}/learn`);
+  }
+  revalidatePath(`/dashboard/student`);
+  revalidatePath(`/dashboard/student/certificates`);
+
+  // Under-18 Milestone: Notify parent of earned digital certificate
+  try {
+    const student = await db.user.findUnique({
+      where: { id: user.id },
+      select: { age: true, parentEmail: true },
+    });
+    if (student?.age !== null && student?.age !== undefined && student.age < 18 && student.parentEmail) {
+      await sendParentAcademicReport({
+        studentId: user.id,
+        courseId,
+        reportType: "CERTIFICATE_ACHIEVED",
+        customNote: `Academic Milestone: Your child has officially graduated and earned verified certificate ${result.certificate?.certificateCode} with honors!`,
+      });
+    }
+  } catch {
+    // Non-blocking telemetry
+  }
+
+  return {
+    success: true,
+    certificateCode: result.certificate?.certificateCode,
+    grade: result.certificate?.grade,
+    newlyIssued: result.newlyIssued,
+  };
+}
+
+/**
  * Submit Course Assessment Quiz and record attempt in database.
  * Strictly verifies the student is actively enrolled in the course.
  */
@@ -182,9 +233,39 @@ export async function submitQuizAttempt(
     await evaluateAndIssueCertificate(user.id, quiz.courseId);
   }
 
+  // Under-18 Milestone: Notify parent of quiz assessment results
+  try {
+    const student = await db.user.findUnique({
+      where: { id: user.id },
+      select: { age: true, parentEmail: true },
+    });
+    if (student?.age !== null && student?.age !== undefined && student.age < 18 && student.parentEmail) {
+      await sendParentAcademicReport({
+        studentId: user.id,
+        courseId: quiz.courseId,
+        reportType: "QUIZ_RESULT",
+        customNote: `Assessment Update: Your child achieved ${scorePercent}% on "${quiz.title}" (${passed ? "Passed ✓" : "Needs Review"}).`,
+      });
+    }
+  } catch {
+    // Non-blocking telemetry
+  }
+
   revalidatePath(`/dashboard/student`);
   revalidatePath(`/dashboard/student/certificates`);
   revalidatePath(`/dashboard/student/quizzes`);
+
+  const questionResults = quiz.questions.map((q) => {
+    const selected = answers[q.id] !== undefined ? answers[q.id] : null;
+    const isCorrect = selected === q.correctIndex;
+    return {
+      questionId: q.id,
+      selectedOption: selected,
+      correctOption: q.correctIndex,
+      isCorrect,
+      explanation: q.explanation || null,
+    };
+  });
 
   return {
     submissionId: submission.id,
@@ -193,6 +274,7 @@ export async function submitQuizAttempt(
     passingScore: quiz.passingScore,
     correctCount,
     totalQuestions: quiz.questions.length,
+    questionResults,
   };
 }
 

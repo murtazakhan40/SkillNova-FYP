@@ -36,6 +36,7 @@ export function resolveOrderPrice(
   canonicalPrice: number,
   _clientSuppliedAmount?: number
 ): number {
+  void _clientSuppliedAmount;
   // STRICT: Client amount is completely discarded; database price is enforced
   return canonicalPrice;
 }

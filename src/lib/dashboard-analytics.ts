@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import type { PrismaClient } from "@prisma/client";
 
 export interface DayActivity {
   dayName: string;
@@ -22,7 +23,7 @@ export interface StudentDashboardAnalytics {
 
 export async function getStudentAnalytics(
   userId: string,
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ): Promise<StudentDashboardAnalytics> {
   // 1. Enrollments
   const enrollments = await dbClient.enrollment.findMany({
@@ -41,7 +42,7 @@ export async function getStudentAnalytics(
   });
 
   const totalEnrolled = enrollments.length;
-  const completedCount = enrollments.filter((e: any) => e.progress >= 100).length;
+  const completedCount = enrollments.filter((e) => e.progress >= 100).length;
   const inProgressCount = totalEnrolled - completedCount;
 
   // 2. Quiz Submissions & Average Score
@@ -53,19 +54,19 @@ export async function getStudentAnalytics(
   const averageQuizScore =
     submissions.length > 0
       ? Math.round(
-          submissions.reduce((acc: number, sub: any) => acc + sub.score, 0) / submissions.length
+          submissions.reduce((acc: number, sub) => acc + sub.score, 0) / submissions.length
         )
       : 0;
 
   // 3. Pending Quizzes
-  const attemptedQuizIds = new Set(submissions.map((s: any) => s.quizId));
-  const allEnrolledQuizzes = enrollments.flatMap((e: any) => e.course.quizzes);
+  const attemptedQuizIds = new Set(submissions.map((s) => s.quizId));
+  const allEnrolledQuizzes = enrollments.flatMap((e) => e.course.quizzes);
   const pendingQuizzesCount = allEnrolledQuizzes.filter(
-    (q: any) => !attemptedQuizIds.has(q.id)
+    (q) => !attemptedQuizIds.has(q.id)
   ).length;
 
   // 4. Pending Assignments
-  const enrolledCourseIds = enrollments.map((e: any) => e.courseId);
+  const enrolledCourseIds = enrollments.map((e) => e.courseId);
   const totalCourseAssignments = await dbClient.assignment.findMany({
     where: { courseId: { in: enrolledCourseIds } },
     select: { id: true },
@@ -74,9 +75,9 @@ export async function getStudentAnalytics(
     where: { userId },
     select: { assignmentId: true },
   });
-  const submittedAssignmentIds = new Set(mySubmissions.map((s: any) => s.assignmentId));
+  const submittedAssignmentIds = new Set(mySubmissions.map((s) => s.assignmentId));
   const pendingAssignmentsCount = totalCourseAssignments.filter(
-    (a: any) => !submittedAssignmentIds.has(a.id)
+    (a) => !submittedAssignmentIds.has(a.id)
   ).length;
 
   // 5. Certificates
@@ -135,7 +136,7 @@ export async function getStudentAnalytics(
   }
 
   // Count completions
-  recentLessons.forEach((l: any) => {
+  recentLessons.forEach((l) => {
     if (l.completedAt) {
       const key = l.completedAt.toISOString().split("T")[0];
       if (dayBuckets[key] !== undefined) {
@@ -144,14 +145,14 @@ export async function getStudentAnalytics(
     }
   });
 
-  recentQuizzes.forEach((q: any) => {
+  recentQuizzes.forEach((q) => {
     const key = q.createdAt.toISOString().split("T")[0];
     if (dayBuckets[key] !== undefined) {
       dayBuckets[key] += 1;
     }
   });
 
-  recentAssignments.forEach((a: any) => {
+  recentAssignments.forEach((a) => {
     const key = a.submittedAt.toISOString().split("T")[0];
     if (dayBuckets[key] !== undefined) {
       dayBuckets[key] += 1;
@@ -210,69 +211,71 @@ export interface TrainerDashboardAnalytics {
 export async function getTrainerAnalytics(
   trainerId: string,
   isAdmin: boolean = false,
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ): Promise<TrainerDashboardAnalytics> {
   // 1. Fetch courses taught by this trainer (or all if admin)
   const courses = await dbClient.course.findMany({
     where: isAdmin ? {} : { instructorId: trainerId },
     include: {
-      enrollments: true,
-      reviews: true,
+      enrollments: { select: { id: true, userId: true, progress: true } },
+      reviews: { select: { id: true, rating: true } },
       sections: {
-        include: { lessons: true },
+        select: {
+          lessons: { select: { id: true } },
+        },
       },
-      quizzes: true,
-      assignments: true,
+      quizzes: { select: { id: true } },
+      assignments: { select: { id: true } },
     },
   });
 
   const assignedCoursesCount = courses.length;
   const enrolledLearnersCount = courses.reduce(
-    (acc: number, c: any) => acc + c.enrollments.length,
+    (acc: number, c) => acc + c.enrollments.length,
     0
   );
   const uniqueLearnerIds = new Set(
-    courses.flatMap((c: any) => c.enrollments.map((e: any) => e.userId))
+    courses.flatMap((c) => c.enrollments.map((e) => e.userId))
   );
   const uniqueLearnersCount = uniqueLearnerIds.size;
 
   const completedGraduatesCount = courses.reduce(
-    (acc: number, c: any) =>
-      acc + c.enrollments.filter((e: any) => e.progress >= 100).length,
+    (acc: number, c) =>
+      acc + c.enrollments.filter((e) => e.progress >= 100).length,
     0
   );
 
   const totalLessonsCount = courses.reduce(
-    (acc: number, c: any) =>
+    (acc: number, c) =>
       acc +
       c.sections.reduce(
-        (sAcc: number, s: any) => sAcc + s.lessons.length,
+        (sAcc: number, s) => sAcc + s.lessons.length,
         0
       ),
     0
   );
 
   const totalQuizzesCount = courses.reduce(
-    (acc: number, c: any) => acc + c.quizzes.length,
+    (acc: number, c) => acc + c.quizzes.length,
     0
   );
 
   const totalAssignmentsCount = courses.reduce(
-    (acc: number, c: any) => acc + c.assignments.length,
+    (acc: number, c) => acc + c.assignments.length,
     0
   );
 
-  const allReviews = courses.flatMap((c: any) => c.reviews);
+  const allReviews = courses.flatMap((c) => c.reviews);
   const averageRating =
     allReviews.length > 0
       ? (
-          allReviews.reduce((acc: number, r: any) => acc + r.rating, 0) /
+          allReviews.reduce((acc: number, r) => acc + r.rating, 0) /
           allReviews.length
         ).toFixed(1)
       : "5.0";
 
   // 2. Pending assignment reviews awaiting grading
-  const courseIds = courses.map((c: any) => c.id);
+  const courseIds = courses.map((c) => c.id);
   const pendingReviewsCount =
     courseIds.length > 0
       ? await dbClient.assignmentSubmission.count({
@@ -353,7 +356,7 @@ export async function getTrainerAnalytics(
     dayBuckets[dateKey] = 0;
   }
 
-  recentLessons.forEach((l: any) => {
+  recentLessons.forEach((l) => {
     if (l.completedAt) {
       const key = l.completedAt.toISOString().split("T")[0];
       if (dayBuckets[key] !== undefined) {
@@ -362,21 +365,21 @@ export async function getTrainerAnalytics(
     }
   });
 
-  recentQuizzes.forEach((q: any) => {
+  recentQuizzes.forEach((q) => {
     const key = q.createdAt.toISOString().split("T")[0];
     if (dayBuckets[key] !== undefined) {
       dayBuckets[key] += 1;
     }
   });
 
-  recentAssignments.forEach((a: any) => {
+  recentAssignments.forEach((a) => {
     const key = a.submittedAt.toISOString().split("T")[0];
     if (dayBuckets[key] !== undefined) {
       dayBuckets[key] += 1;
     }
   });
 
-  recentEnrollments.forEach((e: any) => {
+  recentEnrollments.forEach((e) => {
     const key = e.createdAt.toISOString().split("T")[0];
     if (dayBuckets[key] !== undefined) {
       dayBuckets[key] += 1;
@@ -452,14 +455,16 @@ export interface AdminDashboardAnalytics {
 }
 
 export async function getAdminAnalytics(
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ): Promise<AdminDashboardAnalytics> {
   const [
     studentCount,
     trainerCount,
     adminCount,
     courses,
-    enrollments,
+    enrollmentCount,
+    completedEnrollmentCount,
+    enrollmentGroupedByCourse,
     certCount,
     recentEnrollments,
     recentCerts,
@@ -474,8 +479,11 @@ export async function getAdminAnalytics(
     dbClient.course.findMany({
       select: { id: true, price: true, published: true },
     }),
-    dbClient.enrollment.findMany({
-      select: { id: true, progress: true, courseId: true },
+    dbClient.enrollment.count(),
+    dbClient.enrollment.count({ where: { progress: { gte: 100 } } }),
+    dbClient.enrollment.groupBy({
+      by: ["courseId"],
+      _count: { id: true },
     }),
     dbClient.certificate.count(),
     dbClient.enrollment.findMany({
@@ -510,22 +518,20 @@ export async function getAdminAnalytics(
 
   const totalUsers = studentCount + trainerCount + adminCount;
   const courseCount = courses.length;
-  const publishedCourseCount = courses.filter((c: any) => c.published).length;
+  const publishedCourseCount = courses.filter((c) => c.published).length;
   const draftCourseCount = courseCount - publishedCourseCount;
 
-  const enrollmentCount = enrollments.length;
-  const completedEnrollmentCount = enrollments.filter((e: any) => e.progress >= 100).length;
   const inProgressEnrollments = enrollmentCount - completedEnrollmentCount;
   const completionRate =
     enrollmentCount > 0 ? Math.round((completedEnrollmentCount / enrollmentCount) * 100) : 0;
 
-  // Calculate actual revenue from course price * enrollments
+  // Calculate actual revenue from course price * enrollments (grouped by courseId at database level)
   const coursePriceMap = new Map<string, number>(
-    courses.map((c: any) => [c.id, Number(c.price) || 0])
+    courses.map((c) => [c.id, Number(c.price) || 0])
   );
-  const totalRevenue = enrollments.reduce((acc: number, e: any) => {
-    const price = coursePriceMap.get(e.courseId) ?? 0;
-    return acc + price;
+  const totalRevenue = enrollmentGroupedByCourse.reduce((acc: number, item) => {
+    const price = coursePriceMap.get(item.courseId) ?? 0;
+    return acc + price * (item._count?.id ?? 0);
   }, 0);
 
   // Weekly platform activity (past 7 days window)
@@ -581,11 +587,11 @@ export async function getAdminAnalytics(
     }
   };
 
-  weekEnrollments.forEach((e: any) => addToBucket(e.createdAt));
-  weekLessons.forEach((l: any) => addToBucket(l.completedAt));
-  weekQuizzes.forEach((q: any) => addToBucket(q.createdAt));
-  weekAssignments.forEach((a: any) => addToBucket(a.submittedAt));
-  weekUsers.forEach((u: any) => addToBucket(u.createdAt));
+  weekEnrollments.forEach((e) => addToBucket(e.createdAt));
+  weekLessons.forEach((l) => addToBucket(l.completedAt));
+  weekQuizzes.forEach((q) => addToBucket(q.createdAt));
+  weekAssignments.forEach((a) => addToBucket(a.submittedAt));
+  weekUsers.forEach((u) => addToBucket(u.createdAt));
 
   let totalActionsThisWeek = 0;
   let maxCount = 1;
@@ -611,7 +617,7 @@ export async function getAdminAnalytics(
   // Construct consolidated authentic activity feed
   const rawEvents: AdminActivityItem[] = [];
 
-  recentEnrollments.forEach((e: any) => {
+  recentEnrollments.forEach((e) => {
     rawEvents.push({
       id: `enr-${e.id}`,
       type: "ENROLLMENT",
@@ -631,7 +637,7 @@ export async function getAdminAnalytics(
     });
   });
 
-  recentCerts.forEach((c: any) => {
+  recentCerts.forEach((c) => {
     rawEvents.push({
       id: `cert-${c.id}`,
       type: "CERTIFICATE",
@@ -651,7 +657,7 @@ export async function getAdminAnalytics(
     });
   });
 
-  recentQuizSubs.forEach((q: any) => {
+  recentQuizSubs.forEach((q) => {
     rawEvents.push({
       id: `quiz-${q.id}`,
       type: "QUIZ",
@@ -673,7 +679,7 @@ export async function getAdminAnalytics(
     });
   });
 
-  recentAssignSubs.forEach((a: any) => {
+  recentAssignSubs.forEach((a) => {
     rawEvents.push({
       id: `assign-${a.id}`,
       type: "ASSIGNMENT",
@@ -693,7 +699,7 @@ export async function getAdminAnalytics(
     });
   });
 
-  recentAuditLogs.forEach((l: any) => {
+  recentAuditLogs.forEach((l) => {
     rawEvents.push({
       id: `audit-${l.id}`,
       type: "AUDIT",
@@ -713,7 +719,7 @@ export async function getAdminAnalytics(
     });
   });
 
-  recentUsers.forEach((u: any) => {
+  recentUsers.forEach((u) => {
     rawEvents.push({
       id: `user-${u.id}`,
       type: "USER",
@@ -756,4 +762,3 @@ export async function getAdminAnalytics(
     recentActivity,
   };
 }
-

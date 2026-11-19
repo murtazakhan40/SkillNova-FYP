@@ -1,15 +1,76 @@
+import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+
+function verifyWebhookAuth(request: NextRequest, rawBody: string): boolean {
+  const secret = process.env.PAYMENT_WEBHOOK_SECRET || process.env.WEBHOOK_SECRET;
+  
+  // If in production, secret is mandatory
+  if (process.env.NODE_ENV === "production" && !secret) {
+    console.error("FATAL: PAYMENT_WEBHOOK_SECRET is not configured in production.");
+    return false;
+  }
+
+  // If secret is set, verify either HMAC-SHA256 signature or direct secret token
+  if (secret) {
+    const signature = request.headers.get("x-webhook-signature");
+    const headerSecret = request.headers.get("x-webhook-secret");
+
+    if (headerSecret && headerSecret === secret) {
+      return true;
+    }
+
+    if (signature) {
+      try {
+        const expected = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+        if (signature.length === expected.length && crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+          return true;
+        }
+      } catch {
+        return false;
+      }
+    }
+
+    return false;
+  }
+
+  // In non-production without configured secret, allow demo simulator requests
+  return true;
+}
 
 /**
  * Webhook Ingestion & Idempotent Payment Callback Simulator
  * Demonstrates production-grade webhook signature verification, replay protection,
- * and duplicate callback prevention.
+ * duplicate callback prevention, and sanitized audit logging.
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { orderNumber, providerTxnId, status, simulationScenario } = body;
+    const rawBody = await request.text();
+    
+    // 0. Verify Webhook Authenticity
+    if (!verifyWebhookAuth(request, rawBody)) {
+      return NextResponse.json(
+        { error: "Unauthorized: Invalid or missing webhook signature/secret." },
+        { status: 401 }
+      );
+    }
+
+    let body: Record<string, unknown>;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      return NextResponse.json(
+        { error: "Malformed payload: Request body must be valid JSON." },
+        { status: 400 }
+      );
+    }
+
+    const { orderNumber, providerTxnId, status, simulationScenario } = body as {
+      orderNumber?: string;
+      providerTxnId?: string;
+      status?: string;
+      simulationScenario?: string;
+    };
 
     if (!orderNumber || !providerTxnId) {
       return NextResponse.json(
@@ -85,6 +146,24 @@ export async function POST(request: NextRequest) {
             progress: 0.0,
           },
         });
+
+        // 4. Log Operational Governance Audit Trace
+        await tx.auditLog.create({
+          data: {
+            action: "WEBHOOK_PAYMENT_SETTLED",
+            entity: "Order",
+            entityId: order.id,
+            details: JSON.stringify({
+              orderNumber: order.orderNumber,
+              providerTxnId,
+              amount: order.amount,
+              currency: order.currency,
+              userId: order.userId,
+              courseId: order.courseId,
+            }),
+            userId: order.userId,
+          },
+        });
       });
 
       return NextResponse.json(
@@ -117,6 +196,20 @@ export async function POST(request: NextRequest) {
               reason: simulationScenario || "GATEWAY_DECLINE",
               simulatedWebhook: true,
             }),
+          },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            action: "WEBHOOK_PAYMENT_FAILED",
+            entity: "Order",
+            entityId: order.id,
+            details: JSON.stringify({
+              orderNumber: order.orderNumber,
+              providerTxnId,
+              reason: simulationScenario || "GATEWAY_DECLINE",
+            }),
+            userId: order.userId,
           },
         });
       });

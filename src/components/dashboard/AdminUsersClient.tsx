@@ -5,8 +5,6 @@ import {
   Users, 
   Search, 
   ShieldCheck, 
-  BookOpen, 
-  Award, 
   ChevronLeft, 
   ChevronRight, 
   Eye, 
@@ -16,7 +14,8 @@ import {
   Phone,
   Calendar,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Heart
 } from "lucide-react";
 import { updateUserRoleAction } from "@/app/actions/admin";
 
@@ -29,6 +28,11 @@ export interface UserDirectoryItem {
   headline: string | null;
   bio: string | null;
   phone: string | null;
+  age?: number | null;
+  parentName?: string | null;
+  parentEmail?: string | null;
+  parentPhone?: string | null;
+  parentRelationship?: string | null;
   createdAt: string;
   enrollmentsCount: number;
   certificatesCount: number;
@@ -108,10 +112,10 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
         message: `Successfully changed ${pendingRoleChange.user.name}'s role to ${pendingRoleChange.targetRole}.`,
       });
       setPendingRoleChange(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({
         type: "error",
-        message: err?.message || "Failed to update user role.",
+        message: err instanceof Error ? err.message : "Failed to update user role.",
       });
     } finally {
       setIsUpdating(false);
@@ -276,7 +280,14 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
                           )}
                         </div>
                         <div>
-                          <div className="font-bold text-[#0B1B3D] text-sm">{u.name}</div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-[#0B1B3D] text-sm">{u.name}</span>
+                            {u.age !== undefined && u.age !== null && u.age < 18 && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">
+                                Junior ({u.age}y)
+                              </span>
+                            )}
+                          </div>
                           <div className="text-[10px] text-slate-400 truncate max-w-xs">
                             {u.headline || "Registered Learner"}
                           </div>
@@ -492,6 +503,37 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
                   <span>Account Created: {inspectUser.createdAt}</span>
                 </div>
               </div>
+
+              {/* Parent & Guardian Contact (For students with parent details) */}
+              {inspectUser.parentEmail && (
+                <div className="p-4 rounded-2xl bg-amber-50/80 border border-orange-200 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF6B00] flex items-center gap-1">
+                      <Heart className="w-3.5 h-3.5 text-red-500" />
+                      <span>Parent & Guardian Contact</span>
+                    </span>
+                    {inspectUser.age && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-slate-700 border border-slate-200">
+                        Age {inspectUser.age}
+                      </span>
+                    )}
+                  </div>
+                  <div className="font-bold text-slate-900">
+                    {inspectUser.parentName || "Parent / Guardian"}
+                    {inspectUser.parentRelationship && ` (${inspectUser.parentRelationship})`}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-slate-600 font-mono text-[11px]">
+                    <Mail className="w-3.5 h-3.5 text-[#FF6B00]" />
+                    <span>{inspectUser.parentEmail}</span>
+                  </div>
+                  {inspectUser.parentPhone && (
+                    <div className="flex items-center gap-1.5 text-slate-600 font-mono text-[11px]">
+                      <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>{inspectUser.parentPhone}</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Bio */}
               {inspectUser.bio && (

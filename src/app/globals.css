@@ -4,6 +4,9 @@
   --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-heading: var(--font-outfit), var(--font-jakarta), sans-serif;
   --font-brand: var(--font-outfit), sans-serif;
+  --font-cert-serif: var(--font-cert-serif), "Cinzel", "Times New Roman", Georgia, serif;
+  --font-cert-title: var(--font-cert-serif), "Cinzel", "Times New Roman", Georgia, serif;
+  --font-cert-script: var(--font-cert-script), "Great Vibes", cursive;
 
   --color-navy-950: #060e1e;
   --color-navy-900: #0b1b3d;
@@ -61,6 +64,15 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 .font-brand {
   font-family: var(--font-brand);
   letter-spacing: -0.03em;
+}
+
+/* Luxury high-legibility certificate serif typography */
+.font-cert-title {
+  font-family: var(--font-cert-serif), "Cinzel", "Times New Roman", Georgia, serif;
+}
+
+.font-cert-serif {
+  font-family: var(--font-cert-serif), "Cinzel", "Times New Roman", Georgia, serif;
 }
 
 /* Signature brand orange gradient text */
@@ -271,5 +283,34 @@ textarea:focus-visible {
   .animate-pulse-glow,
   .animate-shimmer {
     animation: none !important;
+  }
+}
+
+/* Certificate Typography & Luxury Aesthetic */
+.font-cert-script {
+  font-family: var(--font-cert-script), 'Great Vibes', 'Alex Brush', cursive, sans-serif;
+}
+
+.font-cert-serif {
+  font-family: var(--font-cert-serif), 'Cinzel', 'Playfair Display', Georgia, serif;
+}
+
+.text-gold-gradient {
+  background: linear-gradient(135deg, #B87B1A 0%, #E5A93C 50%, #9C630D 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-certificate-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
   }
 }

@@ -9,7 +9,6 @@ import {
   CheckCircle2, 
   Star, 
   Award,
-  Layers,
   Search,
   ChevronLeft,
   ChevronRight

@@ -6,25 +6,46 @@ import { db } from "@/lib/db";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { StudentProfileForm } from "@/components/dashboard/StudentProfileForm";
 import { getStudentNotifications } from "@/lib/notifications";
-import { ArrowLeft, UserCheck, GraduationCap, ShieldCheck, BookOpen } from "lucide-react";
+import { ArrowLeft, UserCheck, ShieldCheck, BookOpen } from "lucide-react";
 
 export default async function StudentProfilePage() {
-  const user = await getCurrentUser();
+  const sessionUser = await getCurrentUser();
 
-  if (!user) {
+  if (!sessionUser) {
     redirect("/login");
   }
 
-  const [notifications, enrollments, certificatesCount] = await Promise.all([
-    getStudentNotifications(user.id),
+  const [dbUser, notifications, enrollments, certificatesCount] = await Promise.all([
+    db.user.findUnique({
+      where: { id: sessionUser.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        avatar: true,
+        headline: true,
+        bio: true,
+        phone: true,
+        age: true,
+        dateOfBirth: true,
+        parentName: true,
+        parentEmail: true,
+        parentPhone: true,
+        parentRelationship: true,
+      },
+    }),
+    getStudentNotifications(sessionUser.id),
     db.enrollment.findMany({
-      where: { userId: user.id },
+      where: { userId: sessionUser.id },
       include: { course: true },
     }),
     db.certificate.count({
-      where: { userId: user.id },
+      where: { userId: sessionUser.id },
     }),
   ]);
+
+  const user = dbUser ? { ...sessionUser, ...dbUser } : sessionUser;
 
   return (
     <DashboardShell user={user} notifications={notifications}>

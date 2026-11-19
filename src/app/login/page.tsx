@@ -2,15 +2,22 @@ import React from "react";
 import Link from "next/link";
 import { SkillNovaLogo } from "@/components/brand/SkillNovaLogo";
 import { HeroParticles } from "@/components/animations/HeroParticles";
-import { loginAction, quickDemoLogin, loginWithFacultyEmail } from "@/app/actions/auth";
+import { quickDemoLogin, loginWithFacultyEmail } from "@/app/actions/auth";
+import { LoginForm } from "@/components/auth/LoginForm";
 import { 
-  ArrowRight, 
-  Lock, 
-  Mail, 
-  Sparkles
+  Sparkles,
+  GraduationCap
 } from "lucide-react";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ redirect?: string; error?: string }>;
+}) {
+  const params = searchParams ? await searchParams : {};
+  const redirect = params?.redirect;
+  const errorParam = params?.error;
+
   return (
     <div className="min-h-screen bg-[#0B1B3D] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Background ambient particles & glows */}
@@ -26,12 +33,29 @@ export default function LoginPage() {
           Sign In to Your Account
         </h2>
         <p className="mt-2 text-xs sm:text-sm text-slate-400 font-normal">
-          Access your courses, dashboard, and learning materials.
+          Access your courses, dashboard, and real-time learning materials.
         </p>
+
+        {redirect && (
+          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-200 text-[11px] border border-blue-400/30">
+            <GraduationCap className="w-3.5 h-3.5 text-[#FF6B00]" />
+            <span>Sign in required to access protected learning module</span>
+          </div>
+        )}
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="bg-white py-8 px-6 shadow-2xl rounded-2xl sm:px-10 border border-slate-100">
+          {errorParam && (
+            <div className="mb-4 p-3 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 text-xs font-medium">
+              {errorParam === "demo_disabled_in_production" 
+                ? "Demo shortcuts are disabled in production mode. Please use your email credentials."
+                : errorParam === "user_not_found"
+                ? "Requested demo account could not be found."
+                : "Authentication required to proceed."}
+            </div>
+          )}
+
           {/* Quick Demo Switcher for FYP Presentation */}
           <div className="mb-6 p-4 rounded-2xl bg-orange-50/80 border border-orange-200 shadow-sm">
             <div className="flex items-center gap-2 text-xs font-heading font-bold text-[#0B1B3D] mb-2.5">
@@ -40,7 +64,7 @@ export default function LoginPage() {
             </div>
 
             <div className="grid grid-cols-3 gap-2">
-              <form action={quickDemoLogin.bind(null, "STUDENT")}>
+              <form action={quickDemoLogin.bind(null, "STUDENT", undefined, redirect)}>
                 <button
                   type="submit"
                   className="w-full py-2 px-2 rounded-xl text-[11px] font-heading font-bold bg-white text-blue-700 hover:bg-blue-50 border border-blue-200/80 shadow-sm btn-lift cursor-pointer text-center"
@@ -49,7 +73,7 @@ export default function LoginPage() {
                 </button>
               </form>
 
-              <form action={quickDemoLogin.bind(null, "TRAINER")}>
+              <form action={quickDemoLogin.bind(null, "TRAINER", undefined, redirect)}>
                 <button
                   type="submit"
                   className="w-full py-2 px-2 rounded-xl text-[11px] font-heading font-bold bg-white text-orange-700 hover:bg-orange-50 border border-orange-200/80 shadow-sm btn-lift cursor-pointer text-center"
@@ -58,7 +82,7 @@ export default function LoginPage() {
                 </button>
               </form>
 
-              <form action={quickDemoLogin.bind(null, "ADMIN")}>
+              <form action={quickDemoLogin.bind(null, "ADMIN", undefined, redirect)}>
                 <button
                   type="submit"
                   className="w-full py-2 px-2 rounded-xl text-[11px] font-heading font-bold bg-white text-purple-700 hover:bg-purple-50 border border-purple-200/80 shadow-sm btn-lift cursor-pointer text-center"
@@ -95,23 +119,23 @@ export default function LoginPage() {
                   </button>
                 </form>
 
-                <form action={loginWithFacultyEmail.bind(null, "sarah.mitchell@skillnova.com")}>
+                <form action={loginWithFacultyEmail.bind(null, "ayesha.malik@skillnova.com")}>
                   <button type="submit" className="w-full text-left p-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-800 flex justify-between items-center transition-colors cursor-pointer">
-                    <span>🧠 <strong>Dr. Sarah Mitchell</strong> (AI / PyTorch)</span>
+                    <span>🧠 <strong>Dr. Ayesha Malik</strong> (AI / PyTorch)</span>
                     <span className="text-[10px] text-[#FF6B00] font-bold">1-Click Login →</span>
                   </button>
                 </form>
 
-                <form action={loginWithFacultyEmail.bind(null, "david.chen@skillnova.com")}>
+                <form action={loginWithFacultyEmail.bind(null, "tariq.mahmood@skillnova.com")}>
                   <button type="submit" className="w-full text-left p-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-800 flex justify-between items-center transition-colors cursor-pointer">
-                    <span>☁️ <strong>Prof. David Chen</strong> (Cloud / Go)</span>
+                    <span>☁️ <strong>Prof. Tariq Mahmood</strong> (Cloud / Go)</span>
                     <span className="text-[10px] text-[#FF6B00] font-bold">1-Click Login →</span>
                   </button>
                 </form>
 
-                <form action={loginWithFacultyEmail.bind(null, "alex.rivera@skillnova.com")}>
+                <form action={loginWithFacultyEmail.bind(null, "hamza.farooq@skillnova.com")}>
                   <button type="submit" className="w-full text-left p-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-800 flex justify-between items-center transition-colors cursor-pointer">
-                    <span>🛡️ <strong>Alex Rivera</strong> (Cybersecurity)</span>
+                    <span>🛡️ <strong>Hamza Farooq</strong> (Cybersecurity)</span>
                     <span className="text-[10px] text-[#FF6B00] font-bold">1-Click Login →</span>
                   </button>
                 </form>
@@ -148,56 +172,8 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Login Form */}
-          <form action={async (formData) => {
-            "use server";
-            await loginAction(null, formData);
-          }} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="email"
-                  name="email"
-                  required
-                  placeholder="murtazwazir.edu@gmail.com"
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-slate-700">
-                  Password
-                </label>
-                <span className="text-[11px] text-[#FF6B00] hover:underline cursor-pointer">
-                  Forgot?
-                </span>
-              </div>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="password"
-                  name="password"
-                  required
-                  placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-heading font-bold text-white bg-[#0B1B3D] hover:bg-[#132752] shadow-md btn-lift cursor-pointer mt-2"
-            >
-              <span>Sign In</span>
-              <ArrowRight className="w-4 h-4 text-[#FF6B00]" />
-            </button>
-          </form>
+          {/* Interactive Secure Client Login Form */}
+          <LoginForm initialRedirect={redirect} />
 
           {/* Switch to Register */}
           <div className="mt-6 text-center text-xs text-slate-500">

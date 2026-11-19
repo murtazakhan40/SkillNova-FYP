@@ -5,16 +5,17 @@ import {
   Users, 
   Search, 
   Award, 
-  BookOpen, 
-  CheckCircle2, 
   Eye, 
   X, 
   Mail, 
   Phone, 
-  Calendar,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Send,
+  Heart,
+  Loader2
 } from "lucide-react";
+import { trainerDispatchParentReportAction } from "@/app/actions/parent-report";
 
 export interface TrainerStudentRosterItem {
   id: string;
@@ -25,6 +26,11 @@ export interface TrainerStudentRosterItem {
   studentHeadline: string | null;
   studentPhone: string | null;
   studentBio: string | null;
+  studentAge?: number | null;
+  parentName?: string | null;
+  parentEmail?: string | null;
+  parentPhone?: string | null;
+  parentRelationship?: string | null;
   courseId: string;
   courseTitle: string;
   enrolledAt: string;
@@ -47,6 +53,29 @@ export function TrainerStudentsClient({
   const [inspectStudent, setInspectStudent] = useState<TrainerStudentRosterItem | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+
+  // Faculty report dispatch state
+  const [isSendingReport, setIsSendingReport] = useState(false);
+  const [reportFeedback, setReportFeedback] = useState<string | null>(null);
+  const [facultyNote, setFacultyNote] = useState("");
+
+  const handleSendParentReport = async (studentId: string, courseId: string) => {
+    setIsSendingReport(true);
+    setReportFeedback(null);
+    try {
+      const res = await trainerDispatchParentReportAction(studentId, courseId, facultyNote);
+      if (res.success) {
+        setReportFeedback(res.message || "Progress report successfully delivered to parent!");
+        setFacultyNote("");
+      } else {
+        setReportFeedback(res.message || "Failed to send report.");
+      }
+    } catch (err: unknown) {
+      setReportFeedback(err instanceof Error ? err.message : "Error dispatching report.");
+    } finally {
+      setIsSendingReport(false);
+    }
+  };
 
   // Counts
   const counts = useMemo(() => {
@@ -194,7 +223,14 @@ export function TrainerStudentsClient({
                         )}
                       </div>
                       <div>
-                        <div className="font-bold text-[#0B1B3D] text-sm">{s.studentName}</div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-[#0B1B3D] text-sm">{s.studentName}</span>
+                          {s.studentAge !== undefined && s.studentAge !== null && s.studentAge < 18 && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">
+                              Junior ({s.studentAge}y)
+                            </span>
+                          )}
+                        </div>
                         <div className="text-[10px] text-slate-400">{s.studentEmail}</div>
                       </div>
                     </td>
@@ -392,6 +428,78 @@ export function TrainerStudentsClient({
                   </div>
                 )}
               </div>
+
+              {/* Parent & Guardian Contact Dossier */}
+              {inspectStudent.parentEmail ? (
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/70 border-2 border-orange-200/90 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF6B00] flex items-center gap-1">
+                      <Heart className="w-3.5 h-3.5 text-red-500" />
+                      <span>Parent / Guardian Contact</span>
+                    </span>
+                    {inspectStudent.studentAge && (
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-white text-slate-800 border border-slate-200">
+                        Age {inspectStudent.studentAge}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="text-xs space-y-1">
+                    <div className="font-bold text-slate-900">
+                      {inspectStudent.parentName || "Parent / Guardian"}
+                      {inspectStudent.parentRelationship && ` (${inspectStudent.parentRelationship})`}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-slate-600 font-mono text-[11px]">
+                      <Mail className="w-3.5 h-3.5 text-[#FF6B00]" />
+                      <span>{inspectStudent.parentEmail}</span>
+                    </div>
+                    {inspectStudent.parentPhone && (
+                      <div className="flex items-center gap-1.5 text-slate-600 font-mono text-[11px]">
+                        <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>{inspectStudent.parentPhone}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {reportFeedback && (
+                    <div className="p-2.5 rounded-xl bg-white border border-emerald-300 text-emerald-800 text-xs font-semibold animate-in fade-in duration-200">
+                      {reportFeedback}
+                    </div>
+                  )}
+
+                  <div className="space-y-2 pt-1 border-t border-orange-200/60">
+                    <input
+                      type="text"
+                      value={facultyNote}
+                      onChange={(e) => setFacultyNote(e.target.value)}
+                      placeholder="Add an instructor remark to parents..."
+                      className="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs bg-white text-slate-800 focus:outline-hidden focus:border-[#FF6B00]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleSendParentReport(inspectStudent.studentId, inspectStudent.courseId)}
+                      disabled={isSendingReport}
+                      className="w-full py-2.5 rounded-xl text-xs font-bold bg-[#FF6B00] hover:bg-[#EA580C] text-white flex items-center justify-center gap-1.5 shadow-sm cursor-pointer transition-colors disabled:opacity-50"
+                    >
+                      {isSendingReport ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Dispatching Report...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Dispatch Progress Report to Parent 📤</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-500">
+                  No parent/guardian contact on record for this student.
+                </div>
+              )}
             </div>
 
             <div className="pt-4 border-t border-slate-100 text-center">

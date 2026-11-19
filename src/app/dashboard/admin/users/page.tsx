@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AdminUsersClient, UserDirectoryItem } from "@/components/dashboard/AdminUsersClient";
 import { getAdminNotifications } from "@/lib/notifications";
-import { ArrowLeft, Sparkles, Users } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 export default async function AdminUsersPage() {
@@ -39,6 +39,11 @@ export default async function AdminUsersPage() {
     headline: u.headline,
     bio: u.bio,
     phone: u.phone,
+    age: u.age,
+    parentName: u.parentName,
+    parentEmail: u.parentEmail,
+    parentPhone: u.parentPhone,
+    parentRelationship: u.parentRelationship,
     createdAt: formatDate(u.createdAt),
     enrollmentsCount: u.enrollments.length,
     certificatesCount: u.certificates.length,

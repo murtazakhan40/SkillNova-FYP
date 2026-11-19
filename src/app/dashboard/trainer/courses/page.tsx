@@ -10,7 +10,7 @@ import {
   CategoryOption 
 } from "@/components/dashboard/TrainerCoursesClient";
 import { getTrainerNotifications } from "@/lib/notifications";
-import { ArrowLeft, BookOpen, PlusCircle } from "lucide-react";
+import { ArrowLeft, PlusCircle } from "lucide-react";
 
 export default async function TrainerCoursesPage() {
   const user = await getCurrentUser();

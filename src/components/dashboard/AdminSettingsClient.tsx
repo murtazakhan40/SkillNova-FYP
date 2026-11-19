@@ -10,9 +10,7 @@ import {
   AlertCircle, 
   AlertTriangle,
   Radio,
-  Clock,
-  Users,
-  ShieldCheck
+  Clock
 } from "lucide-react";
 import { 
   broadcastAnnouncementAction, 
@@ -52,10 +50,10 @@ export function AdminSettingsClient({ announcements }: AdminSettingsClientProps)
         message: "Institutional announcement broadcasted live to all target notification feeds.",
       });
       form.reset();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({
         type: "error",
-        message: err?.message || "Failed to publish broadcast announcement.",
+        message: err instanceof Error ? err.message : "Failed to publish broadcast announcement.",
       });
     } finally {
       setIsProcessing(false);
@@ -73,10 +71,10 @@ export function AdminSettingsClient({ announcements }: AdminSettingsClientProps)
         message: "Announcement revoked and removed from user feeds.",
       });
       setDeleteTarget(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({
         type: "error",
-        message: err?.message || "Failed to revoke announcement.",
+        message: err instanceof Error ? err.message : "Failed to revoke announcement.",
       });
     } finally {
       setIsProcessing(false);

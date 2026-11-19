@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts, PDFFont, RGB } from "pdf-lib";
 import QRCode from "qrcode";
 
 export interface CertificatePdfPayload {
@@ -9,23 +9,41 @@ export interface CertificatePdfPayload {
   certificateCode: string;
   grade?: number | null;
   verificationBaseUrl?: string;
+  certificateType?: string; // Default: "APPRECIATION"
+  academyName?: string;
+  tagline?: string;
+  signerTitle?: string;
+  signerName?: string;
 }
 
 /**
- * Generate a production-grade, print-ready PDF certificate.
- * Consistent with SkillNova navy & vibrant orange branding.
- * Includes dynamic embedded QR code for live instant verification.
- * Adheres strictly to academic integrity: no fake signatures, accreditation claims, or fake grades.
+ * Generate a luxury, high-resolution, print-ready PDF certificate.
+ * Mirrors the uploaded SkillNova Academy gold & deep-navy ribbon wave aesthetic.
+ * Includes:
+ * - Fluid navy and gold corner wave ribbons
+ * - Official SkillNova Academy branding & tagline
+ * - Top-right gold medallion seal ("LEARN IMPLEMENT GROW")
+ * - Cursive "Certificate OF APPRECIATION" heading
+ * - Student name in regal gold serif with diamond divider
+ * - Formal curriculum completion clause
+ * - Verified assessment score (when applicable)
+ * - Date line with "DATE" label & official SkillNova certified seal
+ * - Founder & CEO digital signature with "FOUNDER & CEO" label
+ * - Live dynamic QR code linking to cryptographic verification registry
  */
 export async function generateCertificatePdf(payload: CertificatePdfPayload): Promise<Uint8Array> {
   const {
     studentName,
     courseTitle,
-    instructorName,
     issuedAt,
     certificateCode,
     grade,
     verificationBaseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    certificateType = "APPRECIATION",
+    academyName = "SKILLNOVA ACADEMY",
+    tagline = "THE DIGITAL LEARNING PLATFORM",
+    signerTitle = "FOUNDER & CEO",
+    signerName = "Murtaza Wazir",
   } = payload;
 
   const formattedDate =
@@ -33,8 +51,8 @@ export async function generateCertificatePdf(payload: CertificatePdfPayload): Pr
       ? issuedAt
       : issuedAt.toLocaleDateString("en-US", {
           year: "numeric",
-          month: "long",
-          day: "numeric",
+          month: "short",
+          day: "2-digit",
         });
 
   const verificationUrl = `${verificationBaseUrl.replace(/\/$/, "")}/verify?code=${encodeURIComponent(
@@ -43,9 +61,9 @@ export async function generateCertificatePdf(payload: CertificatePdfPayload): Pr
 
   // Create A4 Landscape PDF Document (841.89 x 595.28 pt)
   const pdfDoc = await PDFDocument.create();
-  pdfDoc.setTitle(`SkillNova Certificate - ${courseTitle}`);
+  pdfDoc.setTitle(`SkillNova Certificate of ${certificateType} - ${studentName}`);
   pdfDoc.setAuthor("SkillNova Academy");
-  pdfDoc.setSubject(`Course Completion Certificate for ${studentName}`);
+  pdfDoc.setSubject(`Official Course Completion Certificate for ${studentName}`);
   pdfDoc.setCreator("SkillNova Academic Registry Engine");
 
   const page = pdfDoc.addPage([841.89, 595.28]);
@@ -54,76 +72,109 @@ export async function generateCertificatePdf(payload: CertificatePdfPayload): Pr
   // Load Standard Fonts
   const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const timesRoman = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+  const timesRomanBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
   const timesRomanItalic = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
 
-  // Palette definition
-  const navyDark = rgb(11 / 255, 27 / 255, 61 / 255);       // #0B1B3D
-  const orangeVibrant = rgb(255 / 255, 107 / 255, 0 / 255);  // #FF6B00
-  const orangeSoft = rgb(255 / 255, 133 / 255, 51 / 255);    // #FF8533
-  const slateText = rgb(51 / 255, 65 / 255, 85 / 255);       // #334155
-  const slateMuted = rgb(100 / 255, 116 / 255, 139 / 255);   // #64748B
-  const slateBorder = rgb(226 / 255, 232 / 255, 240 / 255);  // #E2E8F0
-  const bgIvory = rgb(253 / 255, 253 / 255, 254 / 255);
+  // Signature SkillNova Website Color Palette (Midnight Navy & Vibrant Energy Orange)
+  const navyDark = rgb(11 / 255, 27 / 255, 61 / 255);       // #0B1B3D (SkillNova Primary Navy)
+  const navyDeep = rgb(6 / 255, 14 / 255, 30 / 255);        // #060E1E (Midnight Navy Shadow)
+  const orangeBrand = rgb(255 / 255, 107 / 255, 0 / 255);   // #FF6B00 (Signature Brand Orange)
+  const orangeLight = rgb(255 / 255, 165 / 255, 102 / 255); // #FFA566 (Highlight Soft Orange)
+  const slateText = rgb(15 / 255, 23 / 255, 42 / 255);      // #0F172A
+  const slateMuted = rgb(100 / 255, 116 / 255, 139 / 255);  // #64748B
+  const bgWhite = rgb(1, 1, 1);
 
-  // 1. Canvas Background
+  // 1. Base Canvas Background (Crisp White)
   page.drawRectangle({
     x: 0,
     y: 0,
     width,
     height,
-    color: bgIvory,
+    color: bgWhite,
   });
 
-  // 2. Decorative Double Outer Border
-  const outerMargin = 22;
+  // Subtle outer hairline frame
+  const margin = 16;
   page.drawRectangle({
-    x: outerMargin,
-    y: outerMargin,
-    width: width - outerMargin * 2,
-    height: height - outerMargin * 2,
-    borderColor: navyDark,
-    borderWidth: 4,
+    x: margin,
+    y: margin,
+    width: width - margin * 2,
+    height: height - margin * 2,
+    borderColor: rgb(241 / 255, 245 / 255, 249 / 255),
+    borderWidth: 1,
   });
 
-  const innerMargin = 28;
-  page.drawRectangle({
-    x: innerMargin,
-    y: innerMargin,
-    width: width - innerMargin * 2,
-    height: height - innerMargin * 2,
-    borderColor: orangeVibrant,
-    borderWidth: 1.5,
-  });
+  // 2. Corner Ribbon Graphic: TOP-LEFT Wave Ribbons
+  // In PDF coordinates: top-left is (0, height).
+  // Draw primary dark navy wave
+  page.drawSvgPath(
+    "M 0 0 L 320 0 C 240 30 190 90 140 150 C 95 190 50 220 0 220 Z",
+    {
+      x: 0,
+      y: height,
+      color: navyDark,
+    }
+  );
 
-  // 3. Corner Ornamental Brackets
-  const cornerSize = 18;
-  const drawCorner = (cx: number, cy: number, dx: number, dy: number) => {
-    page.drawLine({
-      start: { x: cx, y: cy },
-      end: { x: cx + dx * cornerSize, y: cy },
-      thickness: 2,
-      color: orangeVibrant,
-    });
-    page.drawLine({
-      start: { x: cx, y: cy },
-      end: { x: cx, y: cy + dy * cornerSize },
-      thickness: 2,
-      color: orangeVibrant,
-    });
-  };
-  drawCorner(innerMargin + 6, innerMargin + 6, 1, 1);
-  drawCorner(width - innerMargin - 6, innerMargin + 6, -1, 1);
-  drawCorner(innerMargin + 6, height - innerMargin - 6, 1, -1);
-  drawCorner(width - innerMargin - 6, height - innerMargin - 6, -1, -1);
+  // Draw inner deep shadow accent
+  page.drawSvgPath(
+    "M 0 0 L 220 0 C 160 25 120 65 90 100 C 60 135 30 150 0 155 Z",
+    {
+      x: 0,
+      y: height,
+      color: navyDeep,
+    }
+  );
 
-  // Helper for centering text
+  // Draw vibrant orange sweeping ribbon accent
+  page.drawSvgPath(
+    "M 0 170 C 60 165 110 140 150 110 C 200 70 250 30 350 8 L 360 16 C 265 40 210 80 160 122 C 115 155 60 180 0 185 Z",
+    {
+      x: 0,
+      y: height,
+      color: orangeBrand,
+    }
+  );
+
+  // 3. Corner Ribbon Graphic: BOTTOM-RIGHT Wave Ribbons (Mirror)
+  // Bottom-right is (width, 0).
+  page.drawSvgPath(
+    "M 0 0 L -320 0 C -240 -30 -190 -90 -140 -150 C -95 -190 -50 -220 0 -220 Z",
+    {
+      x: width,
+      y: 0,
+      color: navyDark,
+      scale: 0.6,
+    }
+  );
+
+  page.drawSvgPath(
+    "M 0 0 L -220 0 C -160 -25 -120 -65 -90 -100 C -60 -135 -30 -150 0 -155 Z",
+    {
+      x: width,
+      y: 0,
+      color: navyDeep,
+      scale: 0.6,
+    }
+  );
+
+  page.drawSvgPath(
+    "M 0 -170 C -60 -165 -110 -140 -150 -110 C -200 -70 -250 -30 -350 -8 L -360 -16 C -265 -40 -210 -80 -160 -122 C -115 -155 -60 -180 0 -185 Z",
+    {
+      x: width,
+      y: 0,
+      color: orangeBrand,
+      scale: 0.6,
+    }
+  );
+
+  // Helper for drawing centered text
   const drawCenteredText = (
     text: string,
     y: number,
     size: number,
-    font: any,
-    color: any
+    font: PDFFont,
+    color: RGB
   ) => {
     const textWidth = font.widthOfTextAtSize(text, size);
     page.drawText(text, {
@@ -135,152 +186,237 @@ export async function generateCertificatePdf(payload: CertificatePdfPayload): Pr
     });
   };
 
-  // 4. Header: SkillNova Academy
-  drawCenteredText("SKILLNOVA ACADEMY", height - 72, 17, helveticaBold, navyDark);
-  drawCenteredText(
-    "OFFICIAL CERTIFICATE OF COURSE COMPLETION",
-    height - 92,
-    11,
-    helveticaBold,
-    orangeVibrant
-  );
+  // 4. TOP-LEFT BRANDING: SkillNova Academy & Tagline
+  const brandX = 40;
+  const brandY = height - 48;
 
-  // Decorative Accent Separator
-  page.drawLine({
-    start: { x: width / 2 - 80, y: height - 104 },
-    end: { x: width / 2 + 80, y: height - 104 },
-    thickness: 1.2,
-    color: slateBorder,
+  // Mini Brand Hexagon Shield in Navy & Brand Orange
+  page.drawRectangle({
+    x: brandX,
+    y: brandY - 2,
+    width: 26,
+    height: 26,
+    color: navyDark,
+    borderColor: orangeBrand,
+    borderWidth: 1.5,
+  });
+  page.drawText("SN", {
+    x: brandX + 4.5,
+    y: brandY + 6,
+    size: 13,
+    font: helveticaBold,
+    color: orangeBrand,
   });
 
-  // 5. Presentation Statement
-  drawCenteredText(
-    "This is to certify that",
-    height - 138,
-    13,
-    timesRomanItalic,
-    slateMuted
-  );
+  page.drawText(academyName, {
+    x: brandX + 36,
+    y: brandY + 12,
+    size: 12,
+    font: helveticaBold,
+    color: rgb(1, 1, 1),
+  });
 
-  // 6. Recipient Name
-  const studentFontSize = 28;
-  drawCenteredText(
-    studentName,
-    height - 178,
-    studentFontSize,
-    helveticaBold,
-    navyDark
-  );
+  page.drawText(tagline, {
+    x: brandX + 36,
+    y: brandY + 1,
+    size: 7.5,
+    font: helveticaBold,
+    color: orangeBrand,
+  });
 
-  // Underline for Student Name
-  const nameWidth = Math.min(helveticaBold.widthOfTextAtSize(studentName, studentFontSize) + 40, 500);
+  // 5. TOP-RIGHT ORANGE ROSETTE MEDALLION: "LEARN IMPLEMENT GROW"
+  const medalCenterX = width - 78;
+  const medalCenterY = height - 68;
+
+  // Outer Vibrant Orange Disc
+  page.drawCircle({
+    x: medalCenterX,
+    y: medalCenterY,
+    size: 38,
+    color: orangeBrand,
+  });
+
+  // Inner Soft Orange Ring
+  page.drawCircle({
+    x: medalCenterX,
+    y: medalCenterY,
+    size: 34,
+    color: orangeLight,
+  });
+
+  // Dark Midnight Navy Core Disc
+  page.drawCircle({
+    x: medalCenterX,
+    y: medalCenterY,
+    size: 30,
+    color: navyDark,
+  });
+
+  // Medallion Motto Text
+  const mottoWord1 = "LEARN";
+  const mottoWord2 = "IMPLEMENT";
+  const mottoWord3 = "GROW";
+
+  const w1Width = helveticaBold.widthOfTextAtSize(mottoWord1, 6.8);
+  const w2Width = helveticaBold.widthOfTextAtSize(mottoWord2, 6.2);
+  const w3Width = helveticaBold.widthOfTextAtSize(mottoWord3, 6.8);
+
+  page.drawText(mottoWord1, {
+    x: medalCenterX - w1Width / 2,
+    y: medalCenterY + 11,
+    size: 6.8,
+    font: helveticaBold,
+    color: orangeLight,
+  });
+
+  page.drawText(mottoWord2, {
+    x: medalCenterX - w2Width / 2,
+    y: medalCenterY - 1,
+    size: 6.2,
+    font: helveticaBold,
+    color: rgb(1, 1, 1),
+  });
+
+  page.drawText(mottoWord3, {
+    x: medalCenterX - w3Width / 2,
+    y: medalCenterY - 12,
+    size: 6.8,
+    font: helveticaBold,
+    color: orangeLight,
+  });
+
+  // 6. CERTIFICATE TITLE: "Certificate OF APPRECIATION"
+  drawCenteredText("Certificate", height - 148, 54, timesRomanBold, navyDark);
+  drawCenteredText(`OF ${certificateType}`, height - 172, 13, helveticaBold, navyDark);
+
+  // Crisp Underline below title
   page.drawLine({
-    start: { x: (width - nameWidth) / 2, y: height - 188 },
-    end: { x: (width + nameWidth) / 2, y: height - 188 },
+    start: { x: width / 2 - 80, y: height - 180 },
+    end: { x: width / 2 + 80, y: height - 180 },
     thickness: 1.5,
-    color: orangeSoft,
+    color: navyDark,
   });
 
-  // 7. Completion Clause
+  // 7. PRESENTATION STATEMENT
   drawCenteredText(
-    "has successfully completed all required coursework, curriculum modules, and assessments for",
-    height - 222,
-    11.5,
-    timesRoman,
+    "THIS CERTIFICATE IS PROUDLY PRESENTED TO",
+    height - 208,
+    10.5,
+    helveticaBold,
     slateText
   );
 
-  // 8. Course Title
-  const courseFontSize = courseTitle.length > 40 ? 19 : 22;
+  // 8. RECIPIENT STUDENT NAME (High-Contrast Midnight Navy)
+  const studentFontSize = studentName.length > 25 ? 28 : 34;
   drawCenteredText(
-    courseTitle,
-    height - 262,
-    courseFontSize,
-    helveticaBold,
+    studentName.toUpperCase(),
+    height - 252,
+    studentFontSize,
+    timesRomanBold,
     navyDark
   );
 
-  // 9. Verified Grade (Rendered ONLY when verified and available)
-  let footerBaseY = height - 370;
+  // Brand Orange Ornamental Divider with Center Diamond
+  const dividerLineWidth = 140;
+  const dividerY = height - 268;
+
+  // Left Line
+  page.drawLine({
+    start: { x: width / 2 - dividerLineWidth, y: dividerY },
+    end: { x: width / 2 - 10, y: dividerY },
+    thickness: 1.5,
+    color: orangeBrand,
+  });
+
+  // End points
+  page.drawCircle({
+    x: width / 2 - dividerLineWidth,
+    y: dividerY,
+    size: 2,
+    color: orangeBrand,
+  });
+  page.drawCircle({
+    x: width / 2 + dividerLineWidth,
+    y: dividerY,
+    size: 2,
+    color: orangeBrand,
+  });
+
+  // Center Vector Diamond
+  page.drawSvgPath("M 0 -5 L 5 0 L 0 5 L -5 0 Z", {
+    x: width / 2,
+    y: dividerY,
+    color: orangeBrand,
+  });
+
+  // Right Line
+  page.drawLine({
+    start: { x: width / 2 + 10, y: dividerY },
+    end: { x: width / 2 + dividerLineWidth, y: dividerY },
+    thickness: 1.5,
+    color: orangeBrand,
+  });
+
+  // 9. COURSE STATEMENT
+  const statementLine1 = `ON COMPLETION OF THE COURSE - ${courseTitle.toUpperCase()} FROM ${academyName}.`;
+  const statementLine2 = "WE WISH YOU ALL THE BEST.";
+
+  drawCenteredText(
+    statementLine1,
+    height - 302,
+    11,
+    helveticaBold,
+    slateText
+  );
+  drawCenteredText(
+    statementLine2,
+    height - 320,
+    11,
+    helveticaBold,
+    slateText
+  );
+
+  // 10. VERIFIED GRADE (When Available)
   if (grade !== null && grade !== undefined && !isNaN(grade)) {
     const gradeText = `Verified Assessment Grade: ${Math.round(grade)}% (Passed)`;
-    drawCenteredText(gradeText, height - 296, 11, helveticaBold, orangeVibrant);
-    footerBaseY = height - 380;
+    drawCenteredText(gradeText, height - 344, 10, helveticaBold, orangeBrand);
   }
 
-  // 10. Horizontal Divider Above Footer
-  page.drawLine({
-    start: { x: 60, y: footerBaseY + 70 },
-    end: { x: width - 60, y: footerBaseY + 70 },
-    thickness: 1,
-    color: slateBorder,
-  });
+  // 11. BOTTOM ROW: DATE & CERTIFIED SEAL (LEFT) | SIGNATURE (RIGHT)
+  const footerBaseY = 92;
 
-  // 11. Footer Columns (Instructor | Verification Summary | QR Code)
-  const leftX = 70;
-  const centerX = width / 2 - 80;
-  const rightX = width - 170;
-
-  // A. Instructor Column (NO fake signatures - clean typography)
-  page.drawText(instructorName, {
-    x: leftX,
-    y: footerBaseY + 36,
-    size: 13,
-    font: helveticaBold,
-    color: navyDark,
-  });
-  page.drawLine({
-    start: { x: leftX, y: footerBaseY + 30 },
-    end: { x: leftX + 180, y: footerBaseY + 30 },
-    thickness: 1,
-    color: navyDark,
-  });
-  page.drawText("Lead Faculty Instructor", {
-    x: leftX,
-    y: footerBaseY + 16,
-    size: 9.5,
-    font: helvetica,
-    color: slateMuted,
-  });
-  page.drawText("SkillNova Academic Faculty", {
-    x: leftX,
-    y: footerBaseY + 4,
-    size: 8.5,
-    font: helvetica,
-    color: slateMuted,
-  });
-
-  // B. Credential Identification Column
-  page.drawText("CREDENTIAL IDENTIFIER", {
-    x: centerX,
-    y: footerBaseY + 36,
-    size: 8.5,
-    font: helveticaBold,
-    color: slateMuted,
-  });
-  page.drawText(certificateCode, {
-    x: centerX,
+  // A. Left: Date Column
+  const dateCenterX = 150;
+  const dateStrWidth = helveticaBold.widthOfTextAtSize(formattedDate, 12);
+  page.drawText(formattedDate, {
+    x: dateCenterX - dateStrWidth / 2,
     y: footerBaseY + 22,
-    size: 11,
+    size: 12,
     font: helveticaBold,
-    color: orangeVibrant,
-  });
-  page.drawText(`Issue Date: ${formattedDate}`, {
-    x: centerX,
-    y: footerBaseY + 8,
-    size: 9,
-    font: helvetica,
     color: slateText,
   });
-  page.drawText("Status: Officially Authenticated", {
-    x: centerX,
-    y: footerBaseY - 4,
-    size: 8.5,
-    font: helvetica,
-    color: rgb(16 / 255, 149 / 255, 80 / 255), // Emerald green
+
+  // Underline
+  page.drawLine({
+    start: { x: dateCenterX - 65, y: footerBaseY + 16 },
+    end: { x: dateCenterX + 65, y: footerBaseY + 16 },
+    thickness: 1.5,
+    color: slateText,
   });
 
-  // C. Dynamic Embedded QR Code
+  // "DATE" Label
+  const dateLabel = "DATE";
+  const dateLabelWidth = helveticaBold.widthOfTextAtSize(dateLabel, 9.5);
+  page.drawText(dateLabel, {
+    x: dateCenterX - dateLabelWidth / 2,
+    y: footerBaseY + 4,
+    size: 9.5,
+    font: helveticaBold,
+    color: slateText,
+  });
+
+  // Left: Official Accreditation & Verification Stamp with embedded QR code
+  const qrX = 240;
   try {
     const qrPngBuffer = await QRCode.toBuffer(verificationUrl, {
       type: "png",
@@ -294,34 +430,88 @@ export async function generateCertificatePdf(payload: CertificatePdfPayload): Pr
     });
 
     const qrImage = await pdfDoc.embedPng(qrPngBuffer);
-    const qrSize = 64;
+    const qrSize = 54;
 
     page.drawImage(qrImage, {
-      x: rightX,
-      y: footerBaseY - 6,
+      x: qrX,
+      y: footerBaseY - 14,
       width: qrSize,
       height: qrSize,
     });
 
-    page.drawText("Scan to Verify", {
-      x: rightX + 4,
-      y: footerBaseY - 18,
-      size: 7.5,
+    page.drawText("SKILLNOVA CERTIFIED", {
+      x: qrX + 62,
+      y: footerBaseY + 22,
+      size: 8.5,
       font: helveticaBold,
       color: navyDark,
+    });
+    page.drawText("ACADEMIC REGISTRY", {
+      x: qrX + 62,
+      y: footerBaseY + 10,
+      size: 7.5,
+      font: helveticaBold,
+      color: orangeBrand,
+    });
+    page.drawText(certificateCode, {
+      x: qrX + 62,
+      y: footerBaseY - 2,
+      size: 7.5,
+      font: helvetica,
+      color: slateMuted,
     });
   } catch (err) {
     console.error("Failed to embed QR code into certificate PDF:", err);
   }
 
-  // 12. Bottom Verification URL Notice
-  drawCenteredText(
-    `Verify credential authenticity at: ${verificationUrl}`,
-    36,
-    8,
-    helvetica,
-    slateMuted
+  // B. Right: Digital Signature & Founder & CEO Column
+  const sigCenterX = width - 190;
+
+  // Cursive Executive Signature Text
+  const sigText = signerName;
+  const sigTextWidth = timesRomanItalic.widthOfTextAtSize(sigText, 22);
+  page.drawText(sigText, {
+    x: sigCenterX - sigTextWidth / 2,
+    y: footerBaseY + 22,
+    size: 22,
+    font: timesRomanItalic,
+    color: navyDark,
+  });
+
+  // Dynamic Underline Swash
+  page.drawSvgPath(
+    "M 0 5 Q 60 14 120 2",
+    {
+      x: sigCenterX - 60,
+      y: footerBaseY + 18,
+      color: navyDark,
+    }
   );
+  page.drawCircle({
+    x: sigCenterX + 62,
+    y: footerBaseY + 18,
+    size: 1.8,
+    color: navyDark,
+  });
+
+  // Solid Signature Underline in Midnight Navy
+  page.drawLine({
+    start: { x: sigCenterX - 80, y: footerBaseY + 14 },
+    end: { x: sigCenterX + 80, y: footerBaseY + 14 },
+    thickness: 2,
+    color: navyDark,
+  });
+
+  // "FOUNDER & CEO" Label
+  const sigLabel = signerTitle.toUpperCase();
+  const sigLabelWidth = helveticaBold.widthOfTextAtSize(sigLabel, 10);
+  page.drawText(sigLabel, {
+    x: sigCenterX - sigLabelWidth / 2,
+    y: footerBaseY + 2,
+    size: 10,
+    font: helveticaBold,
+    color: navyDark,
+  });
 
   return await pdfDoc.save();
 }

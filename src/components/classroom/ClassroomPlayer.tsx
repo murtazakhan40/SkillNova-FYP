@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { 
   CheckCircle2, 
+  XCircle,
   Circle, 
   PlayCircle, 
   ArrowLeft, 
@@ -19,7 +21,6 @@ import {
   Send,
   Flag,
   Clock,
-  AlertCircle,
   Sparkles,
   Paperclip,
   ExternalLink,
@@ -27,9 +28,10 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
-  FolderArchive
+  FolderArchive,
+  Lock
 } from "lucide-react";
-import { toggleLessonProgress } from "@/app/actions/learning";
+import { toggleLessonProgress, claimCertificateAction } from "@/app/actions/learning";
 import {
   submitAssignmentAction,
   uploadLessonResourceAction,
@@ -105,6 +107,15 @@ export interface SerializedSection {
   lessons: SerializedLesson[];
 }
 
+export interface SerializedQuizInfo {
+  id: string;
+  title: string;
+  passingScore?: number;
+  isPassed?: boolean;
+  bestScore?: number | null;
+  attemptCount?: number;
+}
+
 export interface ClassroomPlayerProps {
   course: {
     id: string;
@@ -113,7 +124,7 @@ export interface ClassroomPlayerProps {
     category: { name: string };
     instructor: { id: string; name: string };
     sections: SerializedSection[];
-    quizzes: { id: string; title: string }[];
+    quizzes: SerializedQuizInfo[];
     assignments: SerializedAssignment[];
   };
   currentLesson: SerializedLesson;
@@ -138,6 +149,7 @@ export function ClassroomPlayer({
   certificateCode,
   isInstructor,
 }: ClassroomPlayerProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"NOTES" | "RESOURCES" | "ASSIGNMENT" | "QA">("NOTES");
   const [isPending, startTransition] = useTransition();
 
@@ -151,6 +163,17 @@ export function ClassroomPlayer({
   const [resourceStatus, setResourceStatus] = useState<{ error?: string; success?: string } | null>(null);
 
   // Assignment state
+  const currentAssignment = course.assignments[0] || null;
+  const [activeSubmission, setActiveSubmission] = useState<SerializedSubmission | null>(
+    currentAssignment?.mySubmission || null
+  );
+
+  useEffect(() => {
+    if (currentAssignment?.mySubmission) {
+      setActiveSubmission(currentAssignment.mySubmission);
+    }
+  }, [currentAssignment?.mySubmission]);
+
   const [assignmentText, setAssignmentText] = useState("");
   const [assignmentFile, setAssignmentFile] = useState<File | null>(null);
   const [assignmentStatus, setAssignmentStatus] = useState<{ error?: string; success?: string } | null>(null);
@@ -161,6 +184,16 @@ export function ClassroomPlayer({
   const [isAnswerPost, setIsAnswerPost] = useState(false);
   const [qaStatus, setQaStatus] = useState<{ error?: string; success?: string } | null>(null);
 
+  // Certificate claim state
+  const [currentCertificateCode, setCurrentCertificateCode] = useState<string | null>(certificateCode);
+  const [isClaimingCert, setIsClaimingCert] = useState(false);
+  const [certClaimError, setCertClaimError] = useState<string | null>(null);
+  const [certClaimSuccess, setCertClaimSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCurrentCertificateCode(certificateCode);
+  }, [certificateCode]);
+
   // Flattened lessons list
   const allLessons = course.sections.flatMap((s) => s.lessons);
   const currentLessonIndex = allLessons.findIndex((l) => l.id === currentLesson.id);
@@ -168,7 +201,47 @@ export function ClassroomPlayer({
   const nextLesson = currentLessonIndex < allLessons.length - 1 ? allLessons[currentLessonIndex + 1] : null;
 
   const isCurrentCompleted = completedLessonIds.includes(currentLesson.id);
-  const currentAssignment = course.assignments[0] || null;
+
+  // Rigorous Course Completion & Clearance Calculation
+  const totalLessons = allLessons.length;
+  const completedLessonsCount = completedLessonIds.length;
+  const isLessonsComplete = totalLessons > 0 && completedLessonsCount >= totalLessons;
+
+  const hasQuizzes = course.quizzes.length > 0;
+  const isQuizzesCleared = !hasQuizzes || course.quizzes.every((q) => q.isPassed);
+
+  const hasAssignments = course.assignments.length > 0;
+  const isAssignmentsCleared =
+    !hasAssignments ||
+    course.assignments.every((a) => {
+      const sub = a.id === currentAssignment?.id && activeSubmission ? activeSubmission : a.mySubmission;
+      return (
+        sub?.status === "GRADED" &&
+        sub.score !== null &&
+        sub.score / a.maxScore >= 0.7
+      );
+    });
+
+  const isEverythingCleared = isLessonsComplete && isQuizzesCleared && isAssignmentsCleared;
+
+  const handleClaimCertificate = () => {
+    setIsClaimingCert(true);
+    setCertClaimError(null);
+    startTransition(async () => {
+      try {
+        const res = await claimCertificateAction(course.id);
+        if (res.certificateCode) {
+          setCurrentCertificateCode(res.certificateCode);
+          setCertClaimSuccess(`Certificate ${res.certificateCode} issued successfully!`);
+          router.refresh();
+        }
+      } catch (err: unknown) {
+        setCertClaimError(err instanceof Error ? err.message : "Failed to claim certificate.");
+      } finally {
+        setIsClaimingCert(false);
+      }
+    });
+  };
 
   const toggleSection = (sectionId: string) => {
     setCollapsedSections((prev) => ({
@@ -258,9 +331,16 @@ export function ClassroomPlayer({
 
     startTransition(async () => {
       try {
-        await submitAssignmentAction(formData);
-        setAssignmentStatus({ success: "Your project solution has been submitted for evaluation!" });
+        const res = await submitAssignmentAction(formData);
+        if (res?.submission) {
+          setActiveSubmission(res.submission);
+        }
+        setAssignmentStatus({
+          success: "Assignment submitted successfully! Your active submission details are displayed below.",
+        });
         setIsEditingSubmission(false);
+        setAssignmentFile(null);
+        router.refresh();
       } catch (err: unknown) {
         setAssignmentStatus({
           error: err instanceof Error ? err.message : "Submission failed. Please verify file requirements.",
@@ -361,23 +441,79 @@ export function ClassroomPlayer({
         </div>
       </div>
 
-      {/* Certificate Notice Banner */}
-      {certificateCode && (
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white py-2.5 px-4 shadow-inner">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-2">
-              <Award className="w-5 h-5 text-amber-300 shrink-0" />
-              <span>
-                <strong>Academic Milestone Achieved!</strong> Official credential issued with ID: <code className="bg-emerald-900/40 px-1.5 py-0.5 rounded font-mono font-bold text-amber-200">{certificateCode}</code>
-              </span>
+      {/* Certificate Notice & Clearance Banner */}
+      {currentCertificateCode ? (
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-800 text-white py-3 px-4 shadow-md">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/30 border border-emerald-400/50 flex items-center justify-center shrink-0">
+                <Award className="w-5 h-5 text-amber-300" />
+              </div>
+              <div>
+                <span className="font-bold text-white text-sm block">Academic Milestone Achieved!</span>
+                <span className="text-emerald-100 text-[11px]">
+                  Official verified credential issued with ID:{" "}
+                  <code className="bg-emerald-950/60 px-2 py-0.5 rounded font-mono font-bold text-amber-200 border border-emerald-600/50">
+                    {currentCertificateCode}
+                  </code>
+                </span>
+              </div>
             </div>
-            <Link
-              href={`/verify?code=${certificateCode}`}
-              className="px-3 py-1 bg-white text-emerald-800 font-bold rounded-lg hover:bg-emerald-50 transition-colors shadow-xs"
-            >
-              View Verified Credential
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/verify?code=${encodeURIComponent(currentCertificateCode)}`}
+                className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer text-xs"
+              >
+                <Award className="w-4 h-4 text-slate-900" />
+                <span>View Verified Credential</span>
+              </Link>
+              <a
+                href={`/api/certificates/${encodeURIComponent(currentCertificateCode)}/download`}
+                className="px-3.5 py-2 bg-emerald-950/60 hover:bg-emerald-950 text-white font-bold rounded-xl border border-emerald-400/40 transition-all text-xs flex items-center gap-1.5"
+                download
+              >
+                <Download className="w-3.5 h-3.5 text-amber-300" />
+                <span>Download PDF</span>
+              </a>
+            </div>
           </div>
+        </div>
+      ) : isEverythingCleared ? (
+        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white py-3.5 px-4 shadow-md animate-in fade-in">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <span className="font-extrabold text-white text-sm block">All Course Requirements 100% Cleared! 🎓</span>
+                <span className="text-amber-100 text-[11px]">
+                  All lectures completed, assessment quiz passed, and capstone deliverable approved! Your verified certificate is ready.
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleClaimCertificate}
+              disabled={isClaimingCert}
+              className="px-5 py-2.5 bg-white hover:bg-amber-50 text-[#0B1B3D] font-extrabold rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer text-xs disabled:opacity-60 shrink-0"
+            >
+              {isClaimingCert ? <Loader2 className="w-4 h-4 animate-spin text-[#FF6B00]" /> : <Award className="w-4 h-4 text-[#FF6B00]" />}
+              <span>Claim Official Certificate 🎓</span>
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Claim Error Feedback */}
+      {certClaimError && (
+        <div className="bg-red-500 text-white text-xs px-4 py-2 text-center font-bold">
+          {certClaimError}
+        </div>
+      )}
+      {certClaimSuccess && (
+        <div className="bg-emerald-600 text-white text-xs px-4 py-2 text-center font-bold">
+          {certClaimSuccess}
         </div>
       )}
 
@@ -491,8 +627,10 @@ export function ClassroomPlayer({
                   <FileCheck className="w-4 h-4 text-emerald-600" />
                   <span>
                     Assignment
-                    {currentAssignment?.mySubmission && (
-                      <span className="ml-1.5 w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                    {activeSubmission && (
+                      <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        Submitted ✓
+                      </span>
                     )}
                   </span>
                 </button>
@@ -721,87 +859,195 @@ export function ClassroomPlayer({
                       </div>
 
                       {/* Current Student Submission Status */}
-                      {currentAssignment.mySubmission && !isEditingSubmission ? (
-                        <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                              <span className="text-xs font-bold text-[#0B1B3D]">Your Active Submission</span>
-                            </div>
-                            <span
-                              className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
-                                currentAssignment.mySubmission.status === "GRADED"
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : currentAssignment.mySubmission.status === "RESUBMIT_REQUESTED"
-                                  ? "bg-amber-100 text-amber-800"
-                                  : "bg-blue-100 text-blue-800"
-                              }`}
-                            >
-                              {currentAssignment.mySubmission.status}
-                            </span>
-                          </div>
-
-                          {/* Graded Feedback Box if Graded */}
-                          {currentAssignment.mySubmission.score !== null && (
-                            <div className="p-4 rounded-xl bg-emerald-50/80 border border-emerald-200 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-emerald-900">
-                                  Evaluation Grade: {currentAssignment.mySubmission.score} / {currentAssignment.maxScore}
-                                </span>
-                                <span className="text-[10px] text-emerald-700">
-                                  Evaluated on {currentAssignment.mySubmission.gradedAt ? formatDate(currentAssignment.mySubmission.gradedAt) : "Recently"}
-                                </span>
+                      {activeSubmission && !isEditingSubmission ? (
+                        <div className="space-y-4">
+                          {/* Success Notification Banner */}
+                          {assignmentStatus?.success && (
+                            <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50 border-2 border-emerald-400 text-emerald-950 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                              <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                                  <CheckCircle2 className="w-6 h-6" />
+                                </div>
+                                <div>
+                                  <h4 className="text-sm font-heading font-extrabold text-emerald-950">
+                                    Assignment Submitted Successfully!
+                                  </h4>
+                                  <p className="text-xs text-emerald-800 mt-0.5">
+                                    Your project solution has been safely recorded in the SkillNova Academic Registry and queued for faculty grading.
+                                  </p>
+                                  <div className="text-[11px] text-emerald-700 font-semibold mt-1 flex items-center gap-2">
+                                    <span>Submitted: {formatDate(activeSubmission.submittedAt)}</span>
+                                    <span>•</span>
+                                    <span className="uppercase font-bold tracking-wider">Status: {activeSubmission.status}</span>
+                                  </div>
+                                </div>
                               </div>
-                              {currentAssignment.mySubmission.feedback && (
-                                <p className="text-xs text-emerald-800 leading-relaxed">
-                                  <strong>Faculty Feedback:</strong> {currentAssignment.mySubmission.feedback}
-                                </p>
-                              )}
-                            </div>
-                          )}
 
-                          {/* Student Submission Text */}
-                          {currentAssignment.mySubmission.textContent && (
-                            <div className="text-xs text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100 font-mono whitespace-pre-wrap">
-                              {currentAssignment.mySubmission.textContent}
-                            </div>
-                          )}
-
-                          {/* Attached File */}
-                          {currentAssignment.mySubmission.fileUrl && (
-                            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-                              <div className="flex items-center gap-2">
-                                <Paperclip className="w-4 h-4 text-slate-400" />
-                                <span className="font-semibold text-slate-700">
-                                  {currentAssignment.mySubmission.fileName || "Submitted_Project_Archive.zip"}
-                                </span>
-                                {currentAssignment.mySubmission.fileSize && (
-                                  <span className="text-[11px] text-slate-400">
-                                    ({formatBytes(currentAssignment.mySubmission.fileSize)})
-                                  </span>
-                                )}
-                              </div>
-                              <a
-                                href={`/api/courses/${course.slug}/assignments/${currentAssignment.mySubmission.id}/download`}
-                                className="text-xs font-bold text-[#FF6B00] hover:underline"
-                                download
+                              <button
+                                type="button"
+                                onClick={() => setActiveTab("NOTES")}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#0B1B3D] text-white hover:bg-[#132752] transition-colors shadow-sm shrink-0 cursor-pointer"
                               >
-                                Download Solution
-                              </a>
+                                <ArrowLeft className="w-3.5 h-3.5 text-[#FF6B00]" />
+                                <span>Back to Course Lessons</span>
+                              </button>
                             </div>
                           )}
 
-                          <div className="pt-2 flex justify-end">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setAssignmentText(currentAssignment.mySubmission?.textContent || "");
-                                setIsEditingSubmission(true);
-                              }}
-                              className="text-xs font-bold text-slate-500 hover:text-[#0B1B3D]"
-                            >
-                              Update / Resubmit Solution
-                            </button>
+                          {/* Active Submission Card */}
+                          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                                <span className="text-xs font-bold text-[#0B1B3D]">Your Active Submission</span>
+                                <span className="text-[11px] text-slate-400 font-normal">
+                                  (Submitted {formatDate(activeSubmission.submittedAt)})
+                                </span>
+                              </div>
+                              <span
+                                className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                                  activeSubmission.status === "GRADED"
+                                    ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                                    : activeSubmission.status === "RESUBMIT_REQUESTED"
+                                    ? "bg-amber-100 text-amber-800 border border-amber-300"
+                                    : "bg-blue-100 text-blue-800 border border-blue-300"
+                                }`}
+                              >
+                                {activeSubmission.status === "SUBMITTED"
+                                  ? "SUBMITTED • PENDING REVIEW"
+                                  : activeSubmission.status}
+                              </span>
+                            </div>
+
+                            {/* Graded Feedback Box if Graded */}
+                            {activeSubmission.score !== null && (
+                              (() => {
+                                const scoreRatio = activeSubmission.score / currentAssignment.maxScore;
+                                const isPass = scoreRatio >= 0.7;
+
+                                return (
+                                  <div
+                                    className={`p-5 rounded-2xl border ${
+                                      isPass
+                                        ? "bg-emerald-50/90 border-emerald-300 text-emerald-950"
+                                        : "bg-red-50/90 border-red-300 text-red-950"
+                                    } space-y-2`}
+                                  >
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                      <div className="flex items-center gap-2">
+                                        {isPass ? (
+                                          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                                        ) : (
+                                          <XCircle className="w-5 h-5 text-red-600 shrink-0" />
+                                        )}
+                                        <span className="text-xs font-extrabold uppercase tracking-wider">
+                                          {isPass
+                                            ? "ASSIGNMENT STATUS: PASSED (✓)"
+                                            : "ASSIGNMENT STATUS: FAILED / NEEDS REVISION (✗)"}
+                                        </span>
+                                      </div>
+
+                                      <span className="text-xs font-extrabold">
+                                        Grade: {activeSubmission.score} / {currentAssignment.maxScore} (
+                                        {Math.round(scoreRatio * 100)}%)
+                                      </span>
+                                    </div>
+
+                                    <div className="text-[10px] text-slate-500 pl-7">
+                                      Evaluated on{" "}
+                                      {activeSubmission.gradedAt
+                                        ? formatDate(activeSubmission.gradedAt)
+                                        : "Recently"}
+                                    </div>
+
+                                    {activeSubmission.feedback && (
+                                      <p className="text-xs leading-relaxed pl-7 pt-1 border-t border-slate-200/60 mt-2">
+                                        <strong>Faculty Feedback:</strong>{" "}
+                                        {activeSubmission.feedback}
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })()
+                            )}
+
+                            {/* Student Submission Text / Repository Link */}
+                            {activeSubmission.textContent && (
+                              <div className="space-y-1.5">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                  Submitted Notes & Solution Link
+                                </span>
+                                <div className="text-xs text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100 font-mono whitespace-pre-wrap flex flex-col gap-2">
+                                  <span>{activeSubmission.textContent}</span>
+                                  {activeSubmission.textContent.startsWith("http") && (
+                                    <a
+                                      href={activeSubmission.textContent}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[#FF6B00] hover:underline w-fit mt-1"
+                                    >
+                                      <span>Open Submitted Link</span>
+                                      <ExternalLink className="w-3.5 h-3.5" />
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Attached File */}
+                            {activeSubmission.fileUrl && (
+                              <div className="space-y-1.5">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                  Attached Solution Deliverable
+                                </span>
+                                <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                                  <div className="flex items-center gap-2.5">
+                                    <Paperclip className="w-4 h-4 text-[#FF6B00]" />
+                                    <div>
+                                      <span className="font-semibold text-slate-800 block">
+                                        {activeSubmission.fileName || "Submitted_Project_Archive.zip"}
+                                      </span>
+                                      {activeSubmission.fileSize && (
+                                        <span className="text-[10px] text-slate-400">
+                                          {formatBytes(activeSubmission.fileSize)}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <a
+                                    href={`/api/courses/${course.slug}/assignments/${activeSubmission.id}/download`}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-slate-200 text-[#0B1B3D] hover:bg-slate-100 transition-colors shadow-xs"
+                                    download
+                                  >
+                                    <Download className="w-3.5 h-3.5 text-[#FF6B00]" />
+                                    <span>Download Solution</span>
+                                  </a>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Action Footer */}
+                            <div className="pt-3 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100">
+                              <button
+                                type="button"
+                                onClick={() => setActiveTab("NOTES")}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#0B1B3D] text-white hover:bg-[#132752] transition-colors shadow-xs cursor-pointer"
+                              >
+                                <ArrowLeft className="w-3.5 h-3.5 text-[#FF6B00]" />
+                                <span>Back to Course Lessons</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAssignmentText(activeSubmission.textContent || "");
+                                  setIsEditingSubmission(true);
+                                }}
+                                className="text-xs font-bold text-slate-500 hover:text-[#0B1B3D] cursor-pointer"
+                              >
+                                Update / Resubmit Solution
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ) : (
@@ -831,8 +1077,19 @@ export function ClassroomPlayer({
                             </div>
                           )}
                           {assignmentStatus?.success && (
-                            <div className="p-3 bg-emerald-50 text-emerald-700 text-xs rounded-xl border border-emerald-200">
-                              {assignmentStatus.success}
+                            <div className="p-4 bg-emerald-50 text-emerald-800 text-xs rounded-2xl border border-emerald-300 space-y-2">
+                              <div className="font-bold flex items-center gap-1.5">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                <span>{assignmentStatus.success}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setActiveTab("NOTES")}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#0B1B3D] text-white hover:bg-[#132752] transition-colors shadow-xs cursor-pointer mt-1"
+                              >
+                                <ArrowLeft className="w-3.5 h-3.5 text-[#FF6B00]" />
+                                <span>Back to Course Lessons</span>
+                              </button>
                             </div>
                           )}
 
@@ -1147,19 +1404,225 @@ export function ClassroomPlayer({
 
               {/* Assessment Quiz Link in Playlist */}
               {course.quizzes.length > 0 && (
-                <div className="p-4 bg-orange-50/40">
-                  <Link
-                    href={`/courses/${course.slug}/quiz/${course.quizzes[0].id}`}
-                    className="flex items-center justify-between p-3 rounded-xl bg-white border border-orange-200 text-xs font-bold text-[#0B1B3D] hover:border-[#FF6B00] transition-colors shadow-xs"
+                <div className="p-3 bg-orange-50/40 border-t border-slate-100">
+                  {course.quizzes.map((quiz) => (
+                    <Link
+                      key={quiz.id}
+                      href={`/courses/${course.slug}/quiz/${quiz.id}`}
+                      className="flex items-center justify-between p-3 rounded-xl bg-white border border-orange-200 text-xs font-bold text-[#0B1B3D] hover:border-[#FF6B00] transition-colors shadow-xs"
+                    >
+                      <div className="flex items-center gap-2 text-[#FF6B00] min-w-0">
+                        <HelpCircle className="w-4 h-4 shrink-0" />
+                        <span className="truncate">{quiz.title}</span>
+                      </div>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ml-2 ${
+                          quiz.isPassed
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                            : quiz.attemptCount && quiz.attemptCount > 0
+                            ? "bg-red-100 text-red-800 border border-red-300"
+                            : "bg-orange-100 text-orange-700"
+                        }`}
+                      >
+                        {quiz.isPassed
+                          ? `Passed (${quiz.bestScore}%) ✓`
+                          : quiz.attemptCount && quiz.attemptCount > 0
+                          ? `Retake (${quiz.bestScore}%)`
+                          : "Assessment Quiz"}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {/* Capstone Practical Assignment Link in Playlist */}
+              {course.assignments.length > 0 && (
+                <div className="p-3 bg-slate-50/70 border-t border-slate-100">
+                  {course.assignments.map((assign) => {
+                    const sub =
+                      assign.id === currentAssignment?.id && activeSubmission
+                        ? activeSubmission
+                        : assign.mySubmission;
+                    const isPassed =
+                      sub?.status === "GRADED" &&
+                      sub.score !== null &&
+                      sub.score / assign.maxScore >= 0.7;
+                    const isFailed =
+                      sub?.status === "GRADED" &&
+                      sub.score !== null &&
+                      sub.score / assign.maxScore < 0.7;
+                    const isPendingReview = sub?.status === "SUBMITTED";
+                    const isRevision = sub?.status === "RESUBMIT_REQUESTED";
+
+                    return (
+                      <button
+                        key={assign.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveTab("ASSIGNMENT");
+                          window.scrollTo({ top: 400, behavior: "smooth" });
+                        }}
+                        className="w-full text-left p-3 rounded-xl bg-white border border-slate-200 hover:border-[#FF6B00] transition-colors shadow-xs flex items-center justify-between gap-2 cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FileCheck className="w-4 h-4 text-[#FF6B00] shrink-0" />
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-[#0B1B3D] block truncate">
+                              {assign.title}
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              Practical Capstone Project
+                            </span>
+                          </div>
+                        </div>
+
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider shrink-0 ${
+                            isPassed
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                              : isFailed
+                              ? "bg-red-100 text-red-800 border border-red-300"
+                              : isPendingReview
+                              ? "bg-blue-100 text-blue-800 border border-blue-300"
+                              : isRevision
+                              ? "bg-amber-100 text-amber-800 border border-amber-300"
+                              : "bg-slate-100 text-slate-600 border border-slate-200"
+                          }`}
+                        >
+                          {isPassed
+                            ? `Cleared (${sub?.score} Pts) ✓`
+                            : isFailed
+                            ? "Needs Revision ✗"
+                            : isPendingReview
+                            ? "Under Review ⏳"
+                            : isRevision
+                            ? "Resubmit ⚠️"
+                            : "Submit Solution"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Course Clearance & Verified Credential Milestone Card */}
+            <div className="p-4 bg-gradient-to-b from-slate-900 via-[#0B1B3D] to-slate-950 text-white border-t border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Award className="w-4 h-4 text-amber-400" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
+                    Credential Clearance
+                  </span>
+                </div>
+                <span
+                  className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                    currentCertificateCode
+                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40"
+                      : isEverythingCleared
+                      ? "bg-amber-400 text-slate-950 font-bold"
+                      : "bg-slate-800 text-slate-400 border border-slate-700"
+                  }`}
+                >
+                  {currentCertificateCode
+                    ? "ISSUED ✓"
+                    : isEverythingCleared
+                    ? "READY TO CLAIM 🎓"
+                    : "IN PROGRESS"}
+                </span>
+              </div>
+
+              {/* Clearance Checklist */}
+              <div className="space-y-2 text-[11px] bg-white/5 p-3 rounded-xl border border-white/10">
+                {/* 1. Lessons */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-slate-300">
+                    {isLessonsComplete ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    ) : (
+                      <Circle className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                    )}
+                    <span>100% Course Lectures Completed</span>
+                  </div>
+                  <span
+                    className={`font-mono text-[10px] ${
+                      isLessonsComplete ? "text-emerald-400 font-bold" : "text-slate-400"
+                    }`}
                   >
-                    <div className="flex items-center gap-2 text-[#FF6B00]">
-                      <HelpCircle className="w-4 h-4" />
-                      <span className="line-clamp-1">{course.quizzes[0].title}</span>
+                    {completedLessonsCount}/{totalLessons}
+                  </span>
+                </div>
+
+                {/* 2. Quizzes */}
+                {hasQuizzes && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-slate-300">
+                      {isQuizzesCleared ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      ) : (
+                        <Circle className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                      )}
+                      <span>Assessment Quiz Passed</span>
                     </div>
-                    <span className="text-[10px] font-semibold text-orange-600 bg-orange-100 px-2 py-0.5 rounded shrink-0 ml-2">
-                      Assessment
+                    <span
+                      className={`font-mono text-[10px] ${
+                        isQuizzesCleared ? "text-emerald-400 font-bold" : "text-amber-400"
+                      }`}
+                    >
+                      {isQuizzesCleared ? "Cleared ✓" : "Pending ⏳"}
                     </span>
-                  </Link>
+                  </div>
+                )}
+
+                {/* 3. Assignments */}
+                {hasAssignments && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-slate-300">
+                      {isAssignmentsCleared ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      ) : (
+                        <Circle className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                      )}
+                      <span>Capstone Project Approved</span>
+                    </div>
+                    <span
+                      className={`font-mono text-[10px] ${
+                        isAssignmentsCleared ? "text-emerald-400 font-bold" : "text-amber-400"
+                      }`}
+                    >
+                      {isAssignmentsCleared ? "Cleared ✓" : "Pending ⏳"}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Area */}
+              {currentCertificateCode ? (
+                <Link
+                  href={`/verify?code=${encodeURIComponent(currentCertificateCode)}`}
+                  className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 text-xs font-extrabold flex items-center justify-center gap-2 shadow-md hover:from-amber-300 hover:to-amber-400 transition-all cursor-pointer"
+                >
+                  <Award className="w-4 h-4 text-slate-900" />
+                  <span>View Verified Certificate 🎓</span>
+                </Link>
+              ) : isEverythingCleared ? (
+                <button
+                  type="button"
+                  onClick={handleClaimCertificate}
+                  disabled={isClaimingCert}
+                  className="w-full py-2.5 px-3 rounded-xl bg-[#FF6B00] hover:bg-[#EA580C] text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isClaimingCert ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4" />
+                  )}
+                  <span>Claim Verified Certificate 🎓</span>
+                </button>
+              ) : (
+                <div className="text-[10px] text-slate-400 text-center flex items-center justify-center gap-1.5 py-1">
+                  <Lock className="w-3 h-3 text-slate-500" />
+                  <span>Clear all items above to unlock official credential.</span>
                 </div>
               )}
             </div>

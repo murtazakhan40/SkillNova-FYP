@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
+import type { PrismaClient } from "@prisma/client";
 
 export interface DashboardNotification {
   id: string;
@@ -19,16 +20,35 @@ export type StudentNotification = DashboardNotification;
  */
 export async function getStudentNotifications(
   userId: string,
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ): Promise<DashboardNotification[]> {
   const notifications: DashboardNotification[] = [];
 
-  // 1. Assignment Evaluation Feedback (Graded or Revision Requested)
+  // 0. Persisted In-App Notifications (Stored in database)
+  try {
+    const persisted = await dbClient.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+    persisted.forEach((n) => {
+      notifications.push({
+        id: n.id,
+        type: n.type as DashboardNotification["type"],
+        title: n.title,
+        message: n.message,
+        timestamp: formatDate(n.createdAt),
+        link: n.link || "/dashboard/student",
+        unread: !n.isRead,
+      });
+    });
+  } catch {
+    // Graceful fallback if table is newly provisioned
+  }
+
+  // 1. Pending Deliverables & Recent Assignment Submissions
   const assignmentSubmissions = await dbClient.assignmentSubmission.findMany({
-    where: {
-      userId,
-      status: { in: ["GRADED", "RESUBMIT_REQUESTED"] },
-    },
+    where: { userId },
     include: {
       assignment: {
         include: { course: true },
@@ -38,7 +58,7 @@ export async function getStudentNotifications(
     take: 3,
   });
 
-  assignmentSubmissions.forEach((sub: any) => {
+  assignmentSubmissions.forEach((sub) => {
     const isResubmit = sub.status === "RESUBMIT_REQUESTED";
     notifications.push({
       id: `assign-feedback-${sub.id}-${sub.updatedAt.getTime()}`,
@@ -61,7 +81,7 @@ export async function getStudentNotifications(
     take: 3,
   });
 
-  certificates.forEach((cert: any) => {
+  certificates.forEach((cert) => {
     notifications.push({
       id: `cert-${cert.id}`,
       type: "CERTIFICATE",
@@ -85,7 +105,7 @@ export async function getStudentNotifications(
     take: 3,
   });
 
-  submissions.forEach((sub: any) => {
+  submissions.forEach((sub) => {
     notifications.push({
       id: `quiz-${sub.id}`,
       type: "QUIZ",
@@ -108,7 +128,7 @@ export async function getStudentNotifications(
     take: 2,
   });
 
-  recentOrders.forEach((order: any) => {
+  recentOrders.forEach((order) => {
     notifications.push({
       id: `order-enr-${order.id}`,
       type: "ENROLLMENT",
@@ -128,7 +148,7 @@ export async function getStudentNotifications(
     take: 2,
   });
 
-  enrollments.forEach((enr: any) => {
+  enrollments.forEach((enr) => {
     if (enr.progress > 0 && enr.progress < 100) {
       notifications.push({
         id: `enr-${enr.id}`,
@@ -149,7 +169,7 @@ export async function getStudentNotifications(
       orderBy: { createdAt: "desc" },
       take: 2,
     });
-    broadcasts.forEach((b: any) => {
+    broadcasts.forEach((b) => {
       try {
         const details = JSON.parse(b.details || "{}");
         if (!details.scope || details.scope === "ALL" || details.scope === "STUDENTS") {
@@ -185,7 +205,7 @@ export async function getStudentNotifications(
  * Fetch authentic notifications for an administrator
  */
 export async function getAdminNotifications(
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ): Promise<DashboardNotification[]> {
   const notifications: DashboardNotification[] = [];
 
@@ -196,7 +216,7 @@ export async function getAdminNotifications(
       orderBy: { createdAt: "desc" },
       take: 2,
     });
-    broadcasts.forEach((b: any) => {
+    broadcasts.forEach((b) => {
       try {
         const details = JSON.parse(b.details || "{}");
         notifications.push({
@@ -218,7 +238,7 @@ export async function getAdminNotifications(
     take: 2,
   });
 
-  recentUsers.forEach((u: any) => {
+  recentUsers.forEach((u) => {
     notifications.push({
       id: `admin-user-${u.id}`,
       type: "USER",
@@ -237,7 +257,7 @@ export async function getAdminNotifications(
     take: 2,
   });
 
-  recentEnrollments.forEach((enr: any) => {
+  recentEnrollments.forEach((enr) => {
     notifications.push({
       id: `admin-enr-${enr.id}`,
       type: "ENROLLMENT",
@@ -254,7 +274,7 @@ export async function getAdminNotifications(
     id: "admin-system-health",
     type: "SYSTEM",
     title: "System Integrity Normal",
-    message: "SQLite 3NF database, bcrypt authentication, and Next.js server actions are operational.",
+    message: "PostgreSQL 3NF database, bcrypt authentication, and Next.js server actions are operational.",
     timestamp: "System Online",
     link: `/dashboard/admin`,
     unread: false,
@@ -268,7 +288,7 @@ export async function getAdminNotifications(
  */
 export async function getTrainerNotifications(
   trainerId: string,
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ): Promise<DashboardNotification[]> {
   const notifications: DashboardNotification[] = [];
 
@@ -279,7 +299,7 @@ export async function getTrainerNotifications(
       orderBy: { createdAt: "desc" },
       take: 2,
     });
-    broadcasts.forEach((b: any) => {
+    broadcasts.forEach((b) => {
       try {
         const details = JSON.parse(b.details || "{}");
         if (!details.scope || details.scope === "ALL" || details.scope === "TRAINERS") {
@@ -303,7 +323,7 @@ export async function getTrainerNotifications(
     select: { id: true, title: true, slug: true },
   });
 
-  const courseIds = trainerCourses.map((c: any) => c.id);
+  const courseIds = trainerCourses.map((c) => c.id);
 
   // 1. Pending student assignment submissions awaiting evaluation
   const pendingAssignments = await dbClient.assignmentSubmission.findMany({
@@ -319,7 +339,7 @@ export async function getTrainerNotifications(
     take: 4,
   });
 
-  pendingAssignments.forEach((sub: any) => {
+  pendingAssignments.forEach((sub) => {
     notifications.push({
       id: `trainer-assign-${sub.id}-${sub.submittedAt.getTime()}`,
       type: "ASSIGNMENT",
@@ -339,7 +359,7 @@ export async function getTrainerNotifications(
     take: 3,
   });
 
-  studentEnrollments.forEach((enr: any) => {
+  studentEnrollments.forEach((enr) => {
     notifications.push({
       id: `trainer-enr-${enr.id}`,
       type: "ENROLLMENT",
@@ -364,7 +384,7 @@ export async function getTrainerNotifications(
     take: 3,
   });
 
-  quizSubs.forEach((sub: any) => {
+  quizSubs.forEach((sub) => {
     notifications.push({
       id: `trainer-sub-${sub.id}`,
       type: "QUIZ",
@@ -388,4 +408,48 @@ export async function getTrainerNotifications(
   });
 
   return notifications;
+}
+
+/**
+ * Persist an in-app notification in the database for a user
+ */
+export async function createNotification(
+  userId: string,
+  data: {
+    type: "CERTIFICATE" | "QUIZ" | "ENROLLMENT" | "ASSIGNMENT" | "ACADEMIC" | "SYSTEM" | "USER";
+    title: string;
+    message: string;
+    link?: string;
+  },
+  dbClient: PrismaClient = db as PrismaClient
+) {
+  return await dbClient.notification.create({
+    data: {
+      userId,
+      type: data.type,
+      title: data.title,
+      message: data.message,
+      link: data.link,
+    },
+  });
+}
+
+/**
+ * Mark a notification as read (with strict ownership check)
+ */
+export async function markNotificationAsRead(
+  notificationId: string,
+  userId: string,
+  dbClient: PrismaClient = db as PrismaClient
+) {
+  return await dbClient.notification.updateMany({
+    where: {
+      id: notificationId,
+      userId,
+    },
+    data: {
+      isRead: true,
+      readAt: new Date(),
+    },
+  });
 }

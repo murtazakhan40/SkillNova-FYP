@@ -8,6 +8,8 @@ export interface SessionUser {
   avatar?: string | null;
   headline?: string | null;
   phone?: string | null;
+  age?: number | null;
+  parentEmail?: string | null;
 }
 
 export interface SessionPayload extends SessionUser {

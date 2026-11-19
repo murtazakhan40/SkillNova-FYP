@@ -1,5 +1,8 @@
 import crypto from "crypto";
 import { db } from "@/lib/db";
+import type { Prisma, PrismaClient } from "@prisma/client";
+
+export type DbClient = PrismaClient | Prisma.TransactionClient;
 
 /**
  * Generate a cryptographically secure, difficult-to-guess certificate credential code.
@@ -39,7 +42,7 @@ export interface EligibilityResult {
 export async function evaluateAndIssueCertificate(
   userId: string,
   courseId: string,
-  prismaClient: any = db
+  prismaClient: DbClient = db
 ): Promise<EligibilityResult> {
   // 1. Check enrollment
   const enrollment = await prismaClient.enrollment.findUnique({
@@ -70,6 +73,7 @@ export async function evaluateAndIssueCertificate(
         },
       },
       quizzes: true,
+      assignments: true,
     },
   });
 
@@ -80,10 +84,10 @@ export async function evaluateAndIssueCertificate(
     };
   }
 
-  const allLessonIds = course.sections.flatMap((s: any) => s.lessons.map((l: any) => l.id));
+  const allLessonIds = course.sections.flatMap((s) => s.lessons.map((l) => l.id));
   const totalLessons = allLessonIds.length;
 
-  // If course has lessons, verify that EVERY lesson is completed by the student
+  // 1. Lessons Rule: Verify that EVERY lesson is completed by the student (100% curriculum completion)
   if (totalLessons > 0) {
     const completedCount = await prismaClient.lessonProgress.count({
       where: {
@@ -101,8 +105,9 @@ export async function evaluateAndIssueCertificate(
     }
   }
 
-  // 3. Assessment Quiz Rule: If course has quizzes, student MUST pass each assessment
+  // 2. Assessment Quiz Rule: If course has quizzes, student MUST pass each assessment
   let verifiedGrade: number | null = null;
+  const gradeComponents: number[] = [];
 
   if (course.quizzes && course.quizzes.length > 0) {
     const scores: number[] = [];
@@ -126,7 +131,69 @@ export async function evaluateAndIssueCertificate(
     }
 
     const avg = scores.reduce((sum, s) => sum + s, 0) / scores.length;
-    verifiedGrade = Math.round(avg * 10) / 10;
+    gradeComponents.push(avg);
+  }
+
+  // 3. Capstone Assignment Rule: If course has project assignments, student MUST submit and pass each deliverable
+  if (course.assignments && course.assignments.length > 0) {
+    const assignmentPercentages: number[] = [];
+    for (const a of course.assignments) {
+      const submission = await prismaClient.assignmentSubmission.findUnique({
+        where: {
+          assignmentId_userId: {
+            assignmentId: a.id,
+            userId,
+          },
+        },
+      });
+
+      if (!submission) {
+        return {
+          eligible: false,
+          reason: `Capstone project incomplete: "${a.title}" deliverable must be submitted.`,
+        };
+      }
+
+      if (submission.status === "RESUBMIT_REQUESTED") {
+        return {
+          eligible: false,
+          reason: `Capstone assignment "${a.title}" requires revisions before certification.`,
+        };
+      }
+
+      if (submission.status !== "GRADED") {
+        return {
+          eligible: false,
+          reason: `Capstone assignment "${a.title}" is pending faculty review. Certificate unlocks once evaluated and cleared.`,
+        };
+      }
+
+      if (submission.score === null) {
+        return {
+          eligible: false,
+          reason: `Capstone assignment "${a.title}" has not received a final grade.`,
+        };
+      }
+
+      const scoreRatio = submission.score / a.maxScore;
+      if (scoreRatio < 0.7) {
+        return {
+          eligible: false,
+          reason: `Capstone assignment "${a.title}" did not achieve passing grade (${Math.round(scoreRatio * 100)}% achieved, 70% required).`,
+        };
+      }
+
+      assignmentPercentages.push(scoreRatio * 100);
+    }
+
+    const assignAvg = assignmentPercentages.reduce((sum, s) => sum + s, 0) / assignmentPercentages.length;
+    gradeComponents.push(assignAvg);
+  }
+
+  // Calculate composite verified grade across evaluated quizzes and assignments
+  if (gradeComponents.length > 0) {
+    const totalAvg = gradeComponents.reduce((sum, s) => sum + s, 0) / gradeComponents.length;
+    verifiedGrade = Math.round(totalAvg * 10) / 10;
   }
 
   // 4. Check if Certificate already exists

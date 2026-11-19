@@ -15,6 +15,9 @@ export * from "./token";
  * Verify user credentials against the database.
  * Strictly uses bcrypt hash verification. Zero backdoor or hardcoded fallback credentials.
  */
+// Constant-time dummy hash (12 rounds) to prevent timing-attack email enumeration
+const DUMMY_HASH = "$2b$12$e8uq0e1u9xGq0C7RkFv3xO1w8u4e6r8t0y2u4i6o8p0a1s2d3f4g.";
+
 export async function verifyCredentials(
   email: string,
   password: string
@@ -25,6 +28,8 @@ export async function verifyCredentials(
   });
 
   if (!user || !user.passwordHash) {
+    // Execute dummy bcrypt comparison to ensure identical response duration
+    await bcrypt.compare(password, DUMMY_HASH).catch(() => false);
     return null;
   }
 
@@ -42,6 +47,8 @@ export async function verifyCredentials(
     avatar: user.avatar,
     headline: user.headline,
     phone: user.phone,
+    age: user.age,
+    parentEmail: user.parentEmail,
   };
 }
 

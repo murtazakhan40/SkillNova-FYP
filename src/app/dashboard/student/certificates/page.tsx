@@ -11,7 +11,7 @@ import {
   InProgressCourseData 
 } from "@/components/dashboard/CertificateGalleryClient";
 import { getStudentNotifications } from "@/lib/notifications";
-import { ArrowLeft, Sparkles, Award } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 export default async function StudentCertificatesPage() {

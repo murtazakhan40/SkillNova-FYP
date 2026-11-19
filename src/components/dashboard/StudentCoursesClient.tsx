@@ -9,7 +9,6 @@ import {
   BookOpen, 
   ArrowRight, 
   PlayCircle, 
-  CheckCircle2, 
   X,
   ExternalLink
 } from "lucide-react";
@@ -189,7 +188,7 @@ export function StudentCoursesClient({ initialCourses }: StudentCoursesClientPro
               <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 absolute left-3 pointer-events-none" />
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e) => setSortBy(e.target.value as "RECENT" | "PROGRESS" | "TITLE")}
                 aria-label="Sort courses"
                 className="pl-8 pr-7 py-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 bg-white focus:outline-hidden focus:border-[#FF6B00] transition-colors"
               >

@@ -11,14 +11,11 @@ import {
   AlertTriangle, 
   ExternalLink, 
   UserCheck,
-  ChevronDown,
   PlusCircle,
   FolderPlus,
   Trash2,
   ChevronLeft,
   ChevronRight,
-  Layers,
-  Sparkles,
   AlertCircle,
   Tag
 } from "lucide-react";
@@ -144,10 +141,10 @@ export function AdminCoursesClient({
         }.`,
       });
       setConfirmToggle(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({
         type: "error",
-        message: err?.message || "Failed to toggle course publication status.",
+        message: err instanceof Error ? err.message : "Failed to toggle course publication status.",
       });
     } finally {
       setIsProcessing(false);
@@ -164,10 +161,10 @@ export function AdminCoursesClient({
         type: "success",
         message: `Assigned ${trainer?.name || "faculty trainer"} to course.`,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({
         type: "error",
-        message: err?.message || "Failed to reassign course instructor.",
+        message: err instanceof Error ? err.message : "Failed to reassign course instructor.",
       });
     } finally {
       setIsProcessing(false);
@@ -188,10 +185,10 @@ export function AdminCoursesClient({
       });
       form.reset();
       setIsNewCategoryOpen(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({
         type: "error",
-        message: err?.message || "Failed to create category.",
+        message: err instanceof Error ? err.message : "Failed to create category.",
       });
     } finally {
       setIsProcessing(false);
@@ -209,10 +206,10 @@ export function AdminCoursesClient({
         message: `Category "${categoryToDelete.name}" deleted successfully.`,
       });
       setCategoryToDelete(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({
         type: "error",
-        message: err?.message || "Failed to delete category.",
+        message: err instanceof Error ? err.message : "Failed to delete category.",
       });
     } finally {
       setIsProcessing(false);

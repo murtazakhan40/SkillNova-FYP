@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { db } from "@/lib/db";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -18,9 +19,7 @@ import {
   Palette, 
   ShieldCheck, 
   Award, 
-  CheckCircle2, 
   GraduationCap,
-  PlayCircle,
   Terminal,
   Zap
 } from "lucide-react";
@@ -166,79 +165,58 @@ export default async function HomePage() {
               </div>
             </div>
 
-            {/* Right Hero Interactive Preview Graphic */}
+            {/* Right Hero: Real Student Collaborative Learning Showcase */}
             <div className="lg:col-span-5">
-              <div className="relative mx-auto max-w-md lg:max-w-none animate-float-slow">
-                {/* Decorative border container with glow */}
-                <div className="rounded-2xl p-2 bg-gradient-to-b from-slate-700/60 to-slate-800/40 border border-slate-700 shadow-2xl backdrop-blur-xl">
-                  {/* Mock Classroom Card */}
-                  <div className="rounded-xl bg-[#060E1E] border border-slate-800 overflow-hidden text-left shadow-2xl">
-                    {/* Header bar */}
-                    <div className="px-4 py-3 bg-[#0B1B3D] border-b border-slate-800 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                        <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-                        <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
-                        <span className="text-xs font-mono text-slate-400 ml-2">skillnova-classroom.tsx</span>
-                      </div>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        Live Classroom
-                      </span>
+              <div className="relative mx-auto max-w-lg lg:max-w-none group">
+                {/* Subtle outer ambient glow */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-[#FF6B00]/30 via-blue-600/20 to-[#FF6B00]/30 rounded-3xl blur-xl opacity-75 group-hover:opacity-100 transition duration-1000" />
+
+                {/* Card Container */}
+                <div className="relative rounded-2xl p-2 bg-gradient-to-b from-slate-700/60 to-slate-800/40 border border-slate-700/80 shadow-2xl backdrop-blur-xl">
+                  <div className="relative rounded-xl overflow-hidden bg-[#060E1E] border border-slate-800 shadow-2xl aspect-[4/3]">
+                    {/* Students Studying Image */}
+                    <Image
+                      src="/students-studying.jpg"
+                      alt="SkillNova Academy computer science students studying and coding collaboratively in modern tech lab"
+                      fill
+                      priority
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
+                      sizes="(max-width: 1024px) 100vw, 42vw"
+                    />
+
+                    {/* Gradient Overlay for Tech Glow */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#060E1E]/90 via-[#060E1E]/20 to-transparent pointer-events-none" />
+
+                    {/* Top Floating Badge */}
+                    <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#060E1E]/80 backdrop-blur-md border border-slate-700/80 text-white shadow-lg">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 -ml-3" />
+                      <span className="text-xs font-semibold tracking-wide">Live Coding Cohort</span>
                     </div>
 
-                    {/* Mock Content */}
-                    <div className="p-5 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-[#FF6B00]">
-                            <Terminal className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <div className="text-xs text-slate-400 font-medium">Active Module</div>
-                            <div className="text-sm font-heading font-bold text-white">Full-Stack App Architecture</div>
-                          </div>
+                    {/* Bottom Floating Stats Badge */}
+                    <div className="absolute bottom-4 left-4 right-4 z-10 p-3.5 rounded-xl bg-[#0B1B3D]/90 backdrop-blur-md border border-slate-700/70 shadow-xl flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-[#FF6B00]/20 border border-[#FF6B00]/30 flex items-center justify-center text-[#FF6B00]">
+                          <GraduationCap className="w-5 h-5" />
                         </div>
-                        <span className="text-xs font-bold text-[#FF6B00]">68% Completed</span>
-                      </div>
-
-                      {/* Progress Bar */}
-                      <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
-                        <div className="bg-gradient-to-r from-[#FF6B00] to-amber-400 h-2.5 rounded-full transition-all duration-1000" style={{ width: "68%" }} />
-                      </div>
-
-                      {/* Feature Checklist inside Mock */}
-                      <div className="space-y-2 pt-2 text-xs text-slate-300">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                          <span>Normalized SQLite & PostgreSQL Schema</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                          <span>Role-Based Access Control (RBAC)</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                          <span>Automated Assessment & Instant Grading</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                          <span>Digital Verifiable Certificates (SN-2026-X89J21)</span>
+                        <div>
+                          <div className="text-xs font-bold text-white tracking-wide">SkillNova Active Labs</div>
+                          <div className="text-[11px] text-slate-300">Hands-on Software & AI Engineering</div>
                         </div>
                       </div>
-
-                      {/* Video mockup snippet */}
-                      <div className="pt-2">
-                        <div className="rounded-lg bg-slate-900 border border-slate-800 p-3 flex items-center justify-between hover:border-slate-700 transition-colors">
-                          <div className="flex items-center gap-2">
-                            <PlayCircle className="w-5 h-5 text-[#FF6B00]" />
-                            <span className="text-xs text-slate-200 font-medium">Lesson 1: Server Components Overview</span>
-                          </div>
-                          <span className="text-[11px] text-slate-400 font-mono">14:20</span>
-                        </div>
+                      <div className="hidden sm:flex flex-col items-end">
+                        <span className="text-xs font-extrabold text-[#FF6B00]">98.4%</span>
+                        <span className="text-[10px] text-slate-400">Completion</span>
                       </div>
                     </div>
                   </div>
+                </div>
+
+                {/* Floating Micro-Badge Top Right */}
+                <div className="absolute -top-3 -right-3 hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#FF6B00] to-amber-500 text-white shadow-xl text-xs font-bold border border-white/20 animate-bounce duration-1000">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>2,400+ Active Students</span>
                 </div>
               </div>
             </div>
@@ -487,3 +465,4 @@ export default async function HomePage() {
     </div>
   );
 }
+

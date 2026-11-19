@@ -6,24 +6,39 @@ import { db } from "@/lib/db";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { StudentProfileForm } from "@/components/dashboard/StudentProfileForm";
 import { getTrainerNotifications } from "@/lib/notifications";
-import { ArrowLeft, UserCheck, BookOpen, Users, Award } from "lucide-react";
+import { ArrowLeft, UserCheck, BookOpen, Users } from "lucide-react";
 
 export default async function TrainerProfilePage() {
-  const user = await getCurrentUser();
+  const sessionUser = await getCurrentUser();
 
-  if (!user || (user.role !== "TRAINER" && user.role !== "ADMIN")) {
-    redirect(user ? "/dashboard/student" : "/login");
+  if (!sessionUser || (sessionUser.role !== "TRAINER" && sessionUser.role !== "ADMIN")) {
+    redirect(sessionUser ? "/dashboard/student" : "/login");
   }
 
-  const [notifications, courses] = await Promise.all([
-    getTrainerNotifications(user.id),
+  const [dbUser, notifications, courses] = await Promise.all([
+    db.user.findUnique({
+      where: { id: sessionUser.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        avatar: true,
+        headline: true,
+        bio: true,
+        phone: true,
+      },
+    }),
+    getTrainerNotifications(sessionUser.id),
     db.course.findMany({
-      where: user.role === "ADMIN" ? {} : { instructorId: user.id },
+      where: sessionUser.role === "ADMIN" ? {} : { instructorId: sessionUser.id },
       include: {
         enrollments: true,
       },
     }),
   ]);
+
+  const user = dbUser ? { ...sessionUser, ...dbUser } : sessionUser;
 
   const totalEnrollments = courses.reduce(
     (acc, c) => acc + c.enrollments.length,

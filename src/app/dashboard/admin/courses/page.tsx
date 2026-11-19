@@ -11,7 +11,7 @@ import {
   CategoryOption 
 } from "@/components/dashboard/AdminCoursesClient";
 import { getAdminNotifications } from "@/lib/notifications";
-import { ArrowLeft, BookOpen, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 
 export default async function AdminCoursesPage() {
   const user = await getCurrentUser();
@@ -72,7 +72,7 @@ export default async function AdminCoursesPage() {
     email: t.email,
   }));
 
-  const categoryOptions: CategoryOption[] = categories.map((cat: any) => ({
+  const categoryOptions: CategoryOption[] = categories.map((cat) => ({
     id: cat.id,
     name: cat.name,
     slug: cat.slug,

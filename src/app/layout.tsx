@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Outfit, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, Outfit, Plus_Jakarta_Sans, Great_Vibes, Cinzel } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -20,6 +20,20 @@ const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   display: "swap",
   weight: ["400", "500", "600", "700", "800"],
+});
+
+const greatVibes = Great_Vibes({
+  variable: "--font-cert-script",
+  subsets: ["latin"],
+  weight: ["400"],
+  display: "swap",
+});
+
+const cinzel = Cinzel({
+  variable: "--font-cert-serif",
+  subsets: ["latin"],
+  weight: ["600", "700", "800", "900"],
+  display: "swap",
 });
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://skillnovaacademy.com";
@@ -89,7 +103,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${inter.variable} ${outfit.variable} ${plusJakarta.variable} h-full antialiased font-sans`}
+      className={`${inter.variable} ${outfit.variable} ${plusJakarta.variable} ${greatVibes.variable} ${cinzel.variable} h-full antialiased font-sans`}
     >
       <head>
         <script

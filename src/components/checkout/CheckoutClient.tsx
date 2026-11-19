@@ -1,15 +1,12 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { 
   ShieldCheck, 
   CreditCard, 
   Smartphone, 
   CheckCircle2, 
-  AlertTriangle, 
-  ArrowLeft, 
   Sparkles, 
   Lock, 
   Loader2, 

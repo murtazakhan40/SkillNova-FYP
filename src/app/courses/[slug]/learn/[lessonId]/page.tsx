@@ -116,6 +116,30 @@ export default async function ClassroomPage({ params }: ClassroomPageProps) {
     },
   });
 
+  // Fetch all quiz submissions for this user in this course to track clearance
+  const userQuizSubmissions = await db.quizSubmission.findMany({
+    where: {
+      userId: user.id,
+      quizId: { in: course.quizzes.map((q) => q.id) },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const serializedQuizzes = course.quizzes.map((q) => {
+    const attempts = userQuizSubmissions.filter((qs) => qs.quizId === q.id);
+    const passingAttempt = attempts.find((qs) => qs.passed);
+    const bestScore = attempts.length > 0 ? Math.max(...attempts.map((qs) => qs.score)) : null;
+
+    return {
+      id: q.id,
+      title: q.title,
+      passingScore: q.passingScore,
+      isPassed: Boolean(passingAttempt),
+      bestScore,
+      attemptCount: attempts.length,
+    };
+  });
+
   const userEnrollment = course.enrollments[0];
   const currentProgress = userEnrollment ? Math.round(userEnrollment.progress) : 0;
 
@@ -228,7 +252,7 @@ export default async function ClassroomPage({ params }: ClassroomPageProps) {
           category: { name: course.category.name },
           instructor: { id: course.instructor.id, name: course.instructor.name },
           sections: serializedSections,
-          quizzes: course.quizzes.map((q) => ({ id: q.id, title: q.title })),
+          quizzes: serializedQuizzes,
           assignments: serializedAssignments,
         }}
         currentLesson={currentLessonSerialized}

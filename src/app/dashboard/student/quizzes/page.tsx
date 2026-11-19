@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { StudentQuizzesClient, QuizItem } from "@/components/dashboard/StudentQuizzesClient";
 import { getStudentNotifications } from "@/lib/notifications";
-import { ArrowLeft, Sparkles, HelpCircle } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 export default async function StudentQuizzesPage() {

@@ -1,22 +1,16 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import Link from "next/link";
 import { 
   Layers, 
   Search, 
   Filter, 
-  UserCheck, 
-  BookOpen, 
   Trash2, 
   PlusCircle, 
   ChevronLeft, 
   ChevronRight, 
   CheckCircle2, 
-  Clock, 
-  AlertTriangle,
   AlertCircle,
-  ExternalLink,
   ShieldAlert
 } from "lucide-react";
 import { 
@@ -137,10 +131,10 @@ export function AdminEnrollmentsClient({
       setIsManualModalOpen(false);
       setManualStudent("");
       setManualCourse("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({
         type: "error",
-        message: err?.message || "Failed to grant enrollment.",
+        message: err instanceof Error ? err.message : "Failed to grant enrollment.",
       });
     } finally {
       setIsProcessing(false);
@@ -160,10 +154,10 @@ export function AdminEnrollmentsClient({
       });
       setRevokeTarget(null);
       setRevokeReason("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({
         type: "error",
-        message: err?.message || "Failed to revoke enrollment.",
+        message: err instanceof Error ? err.message : "Failed to revoke enrollment.",
       });
     } finally {
       setIsProcessing(false);

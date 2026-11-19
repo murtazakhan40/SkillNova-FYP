@@ -8,11 +8,7 @@ import {
   CheckCircle2, 
   ArrowRight,
   Mail,
-  Phone,
-  GraduationCap,
-  Shield,
-  Layers,
-  Code2
+  Phone
 } from "lucide-react";
 
 export default function AboutPage() {

@@ -3,8 +3,10 @@
 import { revalidatePath } from "next/cache";
 import path from "node:path";
 import fs from "node:fs/promises";
-import { getCurrentUser, requireAuth, requireRole, requireCourseEnrollment } from "@/lib/auth";
+import { requireAuth, requireRole, requireCourseEnrollment } from "@/lib/auth";
 import { db } from "@/lib/db";
+import type { PrismaClient } from "@prisma/client";
+import { evaluateAndIssueCertificate } from "@/lib/certificates";
 
 // File upload constraints
 const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; // 15 Megabytes
@@ -112,7 +114,7 @@ export async function submitAssignmentAction(formData: FormData) {
   }
 
   // Upsert single submission per student per assignment
-  await db.assignmentSubmission.upsert({
+  const submission = await db.assignmentSubmission.upsert({
     where: {
       assignmentId_userId: {
         assignmentId,
@@ -141,7 +143,22 @@ export async function submitAssignmentAction(formData: FormData) {
   revalidatePath(`/dashboard/student`);
   revalidatePath(`/dashboard/trainer/assessments`);
 
-  return { success: true, isPastDeadline };
+  return {
+    success: true,
+    isPastDeadline,
+    submission: {
+      id: submission.id,
+      textContent: submission.textContent,
+      fileUrl: submission.fileUrl,
+      fileName: submission.fileName,
+      fileSize: submission.fileSize,
+      score: submission.score,
+      feedback: submission.feedback,
+      status: submission.status,
+      submittedAt: submission.submittedAt.toISOString(),
+      gradedAt: submission.gradedAt ? submission.gradedAt.toISOString() : null,
+    },
+  };
 }
 
 /**
@@ -151,7 +168,7 @@ export async function submitAssignmentAction(formData: FormData) {
  */
 export async function gradeAssignmentAction(
   formData: FormData,
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ) {
   const reviewer = await requireRole(["TRAINER", "ADMIN"]);
 
@@ -218,10 +235,20 @@ export async function gradeAssignmentAction(
     },
   });
 
+  // If assignment is graded and meets passing threshold (>= 70%), evaluate overall course certificate eligibility
+  if (status !== "RESUBMIT_REQUESTED" && score / submission.assignment.maxScore >= 0.7) {
+    try {
+      await evaluateAndIssueCertificate(submission.userId, submission.assignment.courseId, dbClient);
+    } catch (certErr) {
+      console.error("Auto certificate evaluation upon assignment grading:", certErr);
+    }
+  }
+
   try {
     revalidatePath(`/courses/${submission.assignment.course.slug}/learn`);
     revalidatePath(`/dashboard/trainer/assessments`);
     revalidatePath(`/dashboard/student`);
+    revalidatePath(`/dashboard/student/certificates`);
   } catch {
     // Graceful fallback in non-Next.js runtime (e.g. unit tests)
   }
@@ -488,7 +515,7 @@ export async function deleteLessonDiscussionAction(discussionId: string) {
  */
 export async function createCourseAssignmentAction(
   formData: FormData,
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ) {
   const user = await requireRole(["TRAINER", "ADMIN"]);
 
@@ -569,7 +596,7 @@ export async function createCourseAssignmentAction(
  */
 export async function createCourseQuizAction(
   formData: FormData,
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ) {
   const user = await requireRole(["TRAINER", "ADMIN"]);
 
@@ -676,7 +703,7 @@ export async function createCourseQuizAction(
  */
 export async function createCourseSectionAction(
   formData: FormData,
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ) {
   const user = await requireRole(["TRAINER", "ADMIN"]);
 
@@ -730,7 +757,7 @@ export async function createCourseSectionAction(
  */
 export async function createCourseLessonAction(
   formData: FormData,
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ) {
   const user = await requireRole(["TRAINER", "ADMIN"]);
 

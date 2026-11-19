@@ -1,12 +1,22 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import path from "node:path";
+import fs from "node:fs/promises";
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("🌱 Starting Full SkillNova Academy Database Seed...");
 
-  // Clean existing records in relational order
+  // Clean existing records in strict relational foreign-key order
+  await prisma.auditLog.deleteMany();
+  await prisma.notification.deleteMany();
+  await prisma.payment.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.assignmentSubmission.deleteMany();
+  await prisma.assignment.deleteMany();
+  await prisma.lessonDiscussion.deleteMany();
+  await prisma.lessonResource.deleteMany();
   await prisma.certificate.deleteMany();
   await prisma.review.deleteMany();
   await prisma.quizSubmission.deleteMany();
@@ -108,8 +118,8 @@ async function main() {
 
   const trainerMitchell = await prisma.user.create({
     data: {
-      name: "Dr. Sarah Mitchell",
-      email: "sarah.mitchell@skillnova.com",
+      name: "Dr. Ayesha Malik",
+      email: "ayesha.malik@skillnova.com",
       passwordHash: trainerPassword,
       role: "TRAINER",
       headline: "Principal AI Researcher & Machine Learning Faculty",
@@ -120,11 +130,11 @@ async function main() {
 
   const trainerChen = await prisma.user.create({
     data: {
-      name: "Prof. David Chen",
-      email: "david.chen@skillnova.com",
+      name: "Prof. Tariq Mahmood",
+      email: "tariq.mahmood@skillnova.com",
       passwordHash: trainerPassword,
       role: "TRAINER",
-      headline: "Former Tech Lead at Google • Cloud & Distributed Systems",
+      headline: "Former Tech Lead • Cloud & Distributed Systems",
       bio: "Author of advanced competitive programming textbooks and veteran Kubernetes/Go architect.",
       avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
     },
@@ -132,8 +142,8 @@ async function main() {
 
   const trainerRivera = await prisma.user.create({
     data: {
-      name: "Alex Rivera",
-      email: "alex.rivera@skillnova.com",
+      name: "Hamza Farooq",
+      email: "hamza.farooq@skillnova.com",
       passwordHash: trainerPassword,
       role: "TRAINER",
       headline: "Principal Offensive Cybersecurity Architect",
@@ -189,6 +199,71 @@ async function main() {
       phone: "03451122334",
       headline: "Senior Mobile Engineering Lead & Cross-Platform Architect",
       bio: "Specializing in React Native New Architecture (Fabric & TurboModules), Google Flutter & Dart native compilation, offline-first SQLite sync, and production app releases.",
+      avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  const trainerHaider = await prisma.user.create({
+    data: {
+      name: "Dr. Usman Haider",
+      email: "usman.haider@skillnova.com",
+      passwordHash: trainerPassword,
+      role: "TRAINER",
+      phone: "03215554321",
+      headline: "Principal Generative AI & Autonomous Agent Architect",
+      bio: "Former AI Research Scientist specializing in autonomous multi-agent systems, LangGraph architectures, vector embedding databases, and LLM reasoning pipelines.",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  const trainerZeeshan = await prisma.user.create({
+    data: {
+      name: "Engr. Zeeshan Ali",
+      email: "zeeshan.ali@skillnova.com",
+      passwordHash: trainerPassword,
+      role: "TRAINER",
+      phone: "03009988776",
+      headline: "Staff Cloud Infrastructure & Kubernetes Architect",
+      bio: "12+ years engineering high-availability multi-region Kubernetes clusters, Terraform infrastructure-as-code, and resilient AWS/GCP cloud platforms.",
+      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  const trainerKhadija = await prisma.user.create({
+    data: {
+      name: "Khadija Aslam",
+      email: "khadija.aslam@skillnova.com",
+      passwordHash: trainerPassword,
+      role: "TRAINER",
+      phone: "03334445566",
+      headline: "Senior Data Science & Predictive Analytics Lead",
+      bio: "Specializing in statistical machine learning, PyTorch deep neural networks, time-series forecasting, and big data ETL pipelines with Apache Spark.",
+      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  const trainerBilal = await prisma.user.create({
+    data: {
+      name: "Bilal Hassan",
+      email: "bilal.hassan@skillnova.com",
+      passwordHash: trainerPassword,
+      role: "TRAINER",
+      phone: "03112233445",
+      headline: "Lead Ethical Hacker & Zero-Trust Security Engineer",
+      bio: "OSCP & CISSP certified penetration tester specializing in red-teaming, API vulnerability exploitation, reverse engineering, and threat modeling.",
+      avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  const trainerSaad = await prisma.user.create({
+    data: {
+      name: "Saad Ur Rehman",
+      email: "saad.rehman@skillnova.com",
+      passwordHash: trainerPassword,
+      role: "TRAINER",
+      phone: "03456677889",
+      headline: "Principal Python & Async Microservices Architect",
+      bio: "Architect of high-throughput asynchronous distributed backends using FastAPI, AsyncIO, Celery, Redis cluster caching, and PostgreSQL.",
       avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80",
     },
   });
@@ -524,7 +599,7 @@ gRPC utilizes HTTP/2 streams to allow multiple requests and responses concurrent
   });
 
   // --- COURSE 3: App Development ---
-  const course3 = await seedCurriculum({
+  await seedCurriculum({
     title: "App Development",
     slug: "cross-platform-react-native-expo",
     subtitle: "Create cross-platform mobile apps for iOS and Android with React Native.",
@@ -572,9 +647,9 @@ Reanimated 3 runs worklets on the native UI thread, guaranteeing steady 60 FPS t
     ],
   });
 
-  // --- COURSE 4: Machine Learning & AI ---
+  // --- COURSE 4: Machine Learning ---
   const course4 = await seedCurriculum({
-    title: "Machine Learning & AI",
+    title: "Machine Learning",
     slug: "applied-machine-learning-pytorch",
     subtitle: "Train neural networks, deep learning models, and smart algorithms with PyTorch.",
     description: "Gain hands-on mastery over machine learning and deep learning fundamentals. Build classifiers, sequential models, and export optimized models for production applications.",
@@ -724,9 +799,9 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 7: Cloud Computing & DevOps ---
+  // --- COURSE 7: Cloud Computing ---
   const course7 = await seedCurriculum({
-    title: "Cloud Computing & DevOps",
+    title: "Cloud Computing",
     slug: "cloud-infrastructure-docker-kubernetes-aws",
     subtitle: "Deploy and manage software using Docker, Kubernetes, and AWS.",
     description: "Deploy scalable, enterprise-grade cloud applications. Master Docker multi-stage builds, Kubernetes pods, deployments, services, ingress routing, Helm charts, and AWS Cloud networking.",
@@ -771,9 +846,9 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 8: Cloud Infrastructure ---
+  // --- COURSE 8: DevOps ---
   await seedCurriculum({
-    title: "Cloud Infrastructure",
+    title: "DevOps",
     slug: "enterprise-infrastructure-as-code-terraform",
     subtitle: "Automate server setup and cloud networks using Terraform.",
     description: "Automate entire cloud environments with HashiCorp Terraform. Learn HCL, remote state locking with DynamoDB, modular architectures, and automated testing.",
@@ -853,9 +928,9 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 10: Network & Cloud Security ---
+  // --- COURSE 10: Network Security ---
   await seedCurriculum({
-    title: "Network & Cloud Security",
+    title: "Network Security",
     slug: "zero-trust-cloud-security-defenses",
     subtitle: "Protect servers, cloud networks, and firewalls against cyber threats.",
     description: "Learn essential cloud and network defenses. Master identity and access management (IAM), firewall configurations, security group isolation, and threat detection on AWS and Azure.",
@@ -894,9 +969,9 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 11: Data Structures & Algorithms ---
-  const course11 = await seedCurriculum({
-    title: "Data Structures & Algorithms",
+  // --- COURSE 11: Data Structures ---
+  await seedCurriculum({
+    title: "Data Structures",
     slug: "data-structures-algorithms-leetcode-mastery",
     subtitle: "Master fundamental coding logic, problem solving, and technical interviews.",
     description: "Rigorous computer science algorithms course. Master Big-O analysis, binary heaps, topological sorting, Dijkstra shortest path, dynamic programming memoization, and bit manipulation.",
@@ -930,9 +1005,9 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 12: Database Systems & SQL ---
+  // --- COURSE 12: SQL & Databases ---
   await seedCurriculum({
-    title: "Database Systems & SQL",
+    title: "SQL & Databases",
     slug: "database-engine-internals-query-optimization",
     subtitle: "Master relational databases, SQL queries, indexes, and storage.",
     description: "Understand database fundamentals and storage internals. Learn page buffer managers, B+ Trees vs LSM-Trees, Write-Ahead Logging (WAL) for crash recovery, and multi-version concurrency control.",
@@ -1013,9 +1088,9 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 14: UX Research & Wireframing (Adeel Qasir) ---
+  // --- COURSE 14: UX Design (Adeel Qasir) ---
   const course14 = await seedCurriculum({
-    title: "UX Research & Wireframing",
+    title: "UX Design",
     slug: "ux-research-journey-mapping-wireframing",
     subtitle: "Master user interviews, information architecture, wireframing, and usability testing.",
     description: "Delve deep into cognitive psychology and UX research methodologies with Adeel Qasir. Conduct qualitative user interviews, construct data-driven empathy maps, user journey workflows, and run tree testing to architect friction-free user flows.",
@@ -1077,9 +1152,9 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 15: Mobile UI/UX Design (Adeel Qasir) ---
-  const course15 = await seedCurriculum({
-    title: "Mobile UI/UX Design",
+  // --- COURSE 15: Mobile Design (Adeel Qasir) ---
+  await seedCurriculum({
+    title: "Mobile Design",
     slug: "mobile-app-ui-ux-micro-interactions",
     subtitle: "Design pixel-perfect mobile interfaces and smooth micro-animations in Figma.",
     description: "Design cutting-edge mobile applications following Apple Human Interface Guidelines and Google Material Design 3 with Adeel Qasir. Learn touch ergonomics, spring physics, smart animate transitions, and design token integration for seamless developer handoff.",
@@ -1136,9 +1211,9 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 16: MERN Stack Development (Misbah Ullah) ---
+  // --- COURSE 16: MERN Stack (Misbah Ullah) ---
   const course16 = await seedCurriculum({
-    title: "MERN Stack Development",
+    title: "MERN Stack",
     slug: "enterprise-mern-nextjs-architecture",
     subtitle: "Build web apps with MongoDB, Express, React, and Node.js.",
     description: "Led by Misbah Ullah, master modern full-stack web engineering from monorepo orchestration to server actions, optimistic UI, state management with Zustand, and production Docker containerization. Build resilient, scalable architectures with type-safety end-to-end.",
@@ -1200,9 +1275,9 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 17: API & Backend Engineering (Misbah Ullah) ---
-  const course17 = await seedCurriculum({
-    title: "API & Backend Engineering",
+  // --- COURSE 17: API Engineering (Misbah Ullah) ---
+  await seedCurriculum({
+    title: "API Engineering",
     slug: "scalable-rest-graphql-api-engineering",
     subtitle: "Design fast REST and GraphQL APIs with Node.js and PostgreSQL.",
     description: "Learn the mechanics of engineering high-throughput backend services with Misbah Ullah. Implement connection pooling with pgBouncer, write optimized Prisma and raw SQL queries, engineer Apollo GraphQL schemas with DataLoader N+1 prevention, and deploy resilient CI/CD pipelines.",
@@ -1264,9 +1339,9 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 18: React Native App Development (Muhammad Ibrahim) ---
+  // --- COURSE 18: React Native (Muhammad Ibrahim) ---
   const course18 = await seedCurriculum({
-    title: "React Native App Development",
+    title: "React Native",
     slug: "react-native-expo-production-engineering",
     subtitle: "Build high-speed mobile apps for iOS and Android with React Native and Expo.",
     description: "Taught by Muhammad Ibrahim, harness the power of React Native, TypeScript, Expo SDK, and native gesture handlers. Master Fabric rendering, TurboModule JSI bridges, Reanimated 3 spring physics, and push notification pipelines with Expo EAS.",
@@ -1328,9 +1403,9 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  // --- COURSE 19: Flutter App Development (Muhammad Ibrahim) ---
-  const course19 = await seedCurriculum({
-    title: "Flutter App Development",
+  // --- COURSE 19: Flutter (Muhammad Ibrahim) ---
+  await seedCurriculum({
+    title: "Flutter",
     slug: "flutter-dart-masterclass-mobile-development",
     subtitle: "Create smooth, modern native mobile apps using Google Flutter & Dart.",
     description: "Taught by Muhammad Ibrahim, learn Dart 3 modern features like records and pattern matching, Flutter widget trees, BLoC state management, platform channels for native hardware access, and clean architecture patterns.",
@@ -1392,7 +1467,484 @@ Combining semantic search over private documents with LLM context windows to eli
     ],
   });
 
-  console.log("✓ Seeded all 19 comprehensive computer science & engineering curricula");
+  // --- COURSE 20: AI Agents (Dr. Usman Haider) ---
+  const course20 = await seedCurriculum({
+    title: "AI Agents",
+    slug: "autonomous-ai-agents-llm-systems",
+    subtitle: "Architect autonomous cognitive agents with LangChain, LangGraph, vector memory, and tool invocation.",
+    description: "Taught by Dr. Usman Haider, learn how to build production-grade autonomous agentic workflows. Master ReAct decision loops, episodic vector memory, structured JSON function calling, and multi-agent collaborative swarms.",
+    price: 32000,
+    level: "ADVANCED",
+    thumbnail: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&auto=format&fit=crop&q=80",
+    featured: true,
+    instructorId: trainerHaider.id,
+    categoryId: catAI.id,
+    sections: [
+      {
+        title: "Module 1: Cognitive Architectures & ReAct Loops",
+        lessons: [
+          {
+            title: "ReAct Pattern: Reasoning, Action, and Observation Loops",
+            duration: "24 mins",
+            isFree: true,
+            content: `### The ReAct Framework
+The ReAct (Reason + Act) paradigm prompts LLMs to generate reasoning traces and task-specific actions in an interleaved manner.
+- Thought: Explicit step-by-step reasoning plan.
+- Action: Calling deterministic external tools (calculators, web scrapers, database queries).
+- Observation: Integrating returned tool outputs back into context window memory.`,
+          },
+          {
+            title: "Structured Output Extraction & Function Calling Protocols",
+            duration: "28 mins",
+            isFree: false,
+            content: `### Reliable Schema Enforcements
+Enforce strict Pydantic and JSON Schema definitions to prevent hallucinations when interacting with production backend APIs.`,
+          },
+        ],
+      },
+      {
+        title: "Module 2: Long-Term Memory & Multi-Agent Swarms",
+        lessons: [
+          {
+            title: "Episodic and Semantic Vector Memory with Qdrant & Pinecone",
+            duration: "30 mins",
+            isFree: false,
+            content: `### Vector Memory Systems
+Autonomous agents require semantic retrieval layers for long-horizon execution and cross-session persistence.`,
+          },
+          {
+            title: "LangGraph State Machines & Cyclic Agentic Workflows",
+            duration: "35 mins",
+            isFree: false,
+            content: `### Graph-Based Multi-Agent Orchestration
+Utilize LangGraph directed acyclic and cyclic graphs to manage supervisor agents delegating subtasks to specialized worker agents.`,
+          },
+        ],
+      },
+    ],
+    quizTitle: "Autonomous Agent Architectures Assessment",
+    questions: [
+      {
+        text: "What does the ReAct framework in LLM agents stand for?",
+        options: [
+          "Reason and Act",
+          "React Native Architecture",
+          "Recursive Action Tree",
+          "Relational Activation Network",
+        ],
+        correctIndex: 0,
+        explanation: "ReAct stands for Reason and Act, combining reasoning traces with external action calls.",
+      },
+      {
+        text: "Why is cyclic state flow necessary in advanced agent graphs like LangGraph?",
+        options: [
+          "To allow agents to reflect, retry, and correct mistakes iteratively based on tool evaluation",
+          "To consume more tokens unnecessarily",
+          "To force infinite loops in the browser",
+          "To avoid using databases",
+        ],
+        correctIndex: 0,
+        explanation: "Cyclic workflows enable self-healing and reflection loops where agents critique their own outputs and retry actions until goals are satisfied.",
+      },
+    ],
+  });
+
+  // --- COURSE 21: Kubernetes & Docker (Engr. Zeeshan Ali) ---
+  await seedCurriculum({
+    title: "Kubernetes & Docker",
+    slug: "enterprise-kubernetes-terraform-devops",
+    subtitle: "Design scalable cloud platforms, GitOps delivery pipelines, and production Kubernetes clusters.",
+    description: "Taught by Engr. Zeeshan Ali, master cloud infrastructure-as-code and container orchestration. Deploy highly available Kubernetes clusters on AWS/GCP, configure Helm packaging, and automate zero-downtime Canary deployments with ArgoCD.",
+    price: 34000,
+    level: "ADVANCED",
+    thumbnail: "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?w=800&auto=format&fit=crop&q=80",
+    featured: true,
+    instructorId: trainerZeeshan.id,
+    categoryId: catCloud.id,
+    sections: [
+      {
+        title: "Module 1: Infrastructure as Code (IaC) with Terraform",
+        lessons: [
+          {
+            title: "Modular Terraform Architecture & Remote State Locking",
+            duration: "26 mins",
+            isFree: true,
+            content: `### Declarative Cloud Provisioning
+Learn how to structure reusable Terraform modules, enforce DynamoDB state locking, and isolate multi-environment configurations.`,
+          },
+          {
+            title: "VPC Networking, Subnet Topologies & Cloud Security Groups",
+            duration: "32 mins",
+            isFree: false,
+            content: `### Enterprise Network Hardening
+Private/Public subnet routing, NAT Gateways, and zero-trust bastion security layers.`,
+          },
+        ],
+      },
+      {
+        title: "Module 2: Kubernetes Orchestration & GitOps Pipelines",
+        lessons: [
+          {
+            title: "Pod Scheduling, Horizontal Pod Autoscalers (HPA) & Ingress",
+            duration: "38 mins",
+            isFree: false,
+            content: `### K8s Production Workloads
+Configuring resource requests, limits, custom metrics autoscaling, and TLS ingress controllers.`,
+          },
+          {
+            title: "GitOps Continuous Delivery with ArgoCD & Helm Charts",
+            duration: "34 mins",
+            isFree: false,
+            content: `### Automated GitOps Reconcilers
+Declarative Kubernetes application lifecycle management with automated rollbacks and Canary deployments.`,
+          },
+        ],
+      },
+    ],
+    quizTitle: "Kubernetes & Terraform Certification Assessment",
+    questions: [
+      {
+        text: "What is the purpose of Terraform state locking via AWS DynamoDB?",
+        options: [
+          "To prevent concurrent runs from corrupting the remote state file during team deployments",
+          "To encrypt database passwords in plain text",
+          "To speed up browser network requests",
+          "To delete unused cloud resources automatically",
+        ],
+        correctIndex: 0,
+        explanation: "State locking prevents race conditions and state corruption when multiple engineers or CI pipelines run terraform apply concurrently.",
+      },
+      {
+        text: "In Kubernetes, which component continuously reconciles desired cluster state against actual live state?",
+        options: [
+          "kube-controller-manager",
+          "etcd client driver",
+          "Docker runtime engine",
+          "Kubelet cgroup driver",
+        ],
+        correctIndex: 0,
+        explanation: "The kube-controller-manager runs control loops that watch the state of your cluster through the API server and make changes attempting to move the current state toward the desired state.",
+      },
+    ],
+  });
+
+  // --- COURSE 22: Data Science (Khadija Aslam) ---
+  await seedCurriculum({
+    title: "Data Science",
+    slug: "data-science-pytorch-deep-learning",
+    subtitle: "Harness statistical modeling, high-dimensional vector spaces, and neural networks for production AI.",
+    description: "Taught by Khadija Aslam, transform raw data into predictive intelligence. Master NumPy/Pandas array computing, build Convolutional Neural Networks and Transformers from scratch in PyTorch, and deploy models via ONNX runtimes.",
+    price: 29000,
+    level: "INTERMEDIATE",
+    thumbnail: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80",
+    featured: true,
+    instructorId: trainerKhadija.id,
+    categoryId: catAI.id,
+    sections: [
+      {
+        title: "Module 1: Vectorized Data Wrangling & Statistical EDA",
+        lessons: [
+          {
+            title: "High-Performance Vectorized Computations with NumPy & Pandas",
+            duration: "25 mins",
+            isFree: true,
+            content: `### Vectorization vs Loops
+Leverage SIMD instructions and memory contiguous C arrays for 100x faster numerical preprocessing.`,
+          },
+          {
+            title: "Handling Missing Data, Outliers & Feature Normalization",
+            duration: "28 mins",
+            isFree: false,
+            content: `### Feature Engineering Best Practices
+Z-score standardization, min-max scaling, and categorical embeddings.`,
+          },
+        ],
+      },
+      {
+        title: "Module 2: Neural Networks & Transformer Architectures",
+        lessons: [
+          {
+            title: "Building Custom PyTorch Modules, Loss Functions & Optimizers",
+            duration: "36 mins",
+            isFree: false,
+            content: `### Autograd & Backpropagation
+Implementing custom forward passes, backward autograd graphs, AdamW weight decay, and gradient clipping.`,
+          },
+          {
+            title: "Fine-Tuning Pretrained Transformers & Model Export to ONNX",
+            duration: "34 mins",
+            isFree: false,
+            content: `### Production Model Serving
+Exporting PyTorch computation graphs into optimized ONNX runtimes for sub-10ms inference latency.`,
+          },
+        ],
+      },
+    ],
+    quizTitle: "Data Science & PyTorch Neural Networks Exam",
+    questions: [
+      {
+        text: "Why is vectorized computation in NumPy significantly faster than standard Python for-loops?",
+        options: [
+          "It executes in optimized C/Fortran code using contiguous memory blocks and CPU SIMD instructions",
+          "It skips computing floating point numbers",
+          "It converts all numbers into strings",
+          "It runs exclusively on external web servers",
+        ],
+        correctIndex: 0,
+        explanation: "NumPy arrays are stored in contiguous memory buffers, enabling vectorized C loops to exploit modern CPU vectorization without Python interpreter overhead.",
+      },
+      {
+        text: "What does the PyTorch autograd engine compute during loss.backward()?",
+        options: [
+          "Gradients of the loss with respect to all leaf tensors that have requires_grad=True",
+          "The training dataset accuracy",
+          "The learning rate schedule",
+          "The size of the hard disk",
+        ],
+        correctIndex: 0,
+        explanation: "loss.backward() traces the dynamic computation graph in reverse to accumulate partial derivatives into each parameter's .grad attribute.",
+      },
+    ],
+  });
+
+  // --- COURSE 23: Ethical Hacking (Bilal Hassan) ---
+  await seedCurriculum({
+    title: "Ethical Hacking",
+    slug: "offensive-security-advanced-penetration-testing",
+    subtitle: "Identify critical vulnerabilities, execute ethical exploits, and defend enterprise infrastructure.",
+    description: "Taught by Bilal Hassan, master real-world red-teaming and offensive cybersecurity. Conduct reconnaissance, discover zero-day web application vulnerabilities, bypass modern WAFs, and craft robust security remediation blueprints.",
+    price: 36000,
+    level: "ADVANCED",
+    thumbnail: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80",
+    featured: true,
+    instructorId: trainerBilal.id,
+    categoryId: catCyber.id,
+    sections: [
+      {
+        title: "Module 1: Reconnaissance & Web Application Exploitation",
+        lessons: [
+          {
+            title: "Passive & Active Network Reconnaissance with Nmap and Wireshark",
+            duration: "30 mins",
+            isFree: true,
+            content: `### Threat Discovery & Surface Mapping
+Discovering exposed service ports, OS fingerprinting, and packet inspection.`,
+          },
+          {
+            title: "OWASP Top 10: SQLi, SSRF, Cross-Site Scripting & IDORs",
+            duration: "35 mins",
+            isFree: false,
+            content: `### Application Vulnerability Exploitation
+Understanding the anatomy of SQL injections, Server-Side Request Forgery, and broken object-level authorization.`,
+          },
+        ],
+      },
+      {
+        title: "Module 2: Privilege Escalation & Enterprise Hardening",
+        lessons: [
+          {
+            title: "Linux & Windows Kernel Privilege Escalation Techniques",
+            duration: "38 mins",
+            isFree: false,
+            content: `### Post-Exploitation Tactics
+Abusing SUID binaries, misconfigured sudoers, unquoted service paths, and token impersonation.`,
+          },
+          {
+            title: "Hardening Defensive Postures & Zero-Trust Architecture",
+            duration: "32 mins",
+            isFree: false,
+            content: `### Security Remediation
+Implementing mutual TLS, strict RBAC, automated SAST/DAST pipelines, and runtime intrusion detection.`,
+          },
+        ],
+      },
+    ],
+    quizTitle: "Offensive Security & Penetration Testing Assessment",
+    questions: [
+      {
+        text: "What makes Insecure Direct Object References (IDOR) a dangerous vulnerability?",
+        options: [
+          "It allows attackers to access or manipulate unauthorized records simply by modifying identifier parameters in requests",
+          "It crashes the web server hardware immediately",
+          "It only affects wireless internet connections",
+          "It makes CSS styles fail to load",
+        ],
+        correctIndex: 0,
+        explanation: "IDOR occurs when an application provides direct access to objects based on user-supplied input without server-side authorization checks.",
+      },
+      {
+        text: "In penetration testing, what is the core objective of privilege escalation?",
+        options: [
+          "Transitioning from a low-privilege initial access foothold to root/administrator control",
+          "Formatting the database",
+          "Installing antivirus software",
+          "Generating SSL certificates",
+        ],
+        correctIndex: 0,
+        explanation: "Privilege escalation seeks to exploit configuration errors or system bugs to elevate access permissions from standard user to superuser (root/SYSTEM).",
+      },
+    ],
+  });
+
+  // --- COURSE 24: Python Programming (Saad Ur Rehman) ---
+  await seedCurriculum({
+    title: "Python Programming",
+    slug: "fastapi-python-async-microservices",
+    subtitle: "Build ultra-low-latency asynchronous microservices, distributed queues, and resilient REST APIs.",
+    description: "Taught by Saad Ur Rehman, build lightning-fast web backends using modern Python 3.12+, FastAPI, and AsyncIO. Master non-blocking concurrency, Redis caching, Celery background workers, and PostgreSQL connection pooling.",
+    price: 25000,
+    level: "INTERMEDIATE",
+    thumbnail: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=800&auto=format&fit=crop&q=80",
+    featured: true,
+    instructorId: trainerSaad.id,
+    categoryId: catWeb.id,
+    sections: [
+      {
+        title: "Module 1: Asynchronous Programming & FastAPI Fundamentals",
+        lessons: [
+          {
+            title: "AsyncIO Event Loop Mechanics & Non-Blocking I/O in Python 3.12",
+            duration: "25 mins",
+            isFree: true,
+            content: `### The Python Event Loop
+Understanding coroutines, tasks, cooperative multitasking, and avoiding blocking I/O calls.`,
+          },
+          {
+            title: "FastAPI Dependency Injection, Pydantic v2 & OpenAPI Specs",
+            duration: "30 mins",
+            isFree: false,
+            content: `### Clean API Architecture
+Leveraging Pydantic v2 Rust-backed serialization for 5x faster request validation and automated Swagger documentation.`,
+          },
+        ],
+      },
+      {
+        title: "Module 2: Distributed Caching & Background Task Workers",
+        lessons: [
+          {
+            title: "High-Speed Redis Caching, Rate Limiting & Pub/Sub Messaging",
+            duration: "32 mins",
+            isFree: false,
+            content: `### Sub-Millisecond Caching
+Implementing cache-aside patterns, sliding window rate limiters, and real-time message broadcasting with Redis.`,
+          },
+          {
+            title: "Asynchronous Background Workers with Celery & RabbitMQ",
+            duration: "35 mins",
+            isFree: false,
+            content: `### Distributed Job Processing
+Decoupling long-running tasks like PDF certificate generation, report emailing, and video encoding from HTTP lifecycles.`,
+          },
+        ],
+      },
+    ],
+    quizTitle: "FastAPI & Distributed Microservices Assessment",
+    questions: [
+      {
+        text: "Why is Pydantic v2 substantially faster than Pydantic v1 in FastAPI applications?",
+        options: [
+          "Its core validation engine is rewritten entirely in Rust with compiled binary execution",
+          "It disables type validation completely",
+          "It only supports Python 2.7",
+          "It runs validation on client browsers",
+        ],
+        correctIndex: 0,
+        explanation: "Pydantic v2 core validation logic was re-engineered in Rust (pydantic-core), yielding 5x to 20x speedups in data parsing and serialization.",
+      },
+      {
+        text: "What happens if a developer invokes a blocking synchronous function (like time.sleep) inside an async FastAPI route?",
+        options: [
+          "It blocks the entire single-threaded AsyncIO event loop, halting all concurrent requests",
+          "FastAPI automatically spawns a new thread",
+          "The server restarts immediately",
+          "The request returns a 404 error",
+        ],
+        correctIndex: 0,
+        explanation: "In AsyncIO, synchronous blocking calls freeze the event loop for all users until the operation finishes. Long-running synchronous code must be offloaded to threadpools with run_in_executor.",
+      },
+    ],
+  });
+
+  // --- COURSE 25: Advanced Databases (Dr. Zainab Ahmed) ---
+  await seedCurriculum({
+    title: "Advanced Databases",
+    slug: "distributed-database-engines-advanced-sql",
+    subtitle: "Master relational engine internals, B-Tree index tuning, LSM-Trees, and distributed consensus.",
+    description: "Taught by Dr. Zainab Ahmed, explore how modern database management systems store, index, and query billions of records. Deep-dive into write-ahead logs, transaction isolation levels (ACID), Raft consensus, and query plan optimization.",
+    price: 31000,
+    level: "ADVANCED",
+    thumbnail: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=800&auto=format&fit=crop&q=80",
+    featured: true,
+    instructorId: trainerAhmed.id,
+    categoryId: catAlgo.id,
+    sections: [
+      {
+        title: "Module 1: Relational Storage Internals & Index Optimization",
+        lessons: [
+          {
+            title: "B+ Tree vs LSM-Tree Storage Engines: Reads vs Writes Tradeoffs",
+            duration: "30 mins",
+            isFree: true,
+            content: `### Storage Engine Mechanics
+Analyzing why PostgreSQL and InnoDB use B+ Trees for fast point lookups, while RocksDB and Cassandra utilize Log-Structured Merge (LSM) trees for massive write throughput.`,
+          },
+          {
+            title: "PostgreSQL EXPLAIN ANALYZE: Query Execution Plans & Cost Tuning",
+            duration: "34 mins",
+            isFree: false,
+            content: `### Execution Plan Optimization
+Interpreting sequential scans vs index scans, bitmap heap scans, hash joins, and cost coefficients.`,
+          },
+        ],
+      },
+      {
+        title: "Module 2: ACID Transactions & Distributed Consensus",
+        lessons: [
+          {
+            title: "Transaction Isolation Levels, MVCC & Phantom Reads",
+            duration: "36 mins",
+            isFree: false,
+            content: `### Concurrency Control
+Multi-Version Concurrency Control (MVCC), Read Committed vs Serializable isolation, and deadlocks.`,
+          },
+          {
+            title: "Distributed Consensus: Raft Protocol, Quorums & Replication",
+            duration: "40 mins",
+            isFree: false,
+            content: `### Distributed Reliability
+Leader election, log replication, split-brain mitigation, and quorum reads/writes in distributed database clusters.`,
+          },
+        ],
+      },
+    ],
+    quizTitle: "Distributed Database Systems & SQL Optimization Exam",
+    questions: [
+      {
+        text: "What is the primary architectural advantage of an LSM-Tree over a traditional B+ Tree?",
+        options: [
+          "It turns random writes into sequential disk writes via MemTable flushes and SSTable compaction",
+          "It eliminates the need for hard disk storage",
+          "It only works on relational databases",
+          "It guarantees zero memory usage",
+        ],
+        correctIndex: 0,
+        explanation: "LSM-Trees buffer writes in memory (MemTable) and append them sequentially to disk in SSTables, converting expensive random disk writes into blazing fast sequential writes.",
+      },
+      {
+        text: "In distributed systems, what is the role of the Raft consensus algorithm?",
+        options: [
+          "To ensure that a cluster of replicated state machines agrees on a single shared state log even during node failures",
+          "To speed up CSS animations",
+          "To compress JPEG images",
+          "To send marketing email newsletters",
+        ],
+        correctIndex: 0,
+        explanation: "Raft provides distributed consensus, electing a single leader to manage a replicated log across nodes, ensuring fault-tolerant state agreement.",
+      },
+    ],
+  });
+
+  console.log("✓ Seeded all 25 comprehensive computer science & engineering curricula with Muslim faculty");
 
   // 3. Seed Realistic Enrollments across Multiple Courses
   // Student 1 (Murtaza Wazir): Enrolled in 4 courses with certificates and progress
@@ -1498,6 +2050,7 @@ Combining semantic search over private documents with LLM context windows to eli
       certificateCode: "SN-2026-X89J21",
       userId: studentMurtaza.id,
       courseId: course1.id,
+      grade: 95.0,
       issuedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     },
   });
@@ -1507,6 +2060,7 @@ Combining semantic search over private documents with LLM context windows to eli
       certificateCode: "SN-2026-B94K12",
       userId: studentMurtaza.id,
       courseId: course2.id,
+      grade: 92.0,
       issuedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
     },
   });
@@ -1516,6 +2070,7 @@ Combining semantic search over private documents with LLM context windows to eli
       certificateCode: "SN-2026-UX77A9",
       userId: studentMurtaza.id,
       courseId: course14.id,
+      grade: 96.0,
       issuedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
     },
   });
@@ -1544,7 +2099,7 @@ Combining semantic search over private documents with LLM context windows to eli
       userId: studentMurtaza.id,
       courseId: course2.id,
       rating: 5,
-      comment: "Prof. David Chen explains Go channels and the M:N scheduler with supreme clarity.",
+      comment: "Prof. Tariq Mahmood explains Go channels and the M:N scheduler with supreme clarity.",
     },
   });
 
@@ -1553,7 +2108,7 @@ Combining semantic search over private documents with LLM context windows to eli
       userId: studentFatima.id,
       courseId: course4.id,
       rating: 5,
-      comment: "Dr. Sarah Mitchell breaks down autograd and backprop math intuitively.",
+      comment: "Dr. Ayesha Malik breaks down autograd and backprop math intuitively.",
     },
   });
 
@@ -1585,7 +2140,661 @@ Combining semantic search over private documents with LLM context windows to eli
   });
 
   console.log("✓ Seeded realistic enrollments, reviews, and verified certificates");
-  console.log("🚀 SkillNova Academy database is fully populated and ready for FYP evaluation!");
+
+  // 6. Seed Practical Coding Assignments across Multiple Courses
+  const asg1 = await prisma.assignment.create({
+    data: {
+      title: "Full-Stack Portfolio Project with Next.js 16 & Server Actions",
+      description: `**Project Brief:**
+Develop a responsive personal developer portfolio website using Next.js 16 App Router, React 19, and Tailwind CSS.
+
+**Core Requirements:**
+1. Dynamic project catalog with filterable tags.
+2. Interactive contact form powered by Next.js Server Actions with server-side validation.
+3. Mobile-first responsive layout with clean modern typography.
+4. Clean GitHub repository with informative README.md documentation.
+
+**Submission Guidelines:**
+Provide your public GitHub repository URL or a ZIP archive containing your project files.`,
+      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      maxScore: 100,
+      courseId: course1.id,
+    },
+  });
+
+  const asg2 = await prisma.assignment.create({
+    data: {
+      title: "High-Throughput Microservice with Prisma & JWT Security",
+      description: `**Project Brief:**
+Construct a production-ready RESTful service with RBAC authentication, relational PostgreSQL/SQLite models, and structured audit logs.
+
+**Evaluation Rubric:**
+- 3NF relational data integrity (30 pts)
+- Cryptographic session authentication & role authorization (30 pts)
+- Unit and integration test coverage (20 pts)
+- API endpoint documentation (20 pts)`,
+      dueDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
+      maxScore: 100,
+      courseId: course2.id,
+    },
+  });
+
+  const asg4 = await prisma.assignment.create({
+    data: {
+      title: "PyTorch Deep Learning Classifier & Hyperparameter Tuning",
+      description: `**Project Brief:**
+Train a Convolutional Neural Network or Multilayer Perceptron on an image/tabular dataset in PyTorch. Implement dynamic learning rate scheduling and compute a confusion matrix.`,
+      dueDate: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000),
+      maxScore: 100,
+      courseId: course4.id,
+    },
+  });
+
+  await prisma.assignment.create({
+    data: {
+      title: "Multi-Stage Dockerfile & Kubernetes Cluster Deployment",
+      description: `**Project Brief:**
+Package a Next.js or Node.js microservice into a multi-stage Docker image under 60MB. Write Kubernetes manifests (Deployment, Service, HPA) and deploy to a local cluster (k3d/minikube).`,
+      dueDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000),
+      maxScore: 100,
+      courseId: course7.id,
+    },
+  });
+
+  await prisma.assignment.create({
+    data: {
+      title: "Vulnerability Assessment & Threat Surface Remediation Report",
+      description: `**Project Brief:**
+Conduct a structured security audit against an intentionally vulnerable target. Identify OWASP Top 10 vulnerabilities (SQLi, IDOR, XSS) and formulate actionable remediation patches.`,
+      dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+      maxScore: 100,
+      courseId: course9.id,
+    },
+  });
+
+  await prisma.assignment.create({
+    data: {
+      title: "Figma Multi-Device Component Library & Design Tokens",
+      description: `**Project Brief:**
+Construct an accessible design system in Figma utilizing auto-layout, component variants, and token semantic naming adhering to WCAG 2.1 AA standards.`,
+      dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+      maxScore: 100,
+      courseId: course13.id,
+    },
+  });
+
+  const asg14 = await prisma.assignment.create({
+    data: {
+      title: "Qualitative User Discovery & Interactive Wireframe Prototype",
+      description: `**Project Brief:**
+Conduct 3 simulated user interviews, formulate empathy maps, construct information architecture site maps, and design high-fidelity clickable wireframes in Figma.`,
+      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      maxScore: 100,
+      courseId: course14.id,
+    },
+  });
+
+  const asg16 = await prisma.assignment.create({
+    data: {
+      title: "Full-Stack Monorepo Architecture with Optimistic Server Actions",
+      description: `**Project Brief:**
+Build an enterprise Turborepo monorepo with shared packages, Server Actions, Zustand state synchronization, and PostgreSQL transaction isolation.`,
+      dueDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000),
+      maxScore: 100,
+      courseId: course16.id,
+    },
+  });
+
+  const asg18 = await prisma.assignment.create({
+    data: {
+      title: "Native Gesture-Driven Mobile Dashboard with Offline Cache",
+      description: `**Project Brief:**
+Develop a cross-platform React Native app with Expo SDK, Reanimated 3 physics gestures, and SQLite local offline sync.`,
+      dueDate: new Date(Date.now() + 16 * 24 * 60 * 60 * 1000),
+      maxScore: 100,
+      courseId: course18.id,
+    },
+  });
+
+  await prisma.assignment.create({
+    data: {
+      title: "Autonomous Multi-Agent LangGraph Swarm with Memory & Tool Calling",
+      description: `**Project Brief:**
+Architect a ReAct autonomous agent swarm with LangGraph, tool invocation, vector memory, and structured JSON output guards.`,
+      dueDate: new Date(Date.now() + 22 * 24 * 60 * 60 * 1000),
+      maxScore: 100,
+      courseId: course20.id,
+    },
+  });
+
+  console.log("✓ Seeded comprehensive course practical assignments");
+
+  // 7. Seed Student Assignment Submissions (Graded & Pending Evaluations)
+  await prisma.assignmentSubmission.create({
+    data: {
+      assignmentId: asg1.id,
+      userId: studentMurtaza.id,
+      textContent: "GitHub Repo: https://github.com/murtazakhan40/SkillNova-FYP\\nLive Demo: https://skillnovaacademy.com\\n\\nImplemented Next.js 16 App Router, 3NF Prisma schema, dynamic progress tracking, and cryptographic certificate issuance.",
+      status: "GRADED",
+      score: 98.0,
+      gradedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      gradedById: trainerMurtaza.id,
+      feedback: "Masterclass architectural implementation! Server actions with optimistic UI and 3NF schema are textbook standard.",
+    },
+  });
+
+  await prisma.assignmentSubmission.create({
+    data: {
+      assignmentId: asg2.id,
+      userId: studentMurtaza.id,
+      textContent: "GitHub Repo: https://github.com/murtazakhan40/go-microservices-audit\\nImplemented pgBouncer connection pooling, Go channels, and structured slog audit events.",
+      status: "GRADED",
+      score: 95.0,
+      gradedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      gradedById: trainerChen.id,
+      feedback: "Excellent connection pool isolation and zero memory leaks under load. High marks for concurrency safety.",
+    },
+  });
+
+  await prisma.assignmentSubmission.create({
+    data: {
+      assignmentId: asg14.id,
+      userId: studentMurtaza.id,
+      textContent: "Figma Community File: https://www.figma.com/community/file/skillnova-ux-discovery\\nIncluded 5 empathy archetypes, 14 journey maps, and tree testing metrics.",
+      status: "GRADED",
+      score: 96.0,
+      gradedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      gradedById: trainerAdeel.id,
+      feedback: "Phenomenal empathy mapping and WCAG contrast conformance. Outstanding designer-developer handoff.",
+    },
+  });
+
+  await prisma.assignmentSubmission.create({
+    data: {
+      assignmentId: asg4.id,
+      userId: studentFatima.id,
+      textContent: "Notebook: https://github.com/fatima-noor/pytorch-deep-classifier\\nTrained ResNet-18 on custom dataset with 94.2% test accuracy and exported to ONNX runtime.",
+      status: "GRADED",
+      score: 92.0,
+      gradedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      gradedById: trainerMitchell.id,
+      feedback: "Great convergence on validation loss and clear confusion matrix visualization. Impressive ONNX latency tests.",
+    },
+  });
+
+  await prisma.assignmentSubmission.create({
+    data: {
+      assignmentId: asg1.id,
+      userId: studentAli.id,
+      textContent: "GitHub Repo: https://github.com/alikhan-cs/nextjs-store-app\\nImplemented full-stack store catalog with Server Components and search filtering.",
+      status: "SUBMITTED",
+      submittedAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
+    },
+  });
+
+  await prisma.assignmentSubmission.create({
+    data: {
+      assignmentId: asg16.id,
+      userId: studentAli.id,
+      textContent: "GitHub Repo: https://github.com/alikhan-cs/turborepo-ecommerce-core\\nConfigured Turborepo monorepo with shared UI and Zod validations.",
+      status: "SUBMITTED",
+      submittedAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
+    },
+  });
+
+  await prisma.assignmentSubmission.create({
+    data: {
+      assignmentId: asg18.id,
+      userId: studentFatima.id,
+      textContent: "Expo Snack Demo: https://snack.expo.dev/@fatimanoor/fluid-gesture-dashboard\\nImplemented Reanimated 3 spring gestures with 60 FPS mobile transitions.",
+      status: "SUBMITTED",
+      submittedAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
+    },
+  });
+
+  console.log("✓ Seeded student assignment submissions (Graded & Pending evaluations)");
+
+  // 8. Seed Authorized Downloadable Lesson Resources
+  const course1Lessons = await prisma.lesson.findMany({
+    where: { section: { courseId: course1.id } },
+    orderBy: { order: "asc" },
+  });
+
+  if (course1Lessons.length > 0) {
+    const l1 = course1Lessons[0];
+    const resourceDir = path.join(process.cwd(), "uploads", "resources", l1.id);
+    await fs.mkdir(resourceDir, { recursive: true });
+
+    await fs.writeFile(
+      path.join(resourceDir, "web_dev_architecture_guide.pdf"),
+      Buffer.from("%PDF-1.4\\nSkillNova Academy — Web Architecture & Next.js 16 Cheatsheet\\n")
+    );
+
+    await prisma.lessonResource.create({
+      data: {
+        title: "Web Engineering Architecture & React 19 Cheatsheet (PDF)",
+        fileName: "web_dev_architecture_guide.pdf",
+        fileUrl: `/uploads/resources/${l1.id}/web_dev_architecture_guide.pdf`,
+        fileSize: 450560,
+        fileType: "application/pdf",
+        lessonId: l1.id,
+      },
+    });
+
+    await fs.writeFile(
+      path.join(resourceDir, "starter_boilerplate.zip"),
+      Buffer.from("PK\\x03\\x04Starter Template Files for Next.js 16 Classroom\\n")
+    );
+
+    await prisma.lessonResource.create({
+      data: {
+        title: "Next.js 16 Production Starter Boilerplate (ZIP)",
+        fileName: "starter_boilerplate.zip",
+        fileUrl: `/uploads/resources/${l1.id}/starter_boilerplate.zip`,
+        fileSize: 1248576,
+        fileType: "application/zip",
+        lessonId: l1.id,
+      },
+    });
+  }
+
+  const course2Lessons = await prisma.lesson.findMany({
+    where: { section: { courseId: course2.id } },
+    orderBy: { order: "asc" },
+  });
+
+  if (course2Lessons.length > 0) {
+    const l1 = course2Lessons[0];
+    const resourceDir = path.join(process.cwd(), "uploads", "resources", l1.id);
+    await fs.mkdir(resourceDir, { recursive: true });
+
+    await fs.writeFile(
+      path.join(resourceDir, "distributed_backend_handbook.pdf"),
+      Buffer.from("%PDF-1.4\\nSkillNova Academy — Distributed Backend Concurrency & Microservices Handbook\\n")
+    );
+
+    await prisma.lessonResource.create({
+      data: {
+        title: "Distributed Backend Concurrency & Microservices Handbook (PDF)",
+        fileName: "distributed_backend_handbook.pdf",
+        fileUrl: `/uploads/resources/${l1.id}/distributed_backend_handbook.pdf`,
+        fileSize: 634880,
+        fileType: "application/pdf",
+        lessonId: l1.id,
+      },
+    });
+  }
+
+  console.log("✓ Seeded authorized downloadable lesson resources and created disk files");
+
+  // 9. Seed Academic Classroom Discussions (Q&A)
+  if (course1Lessons.length > 0) {
+    const l1 = course1Lessons[0];
+    const q1 = await prisma.lessonDiscussion.create({
+      data: {
+        lessonId: l1.id,
+        userId: studentMurtaza.id,
+        content: "What is the recommended design pattern for validating user form inputs inside Next.js 16 Server Actions?",
+        isAnswer: false,
+        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    await prisma.lessonDiscussion.create({
+      data: {
+        lessonId: l1.id,
+        userId: trainerMurtaza.id,
+        parentId: q1.id,
+        content: "Great question! We recommend performing strict server-side schema validation (e.g., Zod or manual type narrowing) at the top of your server action before touching Prisma. Then call revalidatePath() to refresh cached layouts.",
+        isAnswer: true,
+        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000 + 3600000),
+      },
+    });
+
+    const q2 = await prisma.lessonDiscussion.create({
+      data: {
+        lessonId: l1.id,
+        userId: studentAli.id,
+        content: "Does revalidatePath refresh all nested route segments or only the specified segment?",
+        isAnswer: false,
+        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    await prisma.lessonDiscussion.create({
+      data: {
+        lessonId: l1.id,
+        userId: trainerMurtaza.id,
+        parentId: q2.id,
+        content: "By default, revalidatePath revalidates the exact path. You can pass 'page' or 'layout' as the second parameter if you want layout-level tree revalidation.",
+        isAnswer: true,
+        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 1800000),
+      },
+    });
+  }
+
+  if (course2Lessons.length > 0) {
+    const l1 = course2Lessons[0];
+    const q1 = await prisma.lessonDiscussion.create({
+      data: {
+        lessonId: l1.id,
+        userId: studentAli.id,
+        content: "How does the Go M:N scheduler avoid thread contention during massive concurrent network requests?",
+        isAnswer: false,
+        createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    await prisma.lessonDiscussion.create({
+      data: {
+        lessonId: l1.id,
+        userId: trainerChen.id,
+        parentId: q1.id,
+        content: "Go maps M goroutines onto N OS threads across logical processors (P). When a local run-queue is empty, it uses work-stealing to grab half the runnable goroutines from another processor without global lock contention.",
+        isAnswer: true,
+        createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000 + 2400000),
+      },
+    });
+  }
+
+  console.log("✓ Seeded academic classroom discussions and verified faculty responses");
+
+  // 10. Seed Commercial Orders & Payment Ledger
+  const ordersData = [
+    { orderNum: "ORD-2026-X89J21", user: studentMurtaza, course: course1, amount: 18500, daysAgo: 7, status: "COMPLETED" },
+    { orderNum: "ORD-2026-B94K12", user: studentMurtaza, course: course2, amount: 22000, daysAgo: 3, status: "COMPLETED" },
+    { orderNum: "ORD-2026-UX77A9", user: studentMurtaza, course: course14, amount: 15000, daysAgo: 1, status: "COMPLETED" },
+    { orderNum: "ORD-2026-AK1092", user: studentAli, course: course1, amount: 18500, daysAgo: 5, status: "COMPLETED" },
+    { orderNum: "ORD-2026-AK5512", user: studentAli, course: course16, amount: 25000, daysAgo: 2, status: "COMPLETED" },
+    { orderNum: "ORD-2026-FN3390", user: studentFatima, course: course4, amount: 26500, daysAgo: 4, status: "COMPLETED" },
+    { orderNum: "ORD-2026-FN8811", user: studentFatima, course: course18, amount: 24000, daysAgo: 2, status: "COMPLETED" },
+    { orderNum: "ORD-2026-PEND01", user: studentAli, course: course20, amount: 32000, daysAgo: 0, status: "PENDING" },
+  ];
+
+  for (const od of ordersData) {
+    const order = await prisma.order.create({
+      data: {
+        orderNumber: od.orderNum,
+        userId: od.user.id,
+        courseId: od.course.id,
+        amount: od.amount,
+        currency: "PKR",
+        status: od.status,
+        provider: "DEMO_SANDBOX",
+        idempotencyKey: `idemp_${od.orderNum}_${Date.now()}`,
+        createdAt: new Date(Date.now() - od.daysAgo * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    if (od.status === "COMPLETED") {
+      await prisma.payment.create({
+        data: {
+          orderId: order.id,
+          providerTxnId: `txn_${od.orderNum.toLowerCase()}`,
+          amount: od.amount,
+          currency: "PKR",
+          status: "SUCCESS",
+          paymentMethod: "DEMO_SIMULATOR",
+          metadata: JSON.stringify({ gateway: "SkillNova Sandbox", verified: true }),
+          processedAt: new Date(Date.now() - od.daysAgo * 24 * 60 * 60 * 1000),
+        },
+      });
+    }
+  }
+
+  console.log("✓ Seeded orders and payment ledger transactions (PKR 150,000+ volume)");
+
+  // 11. Seed In-App Real-Time Notification Center
+  const notificationsData = [
+    {
+      userId: studentMurtaza.id,
+      type: "CERTIFICATE",
+      title: "🎉 Certificate Awarded!",
+      message: "Verified digital credential issued for 'Web Development' (Code: SN-2026-X89J21).",
+      link: "/verify/SN-2026-X89J21",
+      isRead: true,
+      daysAgo: 7,
+    },
+    {
+      userId: studentMurtaza.id,
+      type: "CERTIFICATE",
+      title: "🏆 Certificate Awarded!",
+      message: "Verified digital credential issued for 'Backend Development' (Code: SN-2026-B94K12).",
+      link: "/verify/SN-2026-B94K12",
+      isRead: true,
+      daysAgo: 3,
+    },
+    {
+      userId: studentMurtaza.id,
+      type: "ASSIGNMENT",
+      title: "📝 Assignment Graded",
+      message: "Prof. Tariq Mahmood graded your Backend Microservices project (Score: 95/100).",
+      link: "/dashboard/student",
+      isRead: false,
+      daysAgo: 1,
+    },
+    {
+      userId: studentMurtaza.id,
+      type: "SYSTEM",
+      title: "🚀 Welcome to SkillNova Academy",
+      message: "Your full-stack engineering workspace and curricula are ready.",
+      link: "/courses",
+      isRead: true,
+      daysAgo: 8,
+    },
+    {
+      userId: studentAli.id,
+      type: "ENROLLMENT",
+      title: "✅ Enrollment Confirmed",
+      message: "Welcome to Web Development! Start with Lesson 1.",
+      link: "/courses/fullstack-nextjs-typescript/learn",
+      isRead: true,
+      daysAgo: 5,
+    },
+    {
+      userId: studentAli.id,
+      type: "ACADEMIC",
+      title: "📚 New Course Available",
+      message: "'AI Agents' by Dr. Usman Haider is now open for enrollment.",
+      link: "/courses/autonomous-ai-agents-llm-systems",
+      isRead: false,
+      daysAgo: 1,
+    },
+    {
+      userId: studentFatima.id,
+      type: "ASSIGNMENT",
+      title: "📝 Assignment Graded",
+      message: "Dr. Ayesha Malik graded your PyTorch Classifier project (Score: 92/100).",
+      link: "/dashboard/student",
+      isRead: false,
+      daysAgo: 3,
+    },
+    {
+      userId: trainerMurtaza.id,
+      type: "ASSIGNMENT",
+      title: "📥 New Assignment Submission",
+      message: "Ali Khan submitted 'Full-Stack Portfolio Project' for review.",
+      link: "/dashboard/trainer",
+      isRead: false,
+      daysAgo: 0,
+    },
+  ];
+
+  for (const n of notificationsData) {
+    await prisma.notification.create({
+      data: {
+        userId: n.userId,
+        type: n.type,
+        title: n.title,
+        message: n.message,
+        link: n.link,
+        isRead: n.isRead,
+        createdAt: new Date(Date.now() - n.daysAgo * 24 * 60 * 60 * 1000),
+      },
+    });
+  }
+
+  console.log("✓ Seeded in-app notification center records");
+
+  // 12. Seed Complete Lesson Progress Records for Enrolled Students
+  for (const l of course1Lessons) {
+    await prisma.lessonProgress.create({
+      data: {
+        userId: studentMurtaza.id,
+        lessonId: l.id,
+        isCompleted: true,
+        completedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      },
+    });
+  }
+
+  for (const l of course2Lessons) {
+    await prisma.lessonProgress.create({
+      data: {
+        userId: studentMurtaza.id,
+        lessonId: l.id,
+        isCompleted: true,
+        completedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      },
+    });
+  }
+
+  const course14Lessons = await prisma.lesson.findMany({
+    where: { section: { courseId: course14.id } },
+  });
+  for (const l of course14Lessons) {
+    await prisma.lessonProgress.create({
+      data: {
+        userId: studentMurtaza.id,
+        lessonId: l.id,
+        isCompleted: true,
+        completedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      },
+    });
+  }
+
+  if (course1Lessons.length >= 2) {
+    await prisma.lessonProgress.create({
+      data: {
+        userId: studentAli.id,
+        lessonId: course1Lessons[0].id,
+        isCompleted: true,
+        completedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+      },
+    });
+    await prisma.lessonProgress.create({
+      data: {
+        userId: studentAli.id,
+        lessonId: course1Lessons[1].id,
+        isCompleted: true,
+        completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      },
+    });
+  }
+
+  const course4Lessons = await prisma.lesson.findMany({
+    where: { section: { courseId: course4.id } },
+  });
+  for (const l of course4Lessons.slice(0, 2)) {
+    await prisma.lessonProgress.create({
+      data: {
+        userId: studentFatima.id,
+        lessonId: l.id,
+        isCompleted: true,
+        completedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      },
+    });
+  }
+
+  console.log("✓ Seeded comprehensive lesson progress records");
+
+  // 13. Seed Quiz Submissions with Verified Scores
+  const qz1 = await prisma.quiz.findFirst({ where: { courseId: course1.id } });
+  if (qz1) {
+    await prisma.quizSubmission.create({
+      data: {
+        quizId: qz1.id,
+        userId: studentMurtaza.id,
+        score: 95.0,
+        passed: true,
+        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      },
+    });
+    await prisma.quizSubmission.create({
+      data: {
+        quizId: qz1.id,
+        userId: studentAli.id,
+        score: 75.0,
+        passed: true,
+        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      },
+    });
+  }
+
+  const qz2 = await prisma.quiz.findFirst({ where: { courseId: course2.id } });
+  if (qz2) {
+    await prisma.quizSubmission.create({
+      data: {
+        quizId: qz2.id,
+        userId: studentMurtaza.id,
+        score: 92.0,
+        passed: true,
+        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      },
+    });
+  }
+
+  const qz14 = await prisma.quiz.findFirst({ where: { courseId: course14.id } });
+  if (qz14) {
+    await prisma.quizSubmission.create({
+      data: {
+        quizId: qz14.id,
+        userId: studentMurtaza.id,
+        score: 96.0,
+        passed: true,
+        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      },
+    });
+  }
+
+  const qz4 = await prisma.quiz.findFirst({ where: { courseId: course4.id } });
+  if (qz4) {
+    await prisma.quizSubmission.create({
+      data: {
+        quizId: qz4.id,
+        userId: studentFatima.id,
+        score: 88.0,
+        passed: true,
+        createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+      },
+    });
+  }
+
+  console.log("✓ Seeded quiz attempt submissions with verified assessment scores");
+
+  // 14. Seed System Audit Logs for Governance Oversight
+  const auditEntries = [
+    { action: "PLATFORM_INITIALIZED", entity: "System", entityId: "CORE-001", details: JSON.stringify({ version: "2.0.0", mode: "PRODUCTION_READY" }) },
+    { action: "ROLE_GRANTED", entity: "User", entityId: studentMurtaza.id, details: JSON.stringify({ role: "STUDENT", approvedBy: "ADMIN" }) },
+    { action: "COURSE_PUBLISHED", entity: "Course", entityId: course1.id, details: JSON.stringify({ title: "Web Development", instructor: "Murtaza Wazir" }) },
+    { action: "COURSE_PUBLISHED", entity: "Course", entityId: course2.id, details: JSON.stringify({ title: "Backend Development", instructor: "Prof. Tariq Mahmood" }) },
+    { action: "CERTIFICATE_ISSUED", entity: "Certificate", entityId: "SN-2026-X89J21", details: JSON.stringify({ recipient: "Murtaza Wazir", grade: 95.0 }) },
+    { action: "ASSIGNMENT_EVALUATED", entity: "AssignmentSubmission", entityId: asg1.id, details: JSON.stringify({ evaluator: "Murtaza Wazir", score: 98.0 }) },
+  ];
+
+  for (const a of auditEntries) {
+    await prisma.auditLog.create({
+      data: {
+        action: a.action,
+        entity: a.entity,
+        entityId: a.entityId,
+        details: a.details,
+      },
+    });
+  }
+
+  console.log("✓ Seeded system audit logs for administrative oversight");
+  console.log("🚀 SkillNova Academy database is fully populated, functional, and ready for FYP evaluation!");
 }
 
 main()

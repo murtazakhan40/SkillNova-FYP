@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AdminReportsClient, CourseReportItem } from "@/components/dashboard/AdminReportsClient";
 import { getAdminNotifications } from "@/lib/notifications";
-import { ArrowLeft, Sparkles, BarChart3 } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 
 export default async function AdminReportsPage() {
   const user = await getCurrentUser();

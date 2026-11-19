@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
+import type { PrismaClient } from "@prisma/client";
 
 /**
  * Admin: Update User Role (RBAC)
@@ -11,7 +12,7 @@ import { requireRole } from "@/lib/auth";
 export async function updateUserRoleAction(
   userId: string,
   newRole: string,
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ) {
   const admin = await requireRole(["ADMIN"]);
 
@@ -67,7 +68,7 @@ export async function updateUserRoleAction(
 export async function adminUpdateUserProfileAction(
   userId: string,
   formData: FormData,
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ) {
   const admin = await requireRole(["ADMIN"]);
 
@@ -104,7 +105,7 @@ export async function adminUpdateUserProfileAction(
  */
 export async function createCategoryAction(
   formData: FormData,
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ) {
   const admin = await requireRole(["ADMIN"]);
 
@@ -159,7 +160,7 @@ export async function createCategoryAction(
  */
 export async function deleteCategoryAction(
   categoryId: string,
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ) {
   const admin = await requireRole(["ADMIN"]);
 
@@ -202,7 +203,7 @@ export async function deleteCategoryAction(
  */
 export async function adminToggleCoursePublishAction(
   courseId: string,
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ) {
   const admin = await requireRole(["ADMIN"]);
 
@@ -245,7 +246,7 @@ export async function adminToggleCoursePublishAction(
 export async function adminAssignCourseInstructorAction(
   courseId: string,
   instructorId: string,
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ) {
   const admin = await requireRole(["ADMIN"]);
 
@@ -291,7 +292,7 @@ export async function adminAssignCourseInstructorAction(
 export async function adminEnrollStudentAction(
   studentIdentifier: string,
   courseId: string,
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ) {
   const admin = await requireRole(["ADMIN"]);
 
@@ -372,7 +373,7 @@ export async function adminEnrollStudentAction(
 export async function adminRevokeEnrollmentAction(
   enrollmentId: string,
   reason: string = "Administrative Policy Decision",
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ) {
   const admin = await requireRole(["ADMIN"]);
 
@@ -420,7 +421,7 @@ export async function adminRevokeEnrollmentAction(
  */
 export async function broadcastAnnouncementAction(
   formData: FormData,
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ) {
   const admin = await requireRole(["ADMIN"]);
 
@@ -468,9 +469,9 @@ export async function broadcastAnnouncementAction(
  */
 export async function deleteBroadcastAnnouncementAction(
   auditLogId: string,
-  dbClient: any = db
+  dbClient: PrismaClient = db as PrismaClient
 ) {
-  const admin = await requireRole(["ADMIN"]);
+  await requireRole(["ADMIN"]);
 
   const entry = await dbClient.auditLog.findUnique({
     where: { id: auditLogId },

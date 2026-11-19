@@ -110,6 +110,18 @@ describe("Integration: Certificate Eligibility & Credential Issuance Engine", ()
       },
     });
 
+    // 4. Record PASSING capstone assignment submission (95%)
+    await testDb.assignmentSubmission.create({
+      data: {
+        assignmentId: seeded.paidAssignment.id,
+        userId: seeded.student.id,
+        score: 95.0,
+        status: "GRADED",
+        gradedAt: new Date(),
+        textContent: "Clean solution deliverable",
+      },
+    });
+
     const result = await evaluateAndIssueCertificate(
       seeded.student.id,
       seeded.paidCourse.id,
@@ -131,6 +143,104 @@ describe("Integration: Certificate Eligibility & Credential Issuance Engine", ()
     });
     expect(inDb).not.toBeNull();
     expect(inDb?.isRevoked).toBe(false);
+  });
+
+  it("should reject certificate eligibility when capstone assignment is unsubmitted or incomplete", async () => {
+    // 1. Enroll student
+    await testDb.enrollment.create({
+      data: {
+        userId: seeded.student.id,
+        courseId: seeded.paidCourse.id,
+        progress: 100.0,
+      },
+    });
+
+    // 2. Mark all 4 lessons completed
+    for (const lesson of seeded.paidLessons) {
+      await testDb.lessonProgress.create({
+        data: {
+          userId: seeded.student.id,
+          lessonId: lesson.id,
+          isCompleted: true,
+          completedAt: new Date(),
+        },
+      });
+    }
+
+    // 3. Record PASSING quiz attempt
+    await testDb.quizSubmission.create({
+      data: {
+        quizId: seeded.paidQuiz.id,
+        userId: seeded.student.id,
+        score: 95.0,
+        passed: true,
+      },
+    });
+
+    // 4. No assignment submission created
+    const result = await evaluateAndIssueCertificate(
+      seeded.student.id,
+      seeded.paidCourse.id,
+      testDb
+    );
+
+    expect(result.eligible).toBe(false);
+    expect(result.reason).toContain("Capstone project incomplete");
+    expect(result.certificate).toBeUndefined();
+  });
+
+  it("should reject certificate eligibility when capstone assignment score is failing (< 70%)", async () => {
+    // 1. Enroll student
+    await testDb.enrollment.create({
+      data: {
+        userId: seeded.student.id,
+        courseId: seeded.paidCourse.id,
+        progress: 100.0,
+      },
+    });
+
+    // 2. Mark all 4 lessons completed
+    for (const lesson of seeded.paidLessons) {
+      await testDb.lessonProgress.create({
+        data: {
+          userId: seeded.student.id,
+          lessonId: lesson.id,
+          isCompleted: true,
+          completedAt: new Date(),
+        },
+      });
+    }
+
+    // 3. Record PASSING quiz attempt
+    await testDb.quizSubmission.create({
+      data: {
+        quizId: seeded.paidQuiz.id,
+        userId: seeded.student.id,
+        score: 95.0,
+        passed: true,
+      },
+    });
+
+    // 4. Record FAILING assignment (50%)
+    await testDb.assignmentSubmission.create({
+      data: {
+        assignmentId: seeded.paidAssignment.id,
+        userId: seeded.student.id,
+        score: 50.0,
+        status: "GRADED",
+        gradedAt: new Date(),
+      },
+    });
+
+    const result = await evaluateAndIssueCertificate(
+      seeded.student.id,
+      seeded.paidCourse.id,
+      testDb
+    );
+
+    expect(result.eligible).toBe(false);
+    expect(result.reason).toContain("did not achieve passing grade");
+    expect(result.certificate).toBeUndefined();
   });
 
   it("should handle certificate revocation lifecycle with reason and audit timestamp", async () => {

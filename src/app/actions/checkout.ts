@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { sendParentAcademicReport } from "@/lib/parent-reports";
 
 /**
  * -----------------------------------------------------------------------------
@@ -233,6 +234,24 @@ export async function processSimulatedPaymentAction(formData: FormData) {
       },
     });
   });
+
+  // Under-18 Milestone: Dispatch enrollment confirmation report to parent
+  try {
+    const student = await db.user.findUnique({
+      where: { id: order.userId },
+      select: { age: true, parentEmail: true },
+    });
+    if (student?.age !== null && student?.age !== undefined && student.age < 18 && student.parentEmail) {
+      await sendParentAcademicReport({
+        studentId: order.userId,
+        courseId: order.courseId,
+        reportType: "ENROLLMENT",
+        customNote: `Enrollment Confirmed: Your child is now enrolled in "${order.course.title}". Periodic academic progress reports will be sent to this email.`,
+      });
+    }
+  } catch {
+    // Non-blocking telemetry
+  }
 
   revalidatePath(`/courses/${order.course.slug}`);
   revalidatePath(`/dashboard/student`);

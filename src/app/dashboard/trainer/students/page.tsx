@@ -9,7 +9,7 @@ import {
   TrainerStudentRosterItem 
 } from "@/components/dashboard/TrainerStudentsClient";
 import { getTrainerNotifications } from "@/lib/notifications";
-import { ArrowLeft, Users, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 export default async function TrainerStudentsPage() {
@@ -48,6 +48,11 @@ export default async function TrainerStudentsPage() {
       studentHeadline: enr.user.headline,
       studentPhone: enr.user.phone,
       studentBio: enr.user.bio,
+      studentAge: enr.user.age,
+      parentName: enr.user.parentName,
+      parentEmail: enr.user.parentEmail,
+      parentPhone: enr.user.parentPhone,
+      parentRelationship: enr.user.parentRelationship,
       courseId: c.id,
       courseTitle: c.title,
       enrolledAt: formatDate(enr.createdAt),
